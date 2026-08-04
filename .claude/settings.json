@@ -1,0 +1,36 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(npm test*)",
+      "Bash(npx vitest*)",
+      "Bash(npx tsc*)",
+      "Bash(git status)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git add*)",
+      "Bash(git commit*)",
+      "Bash(docker compose*)",
+      "Bash(mkdir*)",
+      "Bash(ls*)",
+      "Bash(cat*)"
+    ],
+    "ask": [
+      "Bash(npm install*)",
+      "Bash(npm uninstall*)",
+      "Bash(pip install*)",
+      "Bash(git push*)",
+      "Bash(gh *)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./**/*.pem)",
+      "Read(./**/credentials*)",
+      "Bash(git push --force*)",
+      "Bash(rm -rf*)",
+      "Bash(curl *)",
+      "Bash(wget *)"
+    ]
+  }
+}
