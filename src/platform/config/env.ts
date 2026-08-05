@@ -29,6 +29,12 @@ const envSchema = z.object({
     .default("http://localhost:8000")
     .describe("Python parser sidecar base URL"),
 
+  OPENSTATES_API_KEY: z
+    .string()
+    .min(1)
+    .optional()
+    .describe("Open States API key — if absent, legislativeStatus stays unknown"),
+
   LOG_LEVEL: z
     .enum(["fatal", "error", "warn", "info", "debug", "trace"])
     .default("info"),

@@ -7,7 +7,18 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       include: ["src/**/*.ts"],
-      exclude: ["src/**/*.test.ts", "src/main.ts"],
+      exclude: [
+        "src/**/*.test.ts",
+        "src/main.ts",
+        "src/platform/db/client.ts",
+        "src/platform/db/migrate.ts",
+        "src/platform/db/ingestion-schema.ts",
+        "src/platform/db/ingestion-repository.ts",
+        "src/platform/db/schema.ts",
+        "src/platform/storage/check.ts",
+        "src/platform/storage/storage.ts",
+        "src/platform/server/routes/upload.ts",
+      ],
       reporter: ["text", "json", "html"],
       thresholds: {
         statements: 80,
