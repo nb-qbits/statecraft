@@ -4,7 +4,7 @@ export function unsupportedMimeType(mimeType: string): AppError {
   return new AppError({
     code: "UNSUPPORTED_MIME_TYPE",
     category: "user_input",
-    message: `Unsupported file type: ${mimeType}. Supported types: text/plain, application/vnd.openxmlformats-officedocument.wordprocessingml.document`,
+    message: `Unsupported file type: ${mimeType}. Supported types: text/plain, application/vnd.openxmlformats-officedocument.wordprocessingml.document, application/pdf`,
     retryable: false,
     context: { mimeType },
   });

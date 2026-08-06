@@ -8,7 +8,13 @@
  *
  * Run: npm run test:integration
  */
+import { readFileSync } from "node:fs";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, it, expect } from "vitest";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const PDF_FIXTURE = readFileSync(resolve(__dirname, "../../fixtures/sample-bill.pdf"));
 
 const BASE = "http://localhost:3000/api/v1/documents/upload";
 
@@ -48,6 +54,7 @@ interface UploadResult {
   contentHash: string;
   legislativeStatus: string;
   statusProvenance: string;
+  parseStatus: string;
   legalIdentity: { jurisdiction: string };
   mimeType: string;
   byteSize: number;
@@ -196,9 +203,9 @@ describe("Gate 1 — Ingestion integration", () => {
 
   it("rejects unsupported mime type", async () => {
     const r = await upload({
-      content: "%PDF-1.4 fake pdf",
-      filename: "doc.pdf",
-      contentType: "application/pdf",
+      content: '{"not":"a bill"}',
+      filename: "doc.json",
+      contentType: "application/json",
       legalIdentity: { ...LEGAL_IDENTITY, number: "7004" },
     });
 
@@ -373,6 +380,46 @@ describe("Gate 1 — Ingestion integration", () => {
 
     expect(r1.body.documentId).toBe(r2.body.documentId);
     expect(r1.body.documentVersionId).toBe(r2.body.documentVersionId);
+  });
+
+  // --- PDF support ---
+
+  it("uploads application/pdf and returns a version with parseStatus 'unparsed'", async () => {
+    const r = await upload({
+      content: PDF_FIXTURE,
+      filename: "bill.pdf",
+      contentType: "application/pdf",
+      legalIdentity: { ...LEGAL_IDENTITY, number: "7017" },
+    });
+
+    expect(r.status).toBe(201);
+    expect(r.body.mimeType).toBe("application/pdf");
+    expect(r.body.parseStatus).toBe("unparsed");
+    expect(r.body.contentHash).toHaveLength(64);
+  });
+
+  it("rejects corrupt PDF (no %PDF- signature)", async () => {
+    const r = await upload({
+      content: "not a real pdf file",
+      filename: "fake.pdf",
+      contentType: "application/pdf",
+      legalIdentity: { ...LEGAL_IDENTITY, number: "7018" },
+    });
+
+    expect(r.status).toBe(400);
+    expect(r.body.error.code).toBe("CORRUPT_FILE");
+  });
+
+  it("text/plain upload also has parseStatus 'unparsed'", async () => {
+    const r = await upload({
+      content: "Parse status check for text.",
+      filename: "bill.txt",
+      contentType: "text/plain",
+      legalIdentity: { ...LEGAL_IDENTITY, number: "7019" },
+    });
+
+    expect(r.status).toBe(201);
+    expect(r.body.parseStatus).toBe("unparsed");
   });
 
   // --- HIGH 3: concurrent uploads ---

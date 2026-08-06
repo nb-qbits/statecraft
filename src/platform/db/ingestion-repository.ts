@@ -16,6 +16,7 @@ import type {
   ContentHash,
   LegislativeStatus,
   StatusProvenance,
+  ParseStatus,
 } from "../../modules/shared/types.js";
 
 function rowToDocumentVersion(row: typeof documentVersions.$inferSelect): DocumentVersion {
@@ -28,6 +29,7 @@ function rowToDocumentVersion(row: typeof documentVersions.$inferSelect): Docume
     legalIdentity: row.legalIdentity as LegalIdentity,
     legislativeStatus: row.legislativeStatus as LegislativeStatus,
     statusProvenance: row.statusProvenance as StatusProvenance,
+    parseStatus: row.parseStatus as ParseStatus,
     authoritativeSource: row.authoritativeSource,
     asOfDate: row.asOfDate,
     retrievedAt: row.retrievedAt.toISOString(),
@@ -95,6 +97,7 @@ export function createIngestionRepository(
           legalIdentity: version.legalIdentity,
           legislativeStatus: version.legislativeStatus,
           statusProvenance: version.statusProvenance,
+          parseStatus: version.parseStatus,
           authoritativeSource: version.authoritativeSource,
           asOfDate: version.asOfDate,
           retrievedAt: new Date(version.retrievedAt),

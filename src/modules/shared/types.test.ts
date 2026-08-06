@@ -5,6 +5,7 @@ import {
   AnchorMethod,
   SupportLevel,
   EvaluatorVerdict,
+  ParseStatus,
   Lane,
 } from "./types.js";
 
@@ -54,6 +55,10 @@ describe("domain type enums", () => {
     const values = Object.values(EvaluatorVerdict);
     expect(values).not.toContain("supported");
     expect(values).toEqual(["ambiguous", "unsupported"]);
+  });
+
+  it("ParseStatus has expected values", () => {
+    expect(Object.values(ParseStatus)).toEqual(["unparsed", "parsed"]);
   });
 
   it("Lane has expected values", () => {

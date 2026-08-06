@@ -73,6 +73,12 @@ export const EvaluatorVerdict = {
 export type EvaluatorVerdict =
   (typeof EvaluatorVerdict)[keyof typeof EvaluatorVerdict];
 
+export const ParseStatus = {
+  unparsed: "unparsed",
+  parsed: "parsed",
+} as const;
+export type ParseStatus = (typeof ParseStatus)[keyof typeof ParseStatus];
+
 export const Lane = {
   straight_through: "straight_through",
   quick_confirmation: "quick_confirmation",

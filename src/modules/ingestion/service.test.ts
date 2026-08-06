@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, it, expect, beforeEach } from "vitest";
 import { createIngestionService, type IngestionRepository } from "./service.js";
 import type { ObjectStorage } from "../../platform/storage/storage.js";
@@ -26,6 +29,11 @@ const TEXT_CONTENT_2 = Buffer.from("Section 2. Different content entirely.");
 
 const DOCX_HEADER = Buffer.from([0x50, 0x4b, 0x03, 0x04]);
 const VALID_DOCX = Buffer.concat([DOCX_HEADER, Buffer.alloc(100)]);
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const VALID_PDF = readFileSync(
+  resolve(__dirname, "../../../fixtures/sample-bill.pdf"),
+);
 
 function createMemoryStorage(): ObjectStorage & {
   stored: Map<string, { body: Buffer; contentType: string }>;
@@ -320,8 +328,8 @@ describe("createIngestionService", () => {
       const svc = makeService();
       try {
         await svc.upload({
-          bytes: Buffer.from("%PDF-1.4"),
-          mimeType: "application/pdf",
+          bytes: Buffer.from("{}"),
+          mimeType: "application/json",
           legalIdentity: VALID_LEGAL_IDENTITY,
         });
         expect.fail("should have thrown");
@@ -404,8 +412,8 @@ describe("createIngestionService", () => {
 
       try {
         await svc.upload({
-          bytes: Buffer.from("%PDF-1.4"),
-          mimeType: "application/pdf",
+          bytes: Buffer.from("{}"),
+          mimeType: "application/json",
           legalIdentity: VALID_LEGAL_IDENTITY,
         });
       } catch {
@@ -425,6 +433,119 @@ describe("createIngestionService", () => {
 
       expect(repository.versions.size).toBe(sizeBefore);
       expect(storage.stored.size).toBe(0);
+    });
+  });
+
+  describe("upload — PDF support", () => {
+    it("accepts a valid PDF file", async () => {
+      const svc = makeService();
+      const version = await svc.upload({
+        bytes: VALID_PDF,
+        mimeType: "application/pdf",
+        legalIdentity: VALID_LEGAL_IDENTITY,
+      });
+
+      expect(version.documentVersionId).toBeDefined();
+      expect(version.mimeType).toBe("application/pdf");
+      expect(version.byteSize).toBe(VALID_PDF.length);
+      expect(version.contentHash).toHaveLength(64);
+    });
+
+    it("rejects PDF with wrong magic bytes as CORRUPT_FILE", async () => {
+      const svc = makeService();
+      const fakeBytes = Buffer.from("Not a real PDF file content");
+      try {
+        await svc.upload({
+          bytes: fakeBytes,
+          mimeType: "application/pdf",
+          legalIdentity: VALID_LEGAL_IDENTITY,
+        });
+        expect.fail("should have thrown");
+      } catch (err) {
+        expect(err).toBeInstanceOf(AppError);
+        expect((err as AppError).code).toBe("CORRUPT_FILE");
+        expect((err as AppError).message).toContain("%PDF-");
+      }
+    });
+
+    it("rejects a PDF renamed to .txt (mime/content mismatch)", async () => {
+      const svc = makeService();
+      try {
+        await svc.upload({
+          bytes: VALID_PDF,
+          mimeType: "text/plain",
+          legalIdentity: VALID_LEGAL_IDENTITY,
+        });
+        expect.fail("should have thrown");
+      } catch (err) {
+        expect(err).toBeInstanceOf(AppError);
+        expect((err as AppError).code).toBe("CORRUPT_FILE");
+        expect((err as AppError).message).toContain("null bytes");
+      }
+    });
+
+    it("rejects an empty buffer as PDF", async () => {
+      const svc = makeService();
+      try {
+        await svc.upload({
+          bytes: Buffer.alloc(0),
+          mimeType: "application/pdf",
+          legalIdentity: VALID_LEGAL_IDENTITY,
+        });
+        expect.fail("should have thrown");
+      } catch (err) {
+        expect(err).toBeInstanceOf(AppError);
+        expect((err as AppError).code).toBe("CORRUPT_FILE");
+      }
+    });
+  });
+
+  describe("upload — parseStatus defaults to unparsed", () => {
+    it("text/plain upload has parseStatus 'unparsed'", async () => {
+      const svc = makeService();
+      const version = await svc.upload({
+        bytes: TEXT_CONTENT,
+        mimeType: "text/plain",
+        legalIdentity: VALID_LEGAL_IDENTITY,
+      });
+      expect(version.parseStatus).toBe("unparsed");
+    });
+
+    it("DOCX upload has parseStatus 'unparsed'", async () => {
+      const svc = makeService();
+      const version = await svc.upload({
+        bytes: VALID_DOCX,
+        mimeType:
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        legalIdentity: VALID_LEGAL_IDENTITY,
+      });
+      expect(version.parseStatus).toBe("unparsed");
+    });
+
+    it("PDF upload has parseStatus 'unparsed'", async () => {
+      const svc = makeService();
+      const version = await svc.upload({
+        bytes: VALID_PDF,
+        mimeType: "application/pdf",
+        legalIdentity: VALID_LEGAL_IDENTITY,
+      });
+      expect(version.parseStatus).toBe("unparsed");
+    });
+
+    it("deduplicated upload preserves parseStatus 'unparsed'", async () => {
+      const svc = makeService();
+      const v1 = await svc.upload({
+        bytes: TEXT_CONTENT,
+        mimeType: "text/plain",
+        legalIdentity: VALID_LEGAL_IDENTITY,
+      });
+      const v2 = await svc.upload({
+        bytes: TEXT_CONTENT,
+        mimeType: "text/plain",
+        legalIdentity: VALID_LEGAL_IDENTITY,
+      });
+      expect(v1.parseStatus).toBe("unparsed");
+      expect(v2.parseStatus).toBe("unparsed");
     });
   });
 

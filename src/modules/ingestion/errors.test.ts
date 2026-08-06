@@ -12,13 +12,13 @@ import { AppError } from "../shared/errors.js";
 
 describe("ingestion error factories", () => {
   it("unsupportedMimeType is user_input and not retryable", () => {
-    const err = unsupportedMimeType("application/pdf");
+    const err = unsupportedMimeType("application/json");
     expect(err).toBeInstanceOf(AppError);
     expect(err.code).toBe("UNSUPPORTED_MIME_TYPE");
     expect(err.category).toBe("user_input");
     expect(err.retryable).toBe(false);
-    expect(err.message).toContain("application/pdf");
-    expect(err.context.mimeType).toBe("application/pdf");
+    expect(err.message).toContain("application/json");
+    expect(err.context.mimeType).toBe("application/json");
   });
 
   it("fileTooLarge is user_input and not retryable", () => {

@@ -9,6 +9,7 @@ import type {
   ContentHash,
   LegislativeStatus,
   StatusProvenance,
+  ParseStatus,
 } from "../shared/types.js";
 import { AppError } from "../shared/errors.js";
 import {
@@ -60,6 +61,12 @@ function validateDocxSignature(bytes: Buffer): void {
   }
 }
 
+function validatePdfSignature(bytes: Buffer): void {
+  if (bytes.length < 5 || bytes[0] !== 0x25 || bytes[1] !== 0x50 || bytes[2] !== 0x44 || bytes[3] !== 0x46 || bytes[4] !== 0x2d) {
+    throw corruptFile("PDF file does not begin with %PDF- signature");
+  }
+}
+
 function validateTextContent(bytes: Buffer): void {
   if (bytes.length === 0) {
     throw corruptFile("File is empty");
@@ -99,6 +106,8 @@ export function createIngestionService(deps: {
         validateDocxSignature(input.bytes);
       } else if (input.mimeType === "text/plain") {
         validateTextContent(input.bytes);
+      } else if (input.mimeType === "application/pdf") {
+        validatePdfSignature(input.bytes);
       }
 
       // Normalize jurisdiction to canonical form
@@ -204,6 +213,9 @@ export function createIngestionService(deps: {
 
       // HIGH 3: insertVersion is conflict-safe — concurrent identical uploads
       // both succeed; the second returns the existing row via ON CONFLICT
+      // PDF parsing is deferred to a later module; all uploads start as unparsed
+      const parseStatus: ParseStatus = "unparsed";
+
       const version = await repository.insertVersion({
         documentVersionId: randomUUID() as DocumentVersionId,
         documentId,
@@ -215,6 +227,7 @@ export function createIngestionService(deps: {
         statusProvenance,
         authoritativeSource,
         asOfDate,
+        parseStatus,
         retrievedAt: now,
       });
 

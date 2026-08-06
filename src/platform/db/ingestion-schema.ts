@@ -51,6 +51,9 @@ export const documentVersions = pgTable(
     statusProvenance: varchar("status_provenance", { length: 32 })
       .notNull()
       .default("default_unknown"),
+    parseStatus: varchar("parse_status", { length: 32 })
+      .notNull()
+      .default("unparsed"),
     authoritativeSource: varchar("authoritative_source", { length: 2048 }),
     asOfDate: varchar("as_of_date", { length: 10 }),
     retrievedAt: timestamp("retrieved_at", { withTimezone: true }).notNull(),
@@ -70,6 +73,10 @@ export const documentVersions = pgTable(
     check(
       "chk_status_provenance",
       sql`${table.statusProvenance} IN ('caller_asserted','metadata_source','default_unknown')`,
+    ),
+    check(
+      "chk_parse_status",
+      sql`${table.parseStatus} IN ('unparsed','parsed')`,
     ),
   ],
 );

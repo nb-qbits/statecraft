@@ -7,8 +7,9 @@
  *
  *   file             (required)  The document bytes. Content-Type determines mimeType.
  *                                Supported: text/plain,
- *                                application/vnd.openxmlformats-officedocument.wordprocessingml.document
- *                                Max size: 50 MB.
+ *                                application/vnd.openxmlformats-officedocument.wordprocessingml.document,
+ *                                application/pdf
+ *                                Max size: 50 MB. PDF page-count cap deferred to parsing module.
  *
  *   legalIdentity    (required)  JSON string: { jurisdiction, session, instrumentType, number, stage, chapter }
  *                                All string fields. chapter may be null.
@@ -56,6 +57,11 @@
  *     -F 'file=@enacted-bill.txt;type=text/plain' \
  *     -F 'legalIdentity={"jurisdiction":"Virginia","session":"2025","instrumentType":"HB","number":"5678","stage":"enrolled","chapter":"123"}' \
  *     -F 'legislativeStatus=enacted'
+ *
+ *   # Upload a PDF (stored only — parsing deferred to a later module)
+ *   curl -X POST http://localhost:3000/api/v1/documents/upload \
+ *     -F 'file=@bill.pdf;type=application/pdf' \
+ *     -F 'legalIdentity={"jurisdiction":"Virginia","session":"2025","instrumentType":"HB","number":"1234","stage":"introduced","chapter":null}'
  */
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";

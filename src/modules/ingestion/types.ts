@@ -4,6 +4,7 @@ import type {
   ContentHash,
   LegislativeStatus,
   StatusProvenance,
+  ParseStatus,
 } from "../shared/types.js";
 
 export interface LegalIdentity {
@@ -26,6 +27,7 @@ export interface DocumentVersion {
   readonly statusProvenance: StatusProvenance;
   readonly authoritativeSource: string | null;
   readonly asOfDate: string | null;
+  readonly parseStatus: ParseStatus;
   readonly retrievedAt: string;
   readonly createdAt: string;
 }
@@ -43,6 +45,7 @@ export interface SourceDocument {
 export const SUPPORTED_MIME_TYPES = [
   "text/plain",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/pdf",
 ] as const;
 
 export type SupportedMimeType = (typeof SUPPORTED_MIME_TYPES)[number];

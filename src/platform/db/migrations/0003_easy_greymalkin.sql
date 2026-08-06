@@ -1,0 +1,2 @@
+ALTER TABLE "document_versions" ADD COLUMN "parse_status" varchar(32) DEFAULT 'unparsed' NOT NULL;--> statement-breakpoint
+ALTER TABLE "document_versions" ADD CONSTRAINT "chk_parse_status" CHECK ("document_versions"."parse_status" IN ('unparsed','parsed'));
