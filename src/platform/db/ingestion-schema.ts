@@ -6,7 +6,9 @@ import {
   timestamp,
   jsonb,
   uniqueIndex,
+  check,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 
 export const sourceDocuments = pgTable(
   "source_documents",
@@ -46,6 +48,9 @@ export const documentVersions = pgTable(
     legislativeStatus: varchar("legislative_status", { length: 32 })
       .notNull()
       .default("unknown"),
+    statusProvenance: varchar("status_provenance", { length: 32 })
+      .notNull()
+      .default("default_unknown"),
     authoritativeSource: varchar("authoritative_source", { length: 2048 }),
     asOfDate: varchar("as_of_date", { length: 10 }),
     retrievedAt: timestamp("retrieved_at", { withTimezone: true }).notNull(),
@@ -57,6 +62,14 @@ export const documentVersions = pgTable(
     uniqueIndex("uq_document_version_content_hash").on(
       table.documentId,
       table.contentHash,
+    ),
+    check(
+      "chk_legislative_status",
+      sql`${table.legislativeStatus} IN ('introduced','engrossed','enrolled','enacted','vetoed','failed','unknown')`,
+    ),
+    check(
+      "chk_status_provenance",
+      sql`${table.statusProvenance} IN ('caller_asserted','metadata_source','default_unknown')`,
     ),
   ],
 );

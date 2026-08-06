@@ -47,8 +47,12 @@ interface UploadResult {
   documentId: string;
   contentHash: string;
   legislativeStatus: string;
+  statusProvenance: string;
+  legalIdentity: { jurisdiction: string };
   mimeType: string;
   byteSize: number;
+  authoritativeSource: string | null;
+  asOfDate: string | null;
 }
 
 interface ErrorResult {
@@ -62,6 +66,8 @@ async function upload(opts: {
   legalIdentity: Record<string, unknown>;
   documentId?: string;
   legislativeStatus?: string;
+  authoritativeSource?: string;
+  asOfDate?: string;
 }): Promise<{ status: number; body: UploadResult & ErrorResult }> {
   const parts: Parameters<typeof buildMultipartBody>[0] = [
     {
@@ -80,6 +86,12 @@ async function upload(opts: {
   }
   if (opts.legislativeStatus) {
     parts.push({ name: "legislativeStatus", value: opts.legislativeStatus });
+  }
+  if (opts.authoritativeSource) {
+    parts.push({ name: "authoritativeSource", value: opts.authoritativeSource });
+  }
+  if (opts.asOfDate) {
+    parts.push({ name: "asOfDate", value: opts.asOfDate });
   }
 
   const { body, boundary } = buildMultipartBody(parts);
@@ -116,6 +128,7 @@ describe("Gate 1 — Ingestion integration", () => {
     expect(r.body.contentHash).toHaveLength(64);
     expect(r.body.mimeType).toBe("text/plain");
     expect(r.body.legislativeStatus).toBe("unknown");
+    expect(r.body.statusProvenance).toBe("default_unknown");
   });
 
   it("identical bytes uploaded twice produce one version (dedup)", async () => {
@@ -215,6 +228,7 @@ describe("Gate 1 — Ingestion integration", () => {
     });
 
     expect(r.body.legislativeStatus).toBe("unknown");
+    expect(r.body.statusProvenance).toBe("default_unknown");
   });
 
   it("unknown is distinguishable from enacted", async () => {
@@ -230,16 +244,16 @@ describe("Gate 1 — Ingestion integration", () => {
       contentType: "text/plain",
       legalIdentity: { ...LEGAL_IDENTITY, number: "7008" },
       legislativeStatus: "enacted",
+      authoritativeSource: "https://lis.virginia.gov/bill/HB7008",
+      asOfDate: "2025-07-01",
     });
 
     expect(rUnknown.body.legislativeStatus).toBe("unknown");
     expect(rEnacted.body.legislativeStatus).toBe("enacted");
-    expect(rUnknown.body.legislativeStatus).not.toBe(
-      rEnacted.body.legislativeStatus,
-    );
+    expect(rEnacted.body.statusProvenance).toBe("caller_asserted");
   });
 
-  it("dedup is durable — survives across requests (DB-backed, not in-memory)", async () => {
+  it("dedup is durable (DB-backed, not in-memory)", async () => {
     const text = "Durable dedup test — persisted in Postgres.";
     const identity = { ...LEGAL_IDENTITY, number: "7009" };
 
@@ -249,10 +263,6 @@ describe("Gate 1 — Ingestion integration", () => {
       contentType: "text/plain",
       legalIdentity: identity,
     });
-
-    // Second upload — same bytes, same legal identity, no documentId.
-    // If dedup were in-memory, a different process/restart would miss it.
-    // This test proves the version ID comes from the DB.
     const r2 = await upload({
       content: text,
       filename: "bill.txt",
@@ -262,5 +272,133 @@ describe("Gate 1 — Ingestion integration", () => {
 
     expect(r1.body.documentVersionId).toBe(r2.body.documentVersionId);
     expect(r1.body.documentId).toBe(r2.body.documentId);
+  });
+
+  // --- HIGH 1: status provenance ---
+
+  it("rejects caller-asserted status without provenance", async () => {
+    const r = await upload({
+      content: "No provenance bill.",
+      filename: "bill.txt",
+      contentType: "text/plain",
+      legalIdentity: { ...LEGAL_IDENTITY, number: "7010" },
+      legislativeStatus: "enacted",
+    });
+
+    expect(r.status).toBe(400);
+    expect(r.body.error.code).toBe("MISSING_STATUS_PROVENANCE");
+  });
+
+  it("rejects caller-asserted status with only authoritativeSource", async () => {
+    const r = await upload({
+      content: "Partial provenance bill.",
+      filename: "bill.txt",
+      contentType: "text/plain",
+      legalIdentity: { ...LEGAL_IDENTITY, number: "7011" },
+      legislativeStatus: "enacted",
+      authoritativeSource: "https://example.com",
+    });
+
+    expect(r.status).toBe(400);
+    expect(r.body.error.code).toBe("MISSING_STATUS_PROVENANCE");
+  });
+
+  // --- MEDIUM 4: input validation ---
+
+  it("rejects malformed legalIdentity (missing required fields)", async () => {
+    const r = await upload({
+      content: "Bad identity bill.",
+      filename: "bill.txt",
+      contentType: "text/plain",
+      legalIdentity: { jurisdiction: "Virginia" },
+    });
+
+    expect(r.status).toBe(400);
+    expect(r.body.error.code).toBe("INVALID_INPUT");
+  });
+
+  it("rejects invalid legislativeStatus enum value", async () => {
+    const parts = [
+      {
+        name: "file",
+        value: "Invalid status bill.",
+        filename: "bill.txt",
+        contentType: "text/plain",
+      },
+      {
+        name: "legalIdentity",
+        value: JSON.stringify({ ...LEGAL_IDENTITY, number: "7013" }),
+      },
+      { name: "legislativeStatus", value: "banana" },
+    ];
+    const { body, boundary } = buildMultipartBody(parts);
+    const res = await fetch(BASE, {
+      method: "POST",
+      headers: { "Content-Type": `multipart/form-data; boundary=${boundary}` },
+      body,
+    });
+    const json = await res.json();
+
+    expect(res.status).toBe(400);
+    expect((json as ErrorResult).error.code).toBe("INVALID_INPUT");
+  });
+
+  it("normalizes jurisdiction ('Virginia' → 'us-va')", async () => {
+    const r = await upload({
+      content: "Jurisdiction normalization test.",
+      filename: "bill.txt",
+      contentType: "text/plain",
+      legalIdentity: { ...LEGAL_IDENTITY, number: "7014", jurisdiction: "Virginia" },
+    });
+
+    expect(r.status).toBe(201);
+    expect(r.body.legalIdentity.jurisdiction).toBe("us-va");
+  });
+
+  it("'Virginia' and 'us-va' route to same document", async () => {
+    const text = "Jurisdiction alias test.";
+
+    const r1 = await upload({
+      content: text,
+      filename: "bill.txt",
+      contentType: "text/plain",
+      legalIdentity: { ...LEGAL_IDENTITY, number: "7015", jurisdiction: "Virginia" },
+    });
+    const r2 = await upload({
+      content: text,
+      filename: "bill.txt",
+      contentType: "text/plain",
+      legalIdentity: { ...LEGAL_IDENTITY, number: "7015", jurisdiction: "us-va" },
+    });
+
+    expect(r1.body.documentId).toBe(r2.body.documentId);
+    expect(r1.body.documentVersionId).toBe(r2.body.documentVersionId);
+  });
+
+  // --- HIGH 3: concurrent uploads ---
+
+  it("concurrent identical uploads produce one version, no 500s", async () => {
+    const text = "Concurrent upload race condition test.";
+    const identity = { ...LEGAL_IDENTITY, number: "7016" };
+
+    const results = await Promise.all(
+      Array.from({ length: 5 }, () =>
+        upload({
+          content: text,
+          filename: "bill.txt",
+          contentType: "text/plain",
+          legalIdentity: identity,
+        }),
+      ),
+    );
+
+    const statuses = results.map((r) => r.status);
+    expect(statuses.every((s) => s === 201)).toBe(true);
+
+    const versionIds = new Set(results.map((r) => r.body.documentVersionId));
+    expect(versionIds.size).toBe(1);
+
+    const documentIds = new Set(results.map((r) => r.body.documentId));
+    expect(documentIds.size).toBe(1);
   });
 });

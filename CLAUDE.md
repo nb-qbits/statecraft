@@ -6,6 +6,14 @@ it cannot prove.
 
 ## Read before doing anything
 
+Before implementing any module, search for existing open-source solutions. Report what you found and why you're building rather than adopting.
+
+## Before implementing any module
+
+Search for existing open-source solutions first. In the module report,
+state what you found, what you're adopting, what you're building, and why.
+Permitted licences: MIT, Apache-2.0, BSD, ISC.
+
 - `docs/02-implementation-brief.md` — the standing brief. Governs every module.
 - `docs/01-architecture.md` — why the design is this way.
 - `docs/03-reuse-analysis.md` — what to reuse, what to build, licence policy.
@@ -31,6 +39,9 @@ module report, and STOP. Do not start the next module.
 6. Every resolved date carries its rule IDs and statutory citations.
 7. Screening produces `screened_no_candidate`, never a certification of absence.
 8. Nothing becomes authoritative without a human decision.
+9. Module reports must quote the actual implementing lines for each gate claim,
+with file and line number — not describe them. A claim without quoted code
+is not evidence.
 
 ## Scope
 

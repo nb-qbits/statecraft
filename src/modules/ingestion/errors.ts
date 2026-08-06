@@ -42,3 +42,43 @@ export function duplicateVersion(
     context: { documentId, contentHash },
   });
 }
+
+export function missingStatusProvenance(
+  legislativeStatus: string,
+): AppError {
+  return new AppError({
+    code: "MISSING_STATUS_PROVENANCE",
+    category: "user_input",
+    message: `legislativeStatus "${legislativeStatus}" requires both authoritativeSource and asOfDate`,
+    retryable: false,
+    context: { legislativeStatus },
+  });
+}
+
+export function identityMismatch(
+  documentId: string,
+  field: string,
+  expected: string,
+  actual: string,
+): AppError {
+  return new AppError({
+    code: "IDENTITY_MISMATCH",
+    category: "user_input",
+    message: `legalIdentity.${field} "${actual}" does not match document ${documentId} ("${expected}")`,
+    retryable: false,
+    context: { documentId, field, expected, actual },
+  });
+}
+
+export function invalidInput(
+  field: string,
+  reason: string,
+): AppError {
+  return new AppError({
+    code: "INVALID_INPUT",
+    category: "user_input",
+    message: `Invalid ${field}: ${reason}`,
+    retryable: false,
+    context: { field, reason },
+  });
+}

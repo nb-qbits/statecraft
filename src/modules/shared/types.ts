@@ -21,6 +21,14 @@ export const LegislativeStatus = {
 export type LegislativeStatus =
   (typeof LegislativeStatus)[keyof typeof LegislativeStatus];
 
+export const StatusProvenance = {
+  caller_asserted: "caller_asserted",
+  metadata_source: "metadata_source",
+  default_unknown: "default_unknown",
+} as const;
+export type StatusProvenance =
+  (typeof StatusProvenance)[keyof typeof StatusProvenance];
+
 export const CoverageState = {
   candidates_found: "candidates_found",
   screened_no_candidate: "screened_no_candidate",

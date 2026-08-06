@@ -8,12 +8,14 @@ import type { IngestionRepository } from "../../modules/ingestion/service.js";
 import type {
   DocumentVersion,
   LegalIdentity,
+  SourceDocument,
 } from "../../modules/ingestion/types.js";
 import type {
   DocumentId,
   DocumentVersionId,
   ContentHash,
   LegislativeStatus,
+  StatusProvenance,
 } from "../../modules/shared/types.js";
 
 function rowToDocumentVersion(row: typeof documentVersions.$inferSelect): DocumentVersion {
@@ -25,6 +27,7 @@ function rowToDocumentVersion(row: typeof documentVersions.$inferSelect): Docume
     byteSize: row.byteSize,
     legalIdentity: row.legalIdentity as LegalIdentity,
     legislativeStatus: row.legislativeStatus as LegislativeStatus,
+    statusProvenance: row.statusProvenance as StatusProvenance,
     authoritativeSource: row.authoritativeSource,
     asOfDate: row.asOfDate,
     retrievedAt: row.retrievedAt.toISOString(),
@@ -91,9 +94,14 @@ export function createIngestionRepository(
           byteSize: version.byteSize,
           legalIdentity: version.legalIdentity,
           legislativeStatus: version.legislativeStatus,
+          statusProvenance: version.statusProvenance,
           authoritativeSource: version.authoritativeSource,
           asOfDate: version.asOfDate,
           retrievedAt: new Date(version.retrievedAt),
+        })
+        .onConflictDoUpdate({
+          target: [documentVersions.documentId, documentVersions.contentHash],
+          set: { contentHash: sql`excluded.content_hash` },
         })
         .returning();
 
@@ -123,7 +131,7 @@ export function createIngestionRepository(
 
     async getDocument(
       documentId: DocumentId,
-    ): Promise<{ documentId: DocumentId; createdAt: string } | null> {
+    ): Promise<SourceDocument | null> {
       const rows = await db
         .select()
         .from(sourceDocuments)
@@ -134,6 +142,11 @@ export function createIngestionRepository(
       const row = rows[0]!;
       return {
         documentId: row.documentId as DocumentId,
+        jurisdiction: row.jurisdiction,
+        session: row.session,
+        instrumentType: row.instrumentType,
+        number: row.number,
+        stage: row.stage,
         createdAt: row.createdAt.toISOString(),
       };
     },

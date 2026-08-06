@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { createIngestionService, type IngestionRepository } from "./service.js";
 import type { ObjectStorage } from "../../platform/storage/storage.js";
-import type { DocumentVersion, LegalIdentity } from "./types.js";
+import type { DocumentVersion, LegalIdentity, SourceDocument } from "./types.js";
 import type {
   DocumentId,
   DocumentVersionId,
@@ -52,13 +52,10 @@ function legalIdentityKey(li: LegalIdentity): string {
 }
 
 function createMemoryRepository(): IngestionRepository & {
-  documents: Map<string, { documentId: DocumentId; createdAt: string }>;
+  documents: Map<string, SourceDocument>;
   versions: Map<string, DocumentVersion>;
 } {
-  const documents = new Map<
-    string,
-    { documentId: DocumentId; createdAt: string }
-  >();
+  const documents = new Map<string, SourceDocument>();
   const identityIndex = new Map<string, DocumentId>();
   const versions = new Map<string, DocumentVersion>();
   let docCounter = 0;
@@ -71,7 +68,15 @@ function createMemoryRepository(): IngestionRepository & {
       const existing = identityIndex.get(key);
       if (existing) return existing;
       const id = `doc-${++docCounter}` as DocumentId;
-      documents.set(id, { documentId: id, createdAt: new Date().toISOString() });
+      documents.set(id, {
+        documentId: id,
+        jurisdiction: legalIdentity.jurisdiction,
+        session: legalIdentity.session,
+        instrumentType: legalIdentity.instrumentType,
+        number: legalIdentity.number,
+        stage: legalIdentity.stage,
+        createdAt: new Date().toISOString(),
+      });
       identityIndex.set(key, id);
       return id;
     },
@@ -89,6 +94,12 @@ function createMemoryRepository(): IngestionRepository & {
     async insertVersion(
       version: Omit<DocumentVersion, "createdAt">,
     ): Promise<DocumentVersion> {
+      // Conflict-safe: return existing on (documentId, contentHash) match
+      for (const v of versions.values()) {
+        if (v.documentId === version.documentId && v.contentHash === version.contentHash) {
+          return v;
+        }
+      }
       const full: DocumentVersion = {
         ...version,
         createdAt: new Date().toISOString(),
@@ -104,9 +115,7 @@ function createMemoryRepository(): IngestionRepository & {
         (v) => v.documentId === documentId,
       );
     },
-    async getDocument(
-      documentId: DocumentId,
-    ): Promise<{ documentId: DocumentId; createdAt: string } | null> {
+    async getDocument(documentId: DocumentId): Promise<SourceDocument | null> {
       return documents.get(documentId) ?? null;
     },
   };
@@ -150,8 +159,12 @@ describe("createIngestionService", () => {
       expect(version.mimeType).toBe("text/plain");
       expect(version.byteSize).toBe(TEXT_CONTENT.length);
       expect(version.contentHash).toHaveLength(64);
-      expect(version.legalIdentity).toEqual(VALID_LEGAL_IDENTITY);
+      expect(version.legalIdentity).toEqual({
+        ...VALID_LEGAL_IDENTITY,
+        jurisdiction: "us-va",
+      });
       expect(version.legislativeStatus).toBe("unknown");
+      expect(version.statusProvenance).toBe("default_unknown");
     });
 
     it("creates a document and version for DOCX", async () => {
@@ -181,16 +194,21 @@ describe("createIngestionService", () => {
       expect(storage.stored.get(key)!.body).toEqual(TEXT_CONTENT);
     });
 
-    it("accepts an explicit legislativeStatus", async () => {
+    it("accepts an explicit legislativeStatus with provenance", async () => {
       const svc = makeService();
       const version = await svc.upload({
         bytes: TEXT_CONTENT,
         mimeType: "text/plain",
         legalIdentity: VALID_LEGAL_IDENTITY,
         legislativeStatus: "enacted",
+        authoritativeSource: "https://lis.virginia.gov/bill/HB1234",
+        asOfDate: "2025-07-01",
       });
 
       expect(version.legislativeStatus).toBe("enacted");
+      expect(version.statusProvenance).toBe("caller_asserted");
+      expect(version.authoritativeSource).toBe("https://lis.virginia.gov/bill/HB1234");
+      expect(version.asOfDate).toBe("2025-07-01");
     });
   });
 
@@ -433,6 +451,8 @@ describe("createIngestionService", () => {
         mimeType: "text/plain",
         legalIdentity: VALID_LEGAL_IDENTITY,
         legislativeStatus: "enacted",
+        authoritativeSource: "https://lis.virginia.gov/bill/HB1234",
+        asOfDate: "2025-07-01",
       });
 
       expect(vUnknown.legislativeStatus).toBe("unknown");
@@ -489,8 +509,11 @@ describe("createIngestionService", () => {
         mimeType: "text/plain",
         legalIdentity: VALID_LEGAL_IDENTITY,
         legislativeStatus: "introduced",
+        authoritativeSource: "https://lis.virginia.gov/bill/HB1234",
+        asOfDate: "2025-01-15",
       });
       expect(v.legislativeStatus).toBe("introduced");
+      expect(v.statusProvenance).toBe("caller_asserted");
       expect(lookupCalled).toBe(false);
     });
 
@@ -526,6 +549,239 @@ describe("createIngestionService", () => {
         legalIdentity: VALID_LEGAL_IDENTITY,
       });
       expect(v.legislativeStatus).toBe("unknown");
+    });
+  });
+
+  describe("upload — status provenance (HIGH 1)", () => {
+    it("rejects caller-asserted status without authoritativeSource", async () => {
+      const svc = makeService();
+      try {
+        await svc.upload({
+          bytes: TEXT_CONTENT,
+          mimeType: "text/plain",
+          legalIdentity: VALID_LEGAL_IDENTITY,
+          legislativeStatus: "enacted",
+          asOfDate: "2025-07-01",
+        });
+        expect.fail("should have thrown");
+      } catch (err) {
+        expect(err).toBeInstanceOf(AppError);
+        expect((err as AppError).code).toBe("MISSING_STATUS_PROVENANCE");
+      }
+    });
+
+    it("rejects caller-asserted status without asOfDate", async () => {
+      const svc = makeService();
+      try {
+        await svc.upload({
+          bytes: TEXT_CONTENT,
+          mimeType: "text/plain",
+          legalIdentity: VALID_LEGAL_IDENTITY,
+          legislativeStatus: "vetoed",
+          authoritativeSource: "https://example.com",
+        });
+        expect.fail("should have thrown");
+      } catch (err) {
+        expect(err).toBeInstanceOf(AppError);
+        expect((err as AppError).code).toBe("MISSING_STATUS_PROVENANCE");
+      }
+    });
+
+    it("rejects caller-asserted status without either provenance field", async () => {
+      const svc = makeService();
+      try {
+        await svc.upload({
+          bytes: TEXT_CONTENT,
+          mimeType: "text/plain",
+          legalIdentity: VALID_LEGAL_IDENTITY,
+          legislativeStatus: "enacted",
+        });
+        expect.fail("should have thrown");
+      } catch (err) {
+        expect(err).toBeInstanceOf(AppError);
+        expect((err as AppError).code).toBe("MISSING_STATUS_PROVENANCE");
+      }
+    });
+
+    it("allows unknown status without provenance", async () => {
+      const svc = makeService();
+      const v = await svc.upload({
+        bytes: TEXT_CONTENT,
+        mimeType: "text/plain",
+        legalIdentity: VALID_LEGAL_IDENTITY,
+        legislativeStatus: "unknown",
+      });
+      expect(v.legislativeStatus).toBe("unknown");
+      expect(v.statusProvenance).toBe("default_unknown");
+    });
+
+    it("records metadata_source provenance from adapter", async () => {
+      const mockSource: LegislativeMetadataSource = {
+        provider: "test",
+        async lookup() {
+          return {
+            legislativeStatus: "enacted" as const,
+            authoritativeSource: "https://openstates.org/bill/123",
+            asOfDate: "2025-06-15",
+          };
+        },
+      };
+
+      const svc = makeService({ metadataSource: mockSource });
+      const v = await svc.upload({
+        bytes: TEXT_CONTENT,
+        mimeType: "text/plain",
+        legalIdentity: VALID_LEGAL_IDENTITY,
+      });
+      expect(v.statusProvenance).toBe("metadata_source");
+      expect(v.authoritativeSource).toBe("https://openstates.org/bill/123");
+      expect(v.asOfDate).toBe("2025-06-15");
+    });
+  });
+
+  describe("upload — identity mismatch (HIGH 2)", () => {
+    it("rejects version with mismatched jurisdiction on existing document", async () => {
+      const svc = makeService();
+      const v1 = await svc.upload({
+        bytes: TEXT_CONTENT,
+        mimeType: "text/plain",
+        legalIdentity: VALID_LEGAL_IDENTITY,
+      });
+
+      try {
+        await svc.upload({
+          documentId: v1.documentId,
+          bytes: TEXT_CONTENT_2,
+          mimeType: "text/plain",
+          legalIdentity: {
+            ...VALID_LEGAL_IDENTITY,
+            jurisdiction: "Maryland",
+          },
+        });
+        expect.fail("should have thrown");
+      } catch (err) {
+        expect(err).toBeInstanceOf(AppError);
+        expect((err as AppError).code).toBe("IDENTITY_MISMATCH");
+        expect((err as AppError).context.field).toBe("jurisdiction");
+      }
+    });
+
+    it("rejects version with mismatched number on existing document", async () => {
+      const svc = makeService();
+      const v1 = await svc.upload({
+        bytes: TEXT_CONTENT,
+        mimeType: "text/plain",
+        legalIdentity: VALID_LEGAL_IDENTITY,
+      });
+
+      try {
+        await svc.upload({
+          documentId: v1.documentId,
+          bytes: TEXT_CONTENT_2,
+          mimeType: "text/plain",
+          legalIdentity: {
+            ...VALID_LEGAL_IDENTITY,
+            number: "9999",
+          },
+        });
+        expect.fail("should have thrown");
+      } catch (err) {
+        expect(err).toBeInstanceOf(AppError);
+        expect((err as AppError).code).toBe("IDENTITY_MISMATCH");
+        expect((err as AppError).context.field).toBe("number");
+      }
+    });
+
+    it("allows version with different chapter on existing document", async () => {
+      const svc = makeService();
+      const v1 = await svc.upload({
+        bytes: TEXT_CONTENT,
+        mimeType: "text/plain",
+        legalIdentity: VALID_LEGAL_IDENTITY,
+      });
+
+      const v2 = await svc.upload({
+        documentId: v1.documentId,
+        bytes: TEXT_CONTENT_2,
+        mimeType: "text/plain",
+        legalIdentity: {
+          ...VALID_LEGAL_IDENTITY,
+          chapter: "123",
+        },
+      });
+
+      expect(v2.documentId).toBe(v1.documentId);
+      expect(v2.legalIdentity.chapter).toBe("123");
+    });
+  });
+
+  describe("upload — race condition (HIGH 3)", () => {
+    it("insertVersion is conflict-safe on (documentId, contentHash)", async () => {
+      const svc = makeService();
+      const v1 = await svc.upload({
+        bytes: TEXT_CONTENT,
+        mimeType: "text/plain",
+        legalIdentity: VALID_LEGAL_IDENTITY,
+      });
+
+      // Simulate a race: repository.findVersionByHash returns null
+      // even though a version exists, then insertVersion handles the conflict
+      const origFind = repository.findVersionByHash.bind(repository);
+      let skipOnce = true;
+      repository.findVersionByHash = async (docId, hash) => {
+        if (skipOnce) {
+          skipOnce = false;
+          return null;
+        }
+        return origFind(docId, hash);
+      };
+
+      const v2 = await svc.upload({
+        bytes: TEXT_CONTENT,
+        mimeType: "text/plain",
+        legalIdentity: VALID_LEGAL_IDENTITY,
+      });
+
+      expect(v2.documentVersionId).toBe(v1.documentVersionId);
+      expect(repository.versions.size).toBe(1);
+    });
+  });
+
+  describe("upload — jurisdiction normalization (MEDIUM 4)", () => {
+    it("normalizes 'Virginia' to 'us-va'", async () => {
+      const svc = makeService();
+      const v = await svc.upload({
+        bytes: TEXT_CONTENT,
+        mimeType: "text/plain",
+        legalIdentity: VALID_LEGAL_IDENTITY,
+      });
+      expect(v.legalIdentity.jurisdiction).toBe("us-va");
+    });
+
+    it("'Virginia' and 'us-va' route to the same document", async () => {
+      const svc = makeService();
+      const v1 = await svc.upload({
+        bytes: TEXT_CONTENT,
+        mimeType: "text/plain",
+        legalIdentity: { ...VALID_LEGAL_IDENTITY, jurisdiction: "Virginia" },
+      });
+      const v2 = await svc.upload({
+        bytes: TEXT_CONTENT,
+        mimeType: "text/plain",
+        legalIdentity: { ...VALID_LEGAL_IDENTITY, jurisdiction: "us-va" },
+      });
+      expect(v1.documentId).toBe(v2.documentId);
+      expect(v1.documentVersionId).toBe(v2.documentVersionId);
+    });
+
+    it("case-insensitive normalization ('VA' → 'us-va')", async () => {
+      const svc = makeService();
+      const v = await svc.upload({
+        bytes: TEXT_CONTENT,
+        mimeType: "text/plain",
+        legalIdentity: { ...VALID_LEGAL_IDENTITY, jurisdiction: "VA" },
+      });
+      expect(v.legalIdentity.jurisdiction).toBe("us-va");
     });
   });
 

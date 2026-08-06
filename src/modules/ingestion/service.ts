@@ -1,19 +1,24 @@
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import type { ObjectStorage } from "../../platform/storage/storage.js";
 import type { LegislativeMetadataSource } from "./legislative-metadata.js";
-import type { LegalIdentity, DocumentVersion } from "./types.js";
+import type { LegalIdentity, DocumentVersion, SourceDocument } from "./types.js";
 import { SUPPORTED_MIME_TYPES, MAX_FILE_SIZE_BYTES } from "./types.js";
 import type {
   DocumentId,
   DocumentVersionId,
   ContentHash,
   LegislativeStatus,
+  StatusProvenance,
 } from "../shared/types.js";
+import { AppError } from "../shared/errors.js";
 import {
   unsupportedMimeType,
   fileTooLarge,
   corruptFile,
+  missingStatusProvenance,
+  identityMismatch,
 } from "./errors.js";
+import { normalizeJurisdiction } from "./jurisdiction.js";
 import type { Logger } from "../../platform/logger/logger.js";
 
 export interface IngestionRepository {
@@ -25,7 +30,7 @@ export interface IngestionRepository {
   insertVersion(version: Omit<DocumentVersion, "createdAt">): Promise<DocumentVersion>;
   getVersion(documentVersionId: DocumentVersionId): Promise<DocumentVersion | null>;
   listVersions(documentId: DocumentId): Promise<DocumentVersion[]>;
-  getDocument(documentId: DocumentId): Promise<{ documentId: DocumentId; createdAt: string } | null>;
+  getDocument(documentId: DocumentId): Promise<SourceDocument | null>;
 }
 
 export interface UploadInput {
@@ -79,17 +84,14 @@ export function createIngestionService(deps: {
 
   return {
     async upload(input: UploadInput): Promise<DocumentVersion> {
-      // Validate mime type
       if (!isSupportedMimeType(input.mimeType)) {
         throw unsupportedMimeType(input.mimeType);
       }
 
-      // Validate file size
       if (input.bytes.length > MAX_FILE_SIZE_BYTES) {
         throw fileTooLarge(input.bytes.length, MAX_FILE_SIZE_BYTES);
       }
 
-      // Validate content integrity
       if (
         input.mimeType ===
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
@@ -99,6 +101,22 @@ export function createIngestionService(deps: {
         validateTextContent(input.bytes);
       }
 
+      // Normalize jurisdiction to canonical form
+      const legalIdentity: LegalIdentity = {
+        ...input.legalIdentity,
+        jurisdiction: normalizeJurisdiction(input.legalIdentity.jurisdiction),
+      };
+
+      // HIGH 1: caller-asserted status requires provenance
+      const callerStatus = input.legislativeStatus;
+      if (
+        callerStatus !== undefined &&
+        callerStatus !== "unknown" &&
+        (!input.authoritativeSource || !input.asOfDate)
+      ) {
+        throw missingStatusProvenance(callerStatus);
+      }
+
       const contentHash = computeContentHash(input.bytes);
 
       // Resolve document: explicit ID or find-or-create by legal identity
@@ -106,7 +124,7 @@ export function createIngestionService(deps: {
       if (input.documentId) {
         const doc = await repository.getDocument(input.documentId);
         if (!doc) {
-          throw new (await import("../shared/errors.js")).AppError({
+          throw new AppError({
             code: "DOCUMENT_NOT_FOUND",
             category: "user_input",
             message: `Document ${input.documentId} not found`,
@@ -114,12 +132,28 @@ export function createIngestionService(deps: {
             context: { documentId: input.documentId },
           });
         }
+
+        // HIGH 2: validate legal identity matches parent document
+        const tupleFields = [
+          "jurisdiction", "session", "instrumentType", "number", "stage",
+        ] as const;
+        for (const field of tupleFields) {
+          if (legalIdentity[field] !== doc[field]) {
+            throw identityMismatch(
+              input.documentId,
+              field,
+              doc[field],
+              legalIdentity[field],
+            );
+          }
+        }
+
         documentId = input.documentId;
       } else {
-        documentId = await repository.findOrCreateDocument(input.legalIdentity);
+        documentId = await repository.findOrCreateDocument(legalIdentity);
       }
 
-      // Check for duplicate
+      // Check for duplicate (fast path — avoids storage.put)
       const existing = await repository.findVersionByHash(
         documentId,
         contentHash,
@@ -132,21 +166,29 @@ export function createIngestionService(deps: {
         return existing;
       }
 
-      // Store immutable bytes keyed by SHA-256
+      // Store immutable bytes keyed by SHA-256 (idempotent — same key = same bytes)
       const storageKey = `documents/${contentHash}`;
       const alreadyStored = await storage.exists(storageKey);
       if (!alreadyStored) {
         await storage.put(storageKey, input.bytes, input.mimeType);
       }
 
-      // Resolve legislative status
-      let legislativeStatus: LegislativeStatus =
-        input.legislativeStatus ?? "unknown";
+      // Resolve legislative status and track provenance
+      let legislativeStatus: LegislativeStatus = "unknown";
+      let statusProvenance: StatusProvenance = "default_unknown";
+      let authoritativeSource = input.authoritativeSource ?? null;
+      let asOfDate = input.asOfDate ?? null;
 
-      if (legislativeStatus === "unknown") {
-        const metadata = await metadataSource.lookup(input.legalIdentity);
+      if (callerStatus !== undefined && callerStatus !== "unknown") {
+        legislativeStatus = callerStatus;
+        statusProvenance = "caller_asserted";
+      } else {
+        const metadata = await metadataSource.lookup(legalIdentity);
         if (metadata) {
           legislativeStatus = metadata.legislativeStatus;
+          statusProvenance = "metadata_source";
+          authoritativeSource = metadata.authoritativeSource ?? authoritativeSource;
+          asOfDate = metadata.asOfDate ?? asOfDate;
           logger.info(
             {
               documentId,
@@ -160,16 +202,19 @@ export function createIngestionService(deps: {
 
       const now = new Date().toISOString();
 
+      // HIGH 3: insertVersion is conflict-safe — concurrent identical uploads
+      // both succeed; the second returns the existing row via ON CONFLICT
       const version = await repository.insertVersion({
-        documentVersionId: crypto.randomUUID() as DocumentVersionId,
+        documentVersionId: randomUUID() as DocumentVersionId,
         documentId,
         contentHash,
         mimeType: input.mimeType,
         byteSize: input.bytes.length,
-        legalIdentity: input.legalIdentity,
+        legalIdentity,
         legislativeStatus,
-        authoritativeSource: input.authoritativeSource ?? null,
-        asOfDate: input.asOfDate ?? null,
+        statusProvenance,
+        authoritativeSource,
+        asOfDate,
         retrievedAt: now,
       });
 
@@ -181,6 +226,7 @@ export function createIngestionService(deps: {
           mimeType: input.mimeType,
           byteSize: input.bytes.length,
           legislativeStatus,
+          statusProvenance,
         },
         "document version created",
       );

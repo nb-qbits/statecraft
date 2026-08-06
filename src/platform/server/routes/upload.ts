@@ -58,10 +58,26 @@
  *     -F 'legislativeStatus=enacted'
  */
 import type { FastifyInstance } from "fastify";
+import { z } from "zod";
 import { AppError } from "../../../modules/shared/errors.js";
+import { invalidInput } from "../../../modules/ingestion/errors.js";
 import type { Logger } from "../../logger/logger.js";
 import type { LegalIdentity } from "../../../modules/ingestion/types.js";
 import type { LegislativeStatus, DocumentId } from "../../../modules/shared/types.js";
+
+const LegalIdentitySchema = z.object({
+  jurisdiction: z.string().min(1, "jurisdiction is required"),
+  session: z.string().min(1, "session is required"),
+  instrumentType: z.string().min(1, "instrumentType is required"),
+  number: z.string().min(1, "number is required"),
+  stage: z.string().min(1, "stage is required"),
+  chapter: z.string().nullable(),
+});
+
+const LEGISLATIVE_STATUS_VALUES = [
+  "introduced", "engrossed", "enrolled", "enacted", "vetoed", "failed", "unknown",
+] as const;
+const LegislativeStatusSchema = z.enum(LEGISLATIVE_STATUS_VALUES);
 
 interface UploadService {
   upload(input: {
@@ -106,32 +122,46 @@ export function registerUploadRoutes(
       const bytes = await data.toBuffer();
       const mimeType = data.mimetype;
 
-      // Parse metadata from fields — they arrive before the file in multipart
       const fields = data.fields;
-      const legalIdentity = parseJsonField(fields, "legalIdentity");
-      if (!legalIdentity) {
-        return reply.status(400).send({
-          error: {
-            code: "MISSING_LEGAL_IDENTITY",
-            message: "legalIdentity field is required",
-          },
-        });
+
+      // Validate legalIdentity shape
+      const rawIdentity = parseJsonField(fields, "legalIdentity");
+      if (!rawIdentity) {
+        throw invalidInput("legalIdentity", "required JSON field is missing or malformed");
+      }
+      const identityResult = LegalIdentitySchema.safeParse(rawIdentity);
+      if (!identityResult.success) {
+        throw invalidInput(
+          "legalIdentity",
+          identityResult.error.issues.map((i) => i.message).join("; "),
+        );
+      }
+      const legalIdentity = identityResult.data as LegalIdentity;
+
+      // Validate legislativeStatus enum
+      const rawStatus = getStringField(fields, "legislativeStatus");
+      let legislativeStatus: LegislativeStatus | undefined;
+      if (rawStatus) {
+        const statusResult = LegislativeStatusSchema.safeParse(rawStatus);
+        if (!statusResult.success) {
+          throw invalidInput(
+            "legislativeStatus",
+            `must be one of: ${LEGISLATIVE_STATUS_VALUES.join(", ")}`,
+          );
+        }
+        legislativeStatus = statusResult.data;
       }
 
       const documentId = getStringField(fields, "documentId") as
         | DocumentId
         | undefined;
-      const legislativeStatus = getStringField(
-        fields,
-        "legislativeStatus",
-      ) as LegislativeStatus | undefined;
       const authoritativeSource = getStringField(fields, "authoritativeSource");
       const asOfDate = getStringField(fields, "asOfDate");
 
       const uploadInput: Parameters<typeof uploadService.upload>[0] = {
         bytes,
         mimeType,
-        legalIdentity: legalIdentity as LegalIdentity,
+        legalIdentity,
       };
       if (documentId) uploadInput.documentId = documentId;
       if (legislativeStatus) uploadInput.legislativeStatus = legislativeStatus;

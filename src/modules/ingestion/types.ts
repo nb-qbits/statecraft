@@ -3,6 +3,7 @@ import type {
   DocumentVersionId,
   ContentHash,
   LegislativeStatus,
+  StatusProvenance,
 } from "../shared/types.js";
 
 export interface LegalIdentity {
@@ -22,6 +23,7 @@ export interface DocumentVersion {
   readonly byteSize: number;
   readonly legalIdentity: LegalIdentity;
   readonly legislativeStatus: LegislativeStatus;
+  readonly statusProvenance: StatusProvenance;
   readonly authoritativeSource: string | null;
   readonly asOfDate: string | null;
   readonly retrievedAt: string;
@@ -30,6 +32,11 @@ export interface DocumentVersion {
 
 export interface SourceDocument {
   readonly documentId: DocumentId;
+  readonly jurisdiction: string;
+  readonly session: string;
+  readonly instrumentType: string;
+  readonly number: string;
+  readonly stage: string;
   readonly createdAt: string;
 }
 

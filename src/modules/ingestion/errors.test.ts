@@ -4,6 +4,9 @@ import {
   fileTooLarge,
   corruptFile,
   duplicateVersion,
+  missingStatusProvenance,
+  identityMismatch,
+  invalidInput,
 } from "./errors.js";
 import { AppError } from "../shared/errors.js";
 
@@ -40,5 +43,32 @@ describe("ingestion error factories", () => {
     expect(err.retryable).toBe(false);
     expect(err.context.documentId).toBe("doc-1");
     expect(err.context.contentHash).toBe("abc123");
+  });
+
+  it("missingStatusProvenance is user_input and not retryable", () => {
+    const err = missingStatusProvenance("enacted");
+    expect(err.code).toBe("MISSING_STATUS_PROVENANCE");
+    expect(err.category).toBe("user_input");
+    expect(err.retryable).toBe(false);
+    expect(err.message).toContain("enacted");
+    expect(err.message).toContain("authoritativeSource");
+  });
+
+  it("identityMismatch is user_input and not retryable", () => {
+    const err = identityMismatch("doc-1", "jurisdiction", "us-va", "us-md");
+    expect(err.code).toBe("IDENTITY_MISMATCH");
+    expect(err.category).toBe("user_input");
+    expect(err.retryable).toBe(false);
+    expect(err.context.field).toBe("jurisdiction");
+    expect(err.context.expected).toBe("us-va");
+    expect(err.context.actual).toBe("us-md");
+  });
+
+  it("invalidInput is user_input and not retryable", () => {
+    const err = invalidInput("legislativeStatus", "must be one of: introduced, enacted, ...");
+    expect(err.code).toBe("INVALID_INPUT");
+    expect(err.category).toBe("user_input");
+    expect(err.retryable).toBe(false);
+    expect(err.context.field).toBe("legislativeStatus");
   });
 });
