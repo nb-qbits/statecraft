@@ -76,7 +76,7 @@ export const documentVersions = pgTable(
     ),
     check(
       "chk_parse_status",
-      sql`${table.parseStatus} IN ('unparsed','parsed')`,
+      sql`${table.parseStatus} IN ('unparsed','parsed','parse_failed')`,
     ),
   ],
 );

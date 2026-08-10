@@ -1,0 +1,261 @@
+{
+  "id": "e25f94c9-d07a-42e9-b0aa-4a0af6379224",
+  "prevId": "544d12ee-3526-43eb-bade-7c77243ce3f5",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.document_versions": {
+      "name": "document_versions",
+      "schema": "",
+      "columns": {
+        "document_version_id": {
+          "name": "document_version_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "document_id": {
+          "name": "document_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "content_hash": {
+          "name": "content_hash",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "mime_type": {
+          "name": "mime_type",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "byte_size": {
+          "name": "byte_size",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "legal_identity": {
+          "name": "legal_identity",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "legislative_status": {
+          "name": "legislative_status",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'unknown'"
+        },
+        "status_provenance": {
+          "name": "status_provenance",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'default_unknown'"
+        },
+        "parse_status": {
+          "name": "parse_status",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'unparsed'"
+        },
+        "authoritative_source": {
+          "name": "authoritative_source",
+          "type": "varchar(2048)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "as_of_date": {
+          "name": "as_of_date",
+          "type": "varchar(10)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "retrieved_at": {
+          "name": "retrieved_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "uq_document_version_content_hash": {
+          "name": "uq_document_version_content_hash",
+          "columns": [
+            {
+              "expression": "document_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "content_hash",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "document_versions_document_id_source_documents_document_id_fk": {
+          "name": "document_versions_document_id_source_documents_document_id_fk",
+          "tableFrom": "document_versions",
+          "tableTo": "source_documents",
+          "columnsFrom": [
+            "document_id"
+          ],
+          "columnsTo": [
+            "document_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "chk_legislative_status": {
+          "name": "chk_legislative_status",
+          "value": "\"document_versions\".\"legislative_status\" IN ('introduced','engrossed','enrolled','enacted','vetoed','failed','unknown')"
+        },
+        "chk_status_provenance": {
+          "name": "chk_status_provenance",
+          "value": "\"document_versions\".\"status_provenance\" IN ('caller_asserted','metadata_source','default_unknown')"
+        },
+        "chk_parse_status": {
+          "name": "chk_parse_status",
+          "value": "\"document_versions\".\"parse_status\" IN ('unparsed','parsed','parse_failed')"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.source_documents": {
+      "name": "source_documents",
+      "schema": "",
+      "columns": {
+        "document_id": {
+          "name": "document_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "jurisdiction": {
+          "name": "jurisdiction",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "session": {
+          "name": "session",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "instrument_type": {
+          "name": "instrument_type",
+          "type": "varchar(32)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "number": {
+          "name": "number",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "stage": {
+          "name": "stage",
+          "type": "varchar(64)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "uq_source_document_legal_identity": {
+          "name": "uq_source_document_legal_identity",
+          "columns": [
+            {
+              "expression": "jurisdiction",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "session",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "instrument_type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "number",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "stage",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

@@ -1,0 +1,2 @@
+ALTER TABLE "document_versions" DROP CONSTRAINT "chk_parse_status";--> statement-breakpoint
+ALTER TABLE "document_versions" ADD CONSTRAINT "chk_parse_status" CHECK ("document_versions"."parse_status" IN ('unparsed','parsed','parse_failed'));

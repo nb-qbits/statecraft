@@ -6,6 +6,7 @@ import {
   SupportLevel,
   EvaluatorVerdict,
   ParseStatus,
+  Fidelity,
   Lane,
 } from "./types.js";
 
@@ -57,8 +58,12 @@ describe("domain type enums", () => {
     expect(values).toEqual(["ambiguous", "unsupported"]);
   });
 
-  it("ParseStatus has expected values", () => {
-    expect(Object.values(ParseStatus)).toEqual(["unparsed", "parsed"]);
+  it("ParseStatus has expected values including parse_failed", () => {
+    expect(Object.values(ParseStatus)).toEqual(["unparsed", "parsed", "parse_failed"]);
+  });
+
+  it("Fidelity has expected values", () => {
+    expect(Object.values(Fidelity)).toEqual(["declared", "inferred", "none"]);
   });
 
   it("Lane has expected values", () => {

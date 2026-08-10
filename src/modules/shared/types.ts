@@ -76,8 +76,16 @@ export type EvaluatorVerdict =
 export const ParseStatus = {
   unparsed: "unparsed",
   parsed: "parsed",
+  parse_failed: "parse_failed",
 } as const;
 export type ParseStatus = (typeof ParseStatus)[keyof typeof ParseStatus];
+
+export const Fidelity = {
+  declared: "declared",
+  inferred: "inferred",
+  none: "none",
+} as const;
+export type Fidelity = (typeof Fidelity)[keyof typeof Fidelity];
 
 export const Lane = {
   straight_through: "straight_through",

@@ -9,6 +9,12 @@ import { createIngestionService } from "./modules/ingestion/service.js";
 import { createNullMetadataSource } from "./modules/ingestion/legislative-metadata.js";
 import { createOpenStatesSource } from "./platform/legislative/openstates.js";
 import { registerUploadRoutes } from "./platform/server/routes/upload.js";
+import { registerParseRoutes } from "./platform/server/routes/parse.js";
+import { createParsingRepository } from "./platform/db/parsing-repository.js";
+import { createParsingService } from "./modules/parsing/service.js";
+import { createPlainTextParser } from "./platform/parsers/plain-text-parser.js";
+import { parseDocxAsync } from "./platform/parsers/docx-parser.js";
+import { createSidecarClient, createPdfParser } from "./platform/parsers/pdf-parser.js";
 import multipart from "@fastify/multipart";
 
 async function main(): Promise<void> {
@@ -63,6 +69,20 @@ async function main(): Promise<void> {
   });
 
   registerUploadRoutes(app, ingestionService, logger);
+
+  const parsingRepository = createParsingRepository(db);
+  const sidecarClient = createSidecarClient(env.SIDECAR_URL);
+  const parsingService = createParsingService({
+    ingestionRepository: repository,
+    parsingRepository,
+    storage,
+    plainTextParser: createPlainTextParser(),
+    parseDocx: parseDocxAsync,
+    parsePdf: createPdfParser(sidecarClient),
+    logger,
+  });
+
+  registerParseRoutes(app, parsingService, logger);
 
   await app.listen({ host: env.HOST, port: env.PORT });
   logger.info({ host: env.HOST, port: env.PORT }, "server listening");

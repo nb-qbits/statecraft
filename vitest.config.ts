@@ -18,6 +18,10 @@ export default defineConfig({
         "src/platform/storage/check.ts",
         "src/platform/storage/storage.ts",
         "src/platform/server/routes/upload.ts",
+        "src/platform/db/parsing-schema.ts",
+        "src/platform/db/parsing-repository.ts",
+        "src/platform/server/routes/parse.ts",
+        "src/modules/parsing/types.ts",
       ],
       reporter: ["text", "json", "html"],
       thresholds: {
