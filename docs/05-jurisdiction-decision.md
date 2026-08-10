@@ -184,3 +184,45 @@ The probes settled format. They did not settle value.
 - What does the first draft of the materiality rules look like?
 
 If the answer is that it takes forty minutes and the reviewer enjoys it, the product thesis changes. Better to learn that for the cost of a day than four months of corpus work.
+
+---
+
+## 7. Post-implementation finding: segmentation generalises
+
+The jurisdiction decision assumed segmentation conventions would be
+jurisdiction-specific. Module 2 verification contradicts that.
+
+The plain-text/PDF segmentation rules were written for Virginia legislative
+structure (§ section headings, numbered subdivisions, enactment clauses).
+Applied unmodified to a federal bill (H.R. 3481, 119th Congress, reported),
+they produced correct structural segmentation:
+
+    segmentCount: 5
+    /body/p[0]                    preamble
+    /body/section[1]/p[0]         SECTION 1. SHORT TITLE
+    /body/section[6320(b)]/p[0]   Section 6320(b) of title 38 ... is amended
+    /body/section[3680]/p[0]      Section 3680 of title 38 ... is amended
+    /body/section[5503(d)(7)]/p[0] Section 5503(d)(7) ... amended by striking
+
+Virginia HB 346 for comparison: 17 segments, all 14 numbered subdivisions
+isolated, no line-number residue, fidelity "inferred".
+
+Implications:
+
+1. Segmentation may be jurisdiction-agnostic and belongs in the shared parser
+   rather than the jurisdiction pack. Revisit if a third jurisdiction breaks it.
+
+2. Federal segments are coarser — subparagraphs (a), (b), (1), (2) collapse
+   into the parent section rather than splitting. Acceptable for small bills;
+   may be too coarse for Module 4's per-segment LLM calls on large bills.
+   Flag for re-evaluation at Module 4.
+
+3. Federal structural paths name the TARGET statute being amended
+   (section[5503(d)(7)] is in title 38, not in H.R. 3481). Structurally
+   reasonable, semantically imprecise. Matters when cross-references are
+   modelled.
+
+4. Geometric line-number stripping (x-coordinate, pre-assembly) worked on both
+   despite different margin conventions, and produced cleaner text than the
+   regex approach on the text path. The text-path fixture is now the weaker
+   test — build corpus text by extracting through the sidecar, not by hand.
