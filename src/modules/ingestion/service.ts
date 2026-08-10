@@ -10,6 +10,7 @@ import type {
   LegislativeStatus,
   StatusProvenance,
   ParseStatus,
+  ScanStatus,
 } from "../shared/types.js";
 import { AppError } from "../shared/errors.js";
 import {
@@ -228,6 +229,8 @@ export function createIngestionService(deps: {
         authoritativeSource,
         asOfDate,
         parseStatus,
+        scanStatus: "unscanned" as ScanStatus,
+        scannerVersion: null,
         retrievedAt: now,
       });
 

@@ -8,6 +8,7 @@ export type ProposalId = Brand<string, "ProposalId">;
 export type RecordVersionId = Brand<string, "RecordVersionId">;
 export type CorrelationId = Brand<string, "CorrelationId">;
 export type ContentHash = Brand<string, "ContentHash">;
+export type CandidateId = Brand<string, "CandidateId">;
 
 export const LegislativeStatus = {
   introduced: "introduced",
@@ -86,6 +87,12 @@ export const Fidelity = {
   none: "none",
 } as const;
 export type Fidelity = (typeof Fidelity)[keyof typeof Fidelity];
+
+export const ScanStatus = {
+  unscanned: "unscanned",
+  scanned: "scanned",
+} as const;
+export type ScanStatus = (typeof ScanStatus)[keyof typeof ScanStatus];
 
 export const Lane = {
   straight_through: "straight_through",

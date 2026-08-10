@@ -9,6 +9,10 @@ const HB346_TEXT = readFileSync(
   resolve(__dirname, "../../../fixtures/documents/hb346-extracted.txt"),
   "utf-8",
 );
+const FOIA_RECORDS_TEXT = readFileSync(
+  resolve(__dirname, "../../../fixtures/documents/va-foia-records-request.txt"),
+  "utf-8",
+);
 
 const parser = createPlainTextParser();
 
@@ -175,7 +179,7 @@ describe("plain-text parser", () => {
 
 describe("plain-text parser — structural segmentation (no blank lines)", () => {
   it("detects line numbers and strips them", () => {
-    const result = parser.parse(Buffer.from(HB346_TEXT), "text/plain");
+    const result = parser.parse(Buffer.from(FOIA_RECORDS_TEXT), "text/plain");
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
@@ -204,7 +208,7 @@ describe("plain-text parser — structural segmentation (no blank lines)", () =>
   });
 
   it("segments on lettered subsections (A., B., C.)", () => {
-    const result = parser.parse(Buffer.from(HB346_TEXT), "text/plain");
+    const result = parser.parse(Buffer.from(FOIA_RECORDS_TEXT), "text/plain");
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 

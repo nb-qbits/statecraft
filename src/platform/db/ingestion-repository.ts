@@ -17,6 +17,7 @@ import type {
   LegislativeStatus,
   StatusProvenance,
   ParseStatus,
+  ScanStatus,
 } from "../../modules/shared/types.js";
 
 function rowToDocumentVersion(row: typeof documentVersions.$inferSelect): DocumentVersion {
@@ -30,6 +31,8 @@ function rowToDocumentVersion(row: typeof documentVersions.$inferSelect): Docume
     legislativeStatus: row.legislativeStatus as LegislativeStatus,
     statusProvenance: row.statusProvenance as StatusProvenance,
     parseStatus: row.parseStatus as ParseStatus,
+    scanStatus: row.scanStatus as ScanStatus,
+    scannerVersion: row.scannerVersion,
     authoritativeSource: row.authoritativeSource,
     asOfDate: row.asOfDate,
     retrievedAt: row.retrievedAt.toISOString(),

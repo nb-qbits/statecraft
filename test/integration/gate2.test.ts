@@ -354,10 +354,11 @@ describe("Gate 2 — Parsing integration", () => {
     expect(p.body.segmentCount).toBeGreaterThan(10);
   });
 
-  it("HB 346 segments contain no line-number margins", async () => {
+  it("HB 346 segments contain no line-number margins (tested on line-numbered fixture)", async () => {
+    const HB346_LINENUMBERED = readFileSync(resolve(__dirname, "../../fixtures/documents/va-foia-records-request.txt"), "utf-8");
     const r = await uploadDoc({
-      content: HB346_TXT,
-      filename: "hb346.txt",
+      content: HB346_LINENUMBERED,
+      filename: "foia-records.txt",
       contentType: "text/plain",
       legalIdentity: { ...LEGAL_IDENTITY, number: "8011" },
     });

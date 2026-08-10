@@ -10,8 +10,11 @@ import { createNullMetadataSource } from "./modules/ingestion/legislative-metada
 import { createOpenStatesSource } from "./platform/legislative/openstates.js";
 import { registerUploadRoutes } from "./platform/server/routes/upload.js";
 import { registerParseRoutes } from "./platform/server/routes/parse.js";
+import { registerScanRoutes } from "./platform/server/routes/scan.js";
 import { createParsingRepository } from "./platform/db/parsing-repository.js";
 import { createParsingService } from "./modules/parsing/service.js";
+import { createScanningRepository } from "./platform/db/scanning-repository.js";
+import { createScanningService } from "./modules/scanning/service.js";
 import { createPlainTextParser } from "./platform/parsers/plain-text-parser.js";
 import { parseDocxAsync } from "./platform/parsers/docx-parser.js";
 import { createSidecarClient, createPdfParser } from "./platform/parsers/pdf-parser.js";
@@ -83,6 +86,16 @@ async function main(): Promise<void> {
   });
 
   registerParseRoutes(app, parsingService, logger);
+
+  const scanningRepository = createScanningRepository(db);
+  const scanningService = createScanningService({
+    ingestionRepository: repository,
+    parsingRepository,
+    scanningRepository,
+    logger,
+  });
+
+  registerScanRoutes(app, scanningService, logger);
 
   await app.listen({ host: env.HOST, port: env.PORT });
   logger.info({ host: env.HOST, port: env.PORT }, "server listening");

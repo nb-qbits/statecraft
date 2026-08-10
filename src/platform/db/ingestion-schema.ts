@@ -54,6 +54,10 @@ export const documentVersions = pgTable(
     parseStatus: varchar("parse_status", { length: 32 })
       .notNull()
       .default("unparsed"),
+    scanStatus: varchar("scan_status", { length: 32 })
+      .notNull()
+      .default("unscanned"),
+    scannerVersion: varchar("scanner_version", { length: 64 }),
     authoritativeSource: varchar("authoritative_source", { length: 2048 }),
     asOfDate: varchar("as_of_date", { length: 10 }),
     retrievedAt: timestamp("retrieved_at", { withTimezone: true }).notNull(),
@@ -77,6 +81,10 @@ export const documentVersions = pgTable(
     check(
       "chk_parse_status",
       sql`${table.parseStatus} IN ('unparsed','parsed','parse_failed')`,
+    ),
+    check(
+      "chk_scan_status",
+      sql`${table.scanStatus} IN ('unscanned','scanned')`,
     ),
   ],
 );

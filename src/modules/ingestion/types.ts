@@ -5,6 +5,7 @@ import type {
   LegislativeStatus,
   StatusProvenance,
   ParseStatus,
+  ScanStatus,
 } from "../shared/types.js";
 
 export interface LegalIdentity {
@@ -28,6 +29,8 @@ export interface DocumentVersion {
   readonly authoritativeSource: string | null;
   readonly asOfDate: string | null;
   readonly parseStatus: ParseStatus;
+  readonly scanStatus: ScanStatus;
+  readonly scannerVersion: string | null;
   readonly retrievedAt: string;
   readonly createdAt: string;
 }

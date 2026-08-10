@@ -1,0 +1,169 @@
+1              HOUSE BILL NO. 346
+2         Offered January 8, 2026
+3         Prefiled December 19, 2025
+4    A BILL to amend and reenact § 2.2-3704 of the Code of
+5    Virginia, relating to Virginia Freedom of Information
+6    Act; response to requests for public records; charges;
+7    public utility account numbers.
+8         ----------
+9         Patron-- Coyner
+10        ----------
+11   Be it enacted by the General Assembly of Virginia:
+12   1. That § 2.2-3704 of the Code of Virginia is amended
+13   and reenacted as follows:
+14   § 2.2-3704. Public records to be open to inspection;
+15   procedure for requesting records and responding to
+16   request; charges; transfer of records for storage, etc.
+17   A. Except as otherwise specifically provided by law, all
+18   public records shall be open to citizens of the
+19   Commonwealth, representatives of newspapers and magazines
+20   with circulation in the Commonwealth, and representatives
+21   of radio and television stations broadcasting in or into
+22   the Commonwealth during the regular office hours of the
+23   custodian of such records. Access to such records shall
+24   not include access to the account numbers of any person
+25   or public body for an account with a public utility as
+26   defined in § 56-232; however, the custodian of such
+27   records may disclose such account numbers at his
+28   discretion, except where such disclosure is prohibited
+29   by law. Access to such records shall be provided by the
+30   custodian in accordance with this chapter by inspection
+31   or by providing copies of the requested records, at the
+32   option of the requester. The custodian may require the
+33   requester to provide his name and legal address. The
+34   custodian of such records shall take all necessary
+35   precautions for their preservation and safekeeping.
+36   B. A request for public records shall identify the
+37   requested records with reasonable specificity. The
+38   request need not make reference to this chapter in order
+39   to invoke the provisions of this chapter or to impose the
+40   time limits for response by a public body. Any public
+41   body that is subject to this chapter and that is the
+42   custodian of the requested records shall promptly, but in
+43   all cases within five working days of receiving a request,
+44   provide the requested records to the requester or make
+45   one of the following responses in writing:
+46   1. The requested records are being entirely withheld.
+47   Such response shall identify with reasonable particularity
+48   the volume and subject matter of withheld records, and
+49   cite, as to each category of withheld records, the
+50   specific Code section that authorizes the withholding of
+51   the records.
+52   2. The requested records are being provided in part and
+53   are being withheld in part. Such response shall identify
+54   with reasonable particularity the subject matter of
+55   withheld portions, and cite, as to each category of
+56   withheld records, the specific Code section that
+57   authorizes the withholding of the records.
+58   3. The requested records could not be found or do not
+59   exist. However, if the public body that received the
+60   request knows that another public body has the requested
+61   records, the response shall include contact information
+62   for the other public body.
+63   4. It is not practically possible to provide the
+64   requested records or to determine whether they are
+65   available within the five-work-day period. Such response
+66   shall specify the conditions that make a response
+67   impossible. If the response is made within five working
+68   days, the public body shall have an additional seven work
+69   days or, in the case of a request for criminal
+70   investigative files pursuant to § 2.2-3706.1, 60 work
+71   days in which to provide one of the four preceding
+72   responses.
+73   C. Any public body may petition the appropriate court for
+74   additional time to respond to a request for records when
+75   the request is for an extraordinary volume of records or
+76   requires an extraordinarily lengthy search, and a response
+77   by the public body within the time required by this chapter
+78   will prevent the public body from meeting its operational
+79   responsibilities. Before proceeding with the petition,
+80   however, the public body shall make reasonable efforts to
+81   reach an agreement with the requester concerning the
+82   production of the records requested.
+83   D. Subject to the provisions of subsection G, no public
+84   body shall be required to create a new record if the
+85   record does not already exist. However, a public body may
+86   abstract or summarize information under such terms and
+87   conditions as agreed between the requester and the public
+88   body.
+89   E. Failure to respond to a request for records shall be
+90   deemed a denial of the request and shall constitute a
+91   violation of this chapter.
+92   F. A public body may make reasonable charges not to
+93   exceed its actual cost incurred in accessing, duplicating,
+94   supplying, or searching for the requested records and
+95   shall make all reasonable efforts to supply the requested
+96   records at the lowest possible cost. No public body shall
+97   impose any extraneous, intermediary, or surplus fees or
+98   expenses to recoup the general costs associated with
+99   creating or maintaining records or transacting the
+100  general business of the public body. Any duplicating fee
+101  charged by a public body shall not exceed the actual cost
+102  of duplication. Prior to conducting a search for records,
+103  the public body shall notify the requester in writing
+104  that the public body may make reasonable charges not to
+105  exceed its actual cost incurred in accessing, duplicating,
+106  supplying, or searching for requested records and inquire
+107  of the requester whether he would like to request a cost
+108  estimate in advance of the supplying of the requested
+109  records. The public body shall provide the requester with
+110  a cost estimate if requested. If the public body receives
+111  no response from the requester within 30 days of sending
+112  the cost estimate, the request shall be deemed to be
+113  withdrawn.
+114  G. Public records maintained by a public body in an
+115  electronic data processing system, computer database, or
+116  any other structured collection of data shall be made
+117  available to a requester at a reasonable cost, not to
+118  exceed the actual cost in accordance with subsection F.
+119  When electronic or other databases are combined or contain
+120  exempt and nonexempt records, the public body may provide
+121  access to the exempt records if not otherwise prohibited
+122  by law, but shall provide access to the nonexempt records
+123  as provided by this chapter. No public body shall be
+124  required to produce records from an electronic database
+125  in a format not regularly used by the public body.
+126  However, the public body shall make reasonable efforts to
+127  provide records in any format under such terms and
+128  conditions as agreed between the requester and public
+129  body, including the payment of reasonable costs.
+130  H. In any case where a public body determines in advance
+131  that charges for producing the requested records are
+132  likely to exceed $200, the public body may, before
+133  continuing to process the request, require the requester
+134  to pay a deposit not to exceed the amount of the advance
+135  determination. The deposit shall be credited toward the
+136  final cost of supplying the requested records. The period
+137  within which the public body shall respond under this
+138  section shall be tolled for the amount of time that
+139  elapses between notice of the advance determination and
+140  the response of the requester.
+141  I. Before processing a request for records, a public body
+142  may require the requester to pay any amounts owed to the
+143  public body for previous requests for records that remain
+144  unpaid 30 days or more after billing.
+145  J. In the event a public body has transferred possession
+146  of public records to any entity, including but not limited
+147  to any other public body, for storage, maintenance, or
+148  archiving, the public body initiating the transfer of such
+149  records shall remain the custodian of such records for
+150  purposes of responding to requests for public records made
+151  pursuant to this chapter and shall be responsible for
+152  retrieving and supplying such public records to the
+153  requester. In the event a public body has transferred
+154  public records for storage, maintenance, or archiving and
+155  such transferring public body is no longer in existence,
+156  any public body that is a successor to the transferring
+157  public body shall be deemed the custodian of such records.
+158  In the event no successor entity exists, the entity in
+159  possession of the public records shall be deemed the
+160  custodian of the records for purposes of compliance with
+161  this chapter, and shall retrieve and supply such records
+162  to the requester. Nothing in this section shall be
+163  construed to apply to records transferred to the Library
+164  of Virginia for permanent archiving pursuant to the duties
+165  imposed by the Virginia Public Records Act (§ 42.1-76 et
+166  seq.). In accordance with § 42.1-79, the Library of
+167  Virginia shall be the custodian of such permanently
+168  archived records and shall be responsible for responding
+169  to requests for such records made pursuant to this chapter.
