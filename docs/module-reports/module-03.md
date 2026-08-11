@@ -307,3 +307,68 @@ Post-gate addition: VA HB 35 (restorative housing)
      ("on ______"). The current legislativeStatus enum (introduced/engrossed/enrolled/
      enacted/vetoed/failed/unknown) does not cleanly represent a committee substitute.
      Open question — do not change the enum now.
+
+Post-gate fix: PDF parser page-boundary bug
+
+  Root cause: pdf-parser.ts joined page texts with "\n", but each page's text
+  from the sidecar already ended with "\n", creating artificial "\n\n" at page
+  boundaries. This routed the PDF through splitByBlankLines instead of
+  splitByStructure, producing different segment ordinals than the text parser
+  for the same bill. Segment identity is (structuralPath, contentHash, ordinal),
+  so the same paragraph got a different segmentId depending on which parser
+  read it — breaking the Module 2 identity guarantee.
+
+  Fix (src/platform/parsers/pdf-parser.ts:101-103):
+    const pageTexts = sidecarResult.pages
+      .filter(p => p.hasTextLayer)
+      .map(p => p.text.replace(/\n+$/, ""));
+
+  The gate2 "HB 346 PDF and text produce same structural shape" test was
+  restored to an ordered equality assertion (no sort). All 42 integration
+  tests pass.
+
+  Note: this fix was originally masked by sorting both arrays in the test
+  assertion. The sort made the test green while the underlying defect —
+  different ordinals from different parsers — remained. The sort was reverted,
+  the root cause diagnosed and fixed in the code.
+
+Known platform limitations (Module 0/1 scope — do not fix now)
+
+  1. MIGRATION SILENT NO-OP. Drizzle stores its migration journal in a
+     separate schema (drizzle.__drizzle_migrations). If the public schema is
+     dropped (e.g. DROP SCHEMA public CASCADE), the tracker survives and
+     reports all migrations applied against a database with zero tables.
+     migrate.js prints "Migrations complete" and exits 0 — a fresh deploy
+     reporting success while creating nothing.
+
+     Observed: after dropping public schema, "docker compose exec app node
+     dist/platform/db/migrate.js" printed "Migrations complete" with no
+     tables in the public schema. Required manually clearing the tracker
+     (DELETE FROM drizzle.__drizzle_migrations) before migrations would
+     re-run.
+
+     Proposed fix: after migrating, assert that the expected tables exist
+     (source_documents, document_versions, source_segments, scan_candidates)
+     and fail loudly if any are missing. Also document that a full database
+     reset requires either dropping the drizzle schema too, or using
+     "docker compose down -v" to destroy the volume.
+
+  2. CONNECTION POOL DID NOT RECOVER. After migrations recreated the tables
+     in the public schema, the running app continued returning 500 with
+     "relation source_documents does not exist" until the container was
+     restarted. The PostgreSQL connection pool (pg-pool via Drizzle) did not
+     recover on its own — every request hit the same error.
+
+     Root cause unknown: could be Drizzle's prepared-statement caching
+     (PostgreSQL caches query plans for prepared statements; if the plan was
+     cached before the table existed, it may not revalidate), or stale pool
+     connections holding references to the dropped schema's OIDs. Needs
+     investigation to determine whether this self-heals after pool
+     connection max-lifetime expiry or requires an explicit reconnect.
+
+     Proposed fix: investigate whether setting pg-pool's
+     idleTimeoutMillis / connectionTimeoutMillis / max connection lifetime
+     is sufficient, or whether Drizzle needs explicit prepared-statement
+     invalidation after schema changes. In production, schema changes
+     should use rolling restarts regardless, but the platform should not
+     silently cache errors indefinitely.

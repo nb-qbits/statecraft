@@ -100,7 +100,7 @@ export function createPdfParser(sidecarClient: SidecarClient): ParsePdfFn {
 
     const pageTexts = sidecarResult.pages
       .filter(p => p.hasTextLayer)
-      .map(p => p.text);
+      .map(p => p.text.replace(/\n+$/, ""));
     const rawText = pageTexts.join("\n");
 
     if (rawText.trim().length === 0) {
