@@ -226,3 +226,30 @@ Implications:
    despite different margin conventions, and produced cleaner text than the
    regex approach on the text path. The text-path fixture is now the weaker
    test — build corpus text by extracting through the sidecar, not by hand.
+
+---
+
+## 8. Calendar and pack mutability
+
+**Date:** August 11, 2026
+**Decision:** Packs are immutable once published. Calendar changes create a new pack version.
+
+### The rule
+
+User calendar changes — adding an office-closure day, correcting a holiday date, disabling an entry — create a **new pack version** (e.g. `us-va/v2`), never mutate an existing one. Every resolution stores its `packVersion`, so records resolved under v1 remain reproducible after v2 exists.
+
+### Why
+
+This is required by the provenance guarantee: a date defended in 2029 must be recomputable from the rules that produced it. Mutating a calendar in place would silently invalidate every prior resolution and make its citation point at rules that no longer exist.
+
+The system's product claim is that every date traces to a quoted span and a cited rule. If the calendar behind a cited rule changes, the citation becomes a lie — the user's 2026 resolution would produce a different result under the 2029 calendar, but would still cite "Va. Code § 1-210(E), pack v1" as though nothing changed. Immutable packs prevent this.
+
+### Implications
+
+1. **Pack loading is already keyed by (jurisdiction, packVersion).** The loader at `src/modules/jurisdiction/pack-loader.ts` resolves to `packs/{jurisdiction}/v{major}/` and caches by `jurisdiction@packVersion`. Two versions coexist without code changes — create `packs/us-va/v2/` with updated data and both are loadable independently.
+
+2. **A pack-authoring UI is deferred to Module 11**, where the user and organisation model first exists. Do not build it now. Until then, a new pack version is created by copying the directory, editing the JSON, and updating `packVersion` in `rules.json`.
+
+3. **Adding a jurisdiction** (Canada, UK) is a folder plus a calendar plus — the hard part — someone reading that jurisdiction's effective-date and time-computation statutes. The engine generalises; the legal knowledge does not. The pack structure (`rules.json`, `holidays.json`, TypeScript strategy functions) is the same for every jurisdiction; only the statutory content differs.
+
+4. **Governor-closure days** (§ 1-210(F)) are the primary trigger for a new pack version within a year. A Governor proclamation closing state offices is not predictable in advance — when one is issued, a new pack version must be published with the closure date added as `type: "office_closure"`. Existing resolutions under the prior pack version remain unchanged.

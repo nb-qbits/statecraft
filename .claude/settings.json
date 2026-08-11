@@ -24,7 +24,14 @@
       "Bash(chmod +x /Users/vgrover/Downloads/software/statecraft/scripts/gate6-demo.sh)",
       "Bash(bash /Users/vgrover/Downloads/software/statecraft/scripts/gate6-demo.sh c2f04940-c1cb-493e-b6ed-192cd13db606)",
       "Bash(bash /Users/vgrover/Downloads/software/statecraft/scripts/gate6-demo.sh fixtures/documents/adversarial-temporal.txt Virginia HB 999-adversarial)",
-      "Bash(bash /Users/vgrover/Downloads/software/statecraft/scripts/gate6-demo.sh fixtures/documents/va-hb35-restorative-housing.pdf Virginia HB 35-demo)"
+      "Bash(bash /Users/vgrover/Downloads/software/statecraft/scripts/gate6-demo.sh fixtures/documents/va-hb35-restorative-housing.pdf Virginia HB 35-demo)",
+      "WebFetch(domain:law.lis.virginia.gov)",
+      "Bash(npm search *)",
+      "Bash(node /Users/vgrover/Downloads/software/statecraft/scripts/seed-va-holidays.js)",
+      "Bash(node /Users/vgrover/Downloads/software/statecraft/scripts/seed-va-holidays.cjs)",
+      "Bash(node -e \"const h = require\\('./packs/us-va/v1/holidays.json'\\); const entries = h['2026']; entries.forEach\\(e => console.log\\(e.date, e.name\\)\\)\")",
+      "Bash(node scripts/seed-va-holidays.cjs)",
+      "Bash(node -e \"const h = require\\('./packs/us-va/v1/holidays.json'\\); h['2026'].forEach\\(e => console.log\\(JSON.stringify\\(e\\)\\)\\)\")"
     ],
     "deny": [
       "Read(./.env)",

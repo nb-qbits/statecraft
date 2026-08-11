@@ -1,0 +1,91 @@
+{
+  "jurisdiction": "us-va",
+  "packVersion": "1.0.0",
+  "effectiveDateRules": [
+    {
+      "ruleId": "va-1-214-A-default",
+      "citation": "Va. Code § 1-214(A)",
+      "description": "Regular session: July 1 following adjournment",
+      "sessionType": "regular",
+      "branch": "default"
+    },
+    {
+      "ruleId": "va-1-214-A-specified",
+      "citation": "Va. Code § 1-214(A)",
+      "description": "Regular session: subsequent date specified in the act",
+      "sessionType": "regular",
+      "branch": "specified"
+    },
+    {
+      "ruleId": "va-1-214-B-default",
+      "citation": "Va. Code § 1-214(B)",
+      "description": "Special session: first day of the fourth month following the month of adjournment",
+      "sessionType": "special",
+      "branch": "default"
+    },
+    {
+      "ruleId": "va-1-214-B-specified",
+      "citation": "Va. Code § 1-214(B)",
+      "description": "Special session: subsequent date specified in the act",
+      "sessionType": "special",
+      "branch": "specified"
+    },
+    {
+      "ruleId": "va-1-214-C-default",
+      "citation": "Va. Code § 1-214(C)",
+      "description": "General appropriation act: from passage",
+      "sessionType": "any",
+      "branch": "default",
+      "actType": "general_appropriation"
+    },
+    {
+      "ruleId": "va-1-214-C-specified",
+      "citation": "Va. Code § 1-214(C)",
+      "description": "General appropriation act: date specified in the act",
+      "sessionType": "any",
+      "branch": "specified",
+      "actType": "general_appropriation"
+    },
+    {
+      "ruleId": "va-1-214-D-default",
+      "citation": "Va. Code § 1-214(D)",
+      "description": "Emergency act: from passage",
+      "sessionType": "any",
+      "branch": "default",
+      "actType": "emergency"
+    },
+    {
+      "ruleId": "va-1-214-D-specified",
+      "citation": "Va. Code § 1-214(D)",
+      "description": "Emergency act: subsequent date specified in the act",
+      "sessionType": "any",
+      "branch": "specified",
+      "actType": "emergency"
+    },
+    {
+      "ruleId": "va-1-214-E",
+      "citation": "Va. Code § 1-214(E)",
+      "description": "Decennial reapportionment act: takes effect immediately",
+      "sessionType": "any",
+      "branch": "immediate",
+      "actType": "decennial_reapportionment"
+    }
+  ],
+  "timeComputationRules": [
+    {
+      "ruleId": "va-1-210-A",
+      "citation": "Va. Code § 1-210(A)",
+      "description": "Day of triggering event not counted"
+    },
+    {
+      "ruleId": "va-1-210-E",
+      "citation": "Va. Code § 1-210(E)",
+      "description": "Act required on Saturday, Sunday, legal holiday, or government closure day may be performed next business day"
+    },
+    {
+      "ruleId": "va-1-210-F",
+      "citation": "Va. Code § 1-210(F)",
+      "description": "Governor-authorized closing day is a legal holiday"
+    }
+  ]
+}

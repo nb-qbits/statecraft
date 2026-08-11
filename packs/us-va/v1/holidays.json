@@ -1,0 +1,1230 @@
+{
+  "2024": [
+    {
+      "date": "2024-01-01",
+      "name": "New Year's Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2024-01-15",
+      "name": "Martin Luther King Jr. Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2024-02-19",
+      "name": "George Washington Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2024-05-27",
+      "name": "Memorial Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2024-06-19",
+      "name": "Juneteenth",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2024-07-04",
+      "name": "Independence Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2024-09-02",
+      "name": "Labor Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2024-10-14",
+      "name": "Columbus Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2024-11-05",
+      "name": "Election Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2024-11-11",
+      "name": "Veterans Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2024-11-28",
+      "name": "Thanksgiving Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2024-11-29",
+      "name": "Day after Thanksgiving",
+      "type": "legal_holiday",
+      "source": "va-code-2.2-3300",
+      "enabled": true
+    },
+    {
+      "date": "2024-12-25",
+      "name": "Christmas Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    }
+  ],
+  "2025": [
+    {
+      "date": "2025-01-01",
+      "name": "New Year's Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2025-01-20",
+      "name": "Martin Luther King Jr. Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2025-02-17",
+      "name": "George Washington Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2025-05-26",
+      "name": "Memorial Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2025-06-19",
+      "name": "Juneteenth",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2025-07-04",
+      "name": "Independence Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2025-09-01",
+      "name": "Labor Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2025-10-13",
+      "name": "Columbus Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2025-11-04",
+      "name": "Election Day",
+      "type": "legal_holiday",
+      "source": "va-code-2.2-3300",
+      "enabled": true
+    },
+    {
+      "date": "2025-11-11",
+      "name": "Veterans Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2025-11-27",
+      "name": "Thanksgiving Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2025-11-28",
+      "name": "Day after Thanksgiving",
+      "type": "legal_holiday",
+      "source": "va-code-2.2-3300",
+      "enabled": true
+    },
+    {
+      "date": "2025-12-25",
+      "name": "Christmas Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    }
+  ],
+  "2026": [
+    {
+      "date": "2026-01-01",
+      "name": "New Year's Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2026-01-19",
+      "name": "Martin Luther King Jr. Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2026-02-16",
+      "name": "George Washington Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2026-05-25",
+      "name": "Memorial Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2026-06-19",
+      "name": "Juneteenth",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2026-07-03",
+      "name": "Independence Day (observed)",
+      "type": "legal_holiday",
+      "source": "va-code-2.2-3300",
+      "enabled": true
+    },
+    {
+      "date": "2026-07-04",
+      "name": "Independence Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2026-09-07",
+      "name": "Labor Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2026-10-12",
+      "name": "Columbus Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2026-11-03",
+      "name": "Election Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2026-11-11",
+      "name": "Veterans Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2026-11-26",
+      "name": "Thanksgiving Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2026-11-27",
+      "name": "Day after Thanksgiving",
+      "type": "legal_holiday",
+      "source": "va-code-2.2-3300",
+      "enabled": true
+    },
+    {
+      "date": "2026-12-25",
+      "name": "Christmas Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    }
+  ],
+  "2027": [
+    {
+      "date": "2027-01-01",
+      "name": "New Year's Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2027-01-18",
+      "name": "Martin Luther King Jr. Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2027-02-15",
+      "name": "George Washington Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2027-05-31",
+      "name": "Memorial Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2027-06-18",
+      "name": "Juneteenth (observed)",
+      "type": "legal_holiday",
+      "source": "va-code-2.2-3300",
+      "enabled": true
+    },
+    {
+      "date": "2027-06-19",
+      "name": "Juneteenth",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2027-07-04",
+      "name": "Independence Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2027-07-05",
+      "name": "Independence Day (observed)",
+      "type": "legal_holiday",
+      "source": "va-code-2.2-3300",
+      "enabled": true
+    },
+    {
+      "date": "2027-09-06",
+      "name": "Labor Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2027-10-11",
+      "name": "Columbus Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2027-11-02",
+      "name": "Election Day",
+      "type": "legal_holiday",
+      "source": "va-code-2.2-3300",
+      "enabled": true
+    },
+    {
+      "date": "2027-11-11",
+      "name": "Veterans Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2027-11-25",
+      "name": "Thanksgiving Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2027-11-26",
+      "name": "Day after Thanksgiving",
+      "type": "legal_holiday",
+      "source": "va-code-2.2-3300",
+      "enabled": true
+    },
+    {
+      "date": "2027-12-24",
+      "name": "Christmas Day (observed)",
+      "type": "legal_holiday",
+      "source": "va-code-2.2-3300",
+      "enabled": true
+    },
+    {
+      "date": "2027-12-25",
+      "name": "Christmas Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    }
+  ],
+  "2028": [
+    {
+      "date": "2027-12-31",
+      "name": "New Year's Day (observed)",
+      "type": "legal_holiday",
+      "source": "va-code-2.2-3300",
+      "enabled": true
+    },
+    {
+      "date": "2028-01-01",
+      "name": "New Year's Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2028-01-17",
+      "name": "Martin Luther King Jr. Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2028-02-21",
+      "name": "George Washington Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2028-05-29",
+      "name": "Memorial Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2028-06-19",
+      "name": "Juneteenth",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2028-07-04",
+      "name": "Independence Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2028-09-04",
+      "name": "Labor Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2028-10-09",
+      "name": "Columbus Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2028-11-07",
+      "name": "Election Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2028-11-10",
+      "name": "Veterans Day (observed)",
+      "type": "legal_holiday",
+      "source": "va-code-2.2-3300",
+      "enabled": true
+    },
+    {
+      "date": "2028-11-11",
+      "name": "Veterans Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2028-11-23",
+      "name": "Thanksgiving Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2028-11-24",
+      "name": "Day after Thanksgiving",
+      "type": "legal_holiday",
+      "source": "va-code-2.2-3300",
+      "enabled": true
+    },
+    {
+      "date": "2028-12-25",
+      "name": "Christmas Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    }
+  ],
+  "2029": [
+    {
+      "date": "2029-01-01",
+      "name": "New Year's Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2029-01-15",
+      "name": "Martin Luther King Jr. Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2029-02-19",
+      "name": "George Washington Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2029-05-28",
+      "name": "Memorial Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2029-06-19",
+      "name": "Juneteenth",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2029-07-04",
+      "name": "Independence Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2029-09-03",
+      "name": "Labor Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2029-10-08",
+      "name": "Columbus Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2029-11-06",
+      "name": "Election Day",
+      "type": "legal_holiday",
+      "source": "va-code-2.2-3300",
+      "enabled": true
+    },
+    {
+      "date": "2029-11-11",
+      "name": "Veterans Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2029-11-12",
+      "name": "Veterans Day (observed)",
+      "type": "legal_holiday",
+      "source": "va-code-2.2-3300",
+      "enabled": true
+    },
+    {
+      "date": "2029-11-22",
+      "name": "Thanksgiving Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2029-11-23",
+      "name": "Day after Thanksgiving",
+      "type": "legal_holiday",
+      "source": "va-code-2.2-3300",
+      "enabled": true
+    },
+    {
+      "date": "2029-12-25",
+      "name": "Christmas Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    }
+  ],
+  "2030": [
+    {
+      "date": "2030-01-01",
+      "name": "New Year's Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2030-01-21",
+      "name": "Martin Luther King Jr. Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2030-02-18",
+      "name": "George Washington Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2030-05-27",
+      "name": "Memorial Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2030-06-19",
+      "name": "Juneteenth",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2030-07-04",
+      "name": "Independence Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2030-09-02",
+      "name": "Labor Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2030-10-14",
+      "name": "Columbus Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2030-11-05",
+      "name": "Election Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2030-11-11",
+      "name": "Veterans Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2030-11-28",
+      "name": "Thanksgiving Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2030-11-29",
+      "name": "Day after Thanksgiving",
+      "type": "legal_holiday",
+      "source": "va-code-2.2-3300",
+      "enabled": true
+    },
+    {
+      "date": "2030-12-25",
+      "name": "Christmas Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    }
+  ],
+  "2031": [
+    {
+      "date": "2031-01-01",
+      "name": "New Year's Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2031-01-20",
+      "name": "Martin Luther King Jr. Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2031-02-17",
+      "name": "George Washington Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2031-05-26",
+      "name": "Memorial Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2031-06-19",
+      "name": "Juneteenth",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2031-07-04",
+      "name": "Independence Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2031-09-01",
+      "name": "Labor Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2031-10-13",
+      "name": "Columbus Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2031-11-04",
+      "name": "Election Day",
+      "type": "legal_holiday",
+      "source": "va-code-2.2-3300",
+      "enabled": true
+    },
+    {
+      "date": "2031-11-11",
+      "name": "Veterans Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2031-11-27",
+      "name": "Thanksgiving Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2031-11-28",
+      "name": "Day after Thanksgiving",
+      "type": "legal_holiday",
+      "source": "va-code-2.2-3300",
+      "enabled": true
+    },
+    {
+      "date": "2031-12-25",
+      "name": "Christmas Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    }
+  ],
+  "2032": [
+    {
+      "date": "2032-01-01",
+      "name": "New Year's Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2032-01-19",
+      "name": "Martin Luther King Jr. Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2032-02-16",
+      "name": "George Washington Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2032-05-31",
+      "name": "Memorial Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2032-06-18",
+      "name": "Juneteenth (observed)",
+      "type": "legal_holiday",
+      "source": "va-code-2.2-3300",
+      "enabled": true
+    },
+    {
+      "date": "2032-06-19",
+      "name": "Juneteenth",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2032-07-04",
+      "name": "Independence Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2032-07-05",
+      "name": "Independence Day (observed)",
+      "type": "legal_holiday",
+      "source": "va-code-2.2-3300",
+      "enabled": true
+    },
+    {
+      "date": "2032-09-06",
+      "name": "Labor Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2032-10-11",
+      "name": "Columbus Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2032-11-02",
+      "name": "Election Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2032-11-11",
+      "name": "Veterans Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2032-11-25",
+      "name": "Thanksgiving Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2032-11-26",
+      "name": "Day after Thanksgiving",
+      "type": "legal_holiday",
+      "source": "va-code-2.2-3300",
+      "enabled": true
+    },
+    {
+      "date": "2032-12-24",
+      "name": "Christmas Day (observed)",
+      "type": "legal_holiday",
+      "source": "va-code-2.2-3300",
+      "enabled": true
+    },
+    {
+      "date": "2032-12-25",
+      "name": "Christmas Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    }
+  ],
+  "2033": [
+    {
+      "date": "2032-12-31",
+      "name": "New Year's Day (observed)",
+      "type": "legal_holiday",
+      "source": "va-code-2.2-3300",
+      "enabled": true
+    },
+    {
+      "date": "2033-01-01",
+      "name": "New Year's Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2033-01-17",
+      "name": "Martin Luther King Jr. Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2033-02-21",
+      "name": "George Washington Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2033-05-30",
+      "name": "Memorial Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2033-06-19",
+      "name": "Juneteenth",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2033-06-20",
+      "name": "Juneteenth (observed)",
+      "type": "legal_holiday",
+      "source": "va-code-2.2-3300",
+      "enabled": true
+    },
+    {
+      "date": "2033-07-04",
+      "name": "Independence Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2033-09-05",
+      "name": "Labor Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2033-10-10",
+      "name": "Columbus Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2033-11-08",
+      "name": "Election Day",
+      "type": "legal_holiday",
+      "source": "va-code-2.2-3300",
+      "enabled": true
+    },
+    {
+      "date": "2033-11-11",
+      "name": "Veterans Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2033-11-24",
+      "name": "Thanksgiving Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2033-11-25",
+      "name": "Day after Thanksgiving",
+      "type": "legal_holiday",
+      "source": "va-code-2.2-3300",
+      "enabled": true
+    },
+    {
+      "date": "2033-12-25",
+      "name": "Christmas Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2033-12-26",
+      "name": "Christmas Day (observed)",
+      "type": "legal_holiday",
+      "source": "va-code-2.2-3300",
+      "enabled": true
+    }
+  ],
+  "2034": [
+    {
+      "date": "2034-01-01",
+      "name": "New Year's Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2034-01-02",
+      "name": "New Year's Day (observed)",
+      "type": "legal_holiday",
+      "source": "va-code-2.2-3300",
+      "enabled": true
+    },
+    {
+      "date": "2034-01-16",
+      "name": "Martin Luther King Jr. Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2034-02-20",
+      "name": "George Washington Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2034-05-29",
+      "name": "Memorial Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2034-06-19",
+      "name": "Juneteenth",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2034-07-04",
+      "name": "Independence Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2034-09-04",
+      "name": "Labor Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2034-10-09",
+      "name": "Columbus Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2034-11-07",
+      "name": "Election Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2034-11-10",
+      "name": "Veterans Day (observed)",
+      "type": "legal_holiday",
+      "source": "va-code-2.2-3300",
+      "enabled": true
+    },
+    {
+      "date": "2034-11-11",
+      "name": "Veterans Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2034-11-23",
+      "name": "Thanksgiving Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2034-11-24",
+      "name": "Day after Thanksgiving",
+      "type": "legal_holiday",
+      "source": "va-code-2.2-3300",
+      "enabled": true
+    },
+    {
+      "date": "2034-12-25",
+      "name": "Christmas Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    }
+  ],
+  "2035": [
+    {
+      "date": "2035-01-01",
+      "name": "New Year's Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2035-01-15",
+      "name": "Martin Luther King Jr. Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2035-02-19",
+      "name": "George Washington Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2035-05-28",
+      "name": "Memorial Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2035-06-19",
+      "name": "Juneteenth",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2035-07-04",
+      "name": "Independence Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2035-09-03",
+      "name": "Labor Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2035-10-08",
+      "name": "Columbus Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2035-11-06",
+      "name": "Election Day",
+      "type": "legal_holiday",
+      "source": "va-code-2.2-3300",
+      "enabled": true
+    },
+    {
+      "date": "2035-11-11",
+      "name": "Veterans Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2035-11-12",
+      "name": "Veterans Day (observed)",
+      "type": "legal_holiday",
+      "source": "va-code-2.2-3300",
+      "enabled": true
+    },
+    {
+      "date": "2035-11-22",
+      "name": "Thanksgiving Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    },
+    {
+      "date": "2035-11-23",
+      "name": "Day after Thanksgiving",
+      "type": "legal_holiday",
+      "source": "va-code-2.2-3300",
+      "enabled": true
+    },
+    {
+      "date": "2035-12-25",
+      "name": "Christmas Day",
+      "type": "legal_holiday",
+      "source": "holidays-lib-vacanza",
+      "enabled": true
+    }
+  ]
+}
