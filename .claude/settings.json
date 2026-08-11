@@ -17,7 +17,9 @@
       "Read(//Users/vgrover/**)",
       "Bash(npm list *)",
       "Bash(npx eslint *)",
-      "Bash(node -e ' *)"
+      "Bash(node -e ' *)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:www.npmjs.com)"
     ],
     "deny": [
       "Read(./.env)",

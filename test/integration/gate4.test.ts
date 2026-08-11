@@ -82,11 +82,13 @@ interface ErrorResult {
   error: { code: string; message: string };
 }
 
+const RUN = Math.random().toString(36).slice(2, 8);
+
 const LEGAL_IDENTITY = {
   jurisdiction: "Virginia",
   session: "2025",
   instrumentType: "HB",
-  number: "4001",
+  number: `g4-${RUN}`,
   stage: "introduced",
   chapter: null,
 };
@@ -171,7 +173,7 @@ describe("Gate 4 — Model Gateway and Span Proposal", () => {
       content: SIMPLE_BILL_TXT,
       filename: "simple-bill.txt",
       contentType: "text/plain",
-      legalIdentity: { ...LEGAL_IDENTITY, number: "4001" },
+      legalIdentity: { ...LEGAL_IDENTITY, number: `4001-${RUN}` },
     });
     expect(r.status).toBe(201);
 
@@ -216,7 +218,7 @@ describe("Gate 4 — Model Gateway and Span Proposal", () => {
       content: "Unparsed content for extract test.",
       filename: "unparsed.txt",
       contentType: "text/plain",
-      legalIdentity: { ...LEGAL_IDENTITY, number: "4002" },
+      legalIdentity: { ...LEGAL_IDENTITY, number: `4002-${RUN}` },
     });
     expect(r.status).toBe(201);
 
@@ -232,7 +234,7 @@ describe("Gate 4 — Model Gateway and Span Proposal", () => {
       content: SIMPLE_BILL_TXT,
       filename: "simple-bill-idem.txt",
       contentType: "text/plain",
-      legalIdentity: { ...LEGAL_IDENTITY, number: "4003" },
+      legalIdentity: { ...LEGAL_IDENTITY, number: `4003-${RUN}` },
     });
     expect(r.status).toBe(201);
 
@@ -257,7 +259,7 @@ describe("Gate 4 — Model Gateway and Span Proposal", () => {
         jurisdiction: "Virginia",
         session: "2026",
         instrumentType: "HB",
-        number: "4035",
+        number: `4035-${RUN}`,
         stage: "introduced",
         chapter: null,
       },
@@ -300,7 +302,7 @@ describe("Gate 4 — Model Gateway and Span Proposal", () => {
         jurisdiction: "Virginia",
         session: "2026",
         instrumentType: "HB",
-        number: "4036",
+        number: `4036-${RUN}`,
         stage: "introduced",
         chapter: null,
       },
@@ -328,7 +330,7 @@ describe("Gate 4 — Model Gateway and Span Proposal", () => {
       content: SIMPLE_BILL_TXT,
       filename: "schema-check.txt",
       contentType: "text/plain",
-      legalIdentity: { ...LEGAL_IDENTITY, number: "4004" },
+      legalIdentity: { ...LEGAL_IDENTITY, number: `4004-${RUN}` },
     });
     expect(r.status).toBe(201);
 

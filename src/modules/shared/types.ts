@@ -11,6 +11,7 @@ export type ContentHash = Brand<string, "ContentHash">;
 export type CandidateId = Brand<string, "CandidateId">;
 export type PromptHash = Brand<string, "PromptHash">;
 export type ModelCallId = Brand<string, "ModelCallId">;
+export type AnchorId = Brand<string, "AnchorId">;
 
 export const LegislativeStatus = {
   introduced: "introduced",
@@ -103,6 +104,14 @@ export const Lane = {
   blocked: "blocked",
 } as const;
 export type Lane = (typeof Lane)[keyof typeof Lane];
+
+export const AnchoringStatus = {
+  unanchored: "unanchored",
+  anchored: "anchored",
+  anchoring_failed: "anchoring_failed",
+} as const;
+export type AnchoringStatus =
+  (typeof AnchoringStatus)[keyof typeof AnchoringStatus];
 
 export const ExtractionStatus = {
   unextracted: "unextracted",

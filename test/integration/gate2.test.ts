@@ -86,11 +86,13 @@ interface ErrorResult {
   error: { code: string; message: string };
 }
 
+const RUN = Math.random().toString(36).slice(2, 8);
+
 const LEGAL_IDENTITY = {
   jurisdiction: "Virginia",
   session: "2025",
   instrumentType: "HB",
-  number: "8001",
+  number: `g2-${RUN}`,
   stage: "introduced",
   chapter: null,
 };
@@ -131,7 +133,7 @@ describe("Gate 2 — Parsing integration", () => {
       content: SIMPLE_BILL_TXT,
       filename: "simple-bill.txt",
       contentType: "text/plain",
-      legalIdentity: { ...LEGAL_IDENTITY, number: "8001" },
+      legalIdentity: { ...LEGAL_IDENTITY, number: `8001-${RUN}` },
     });
     expect(r.status).toBe(201);
     const dvId = r.body.documentVersionId;
@@ -154,7 +156,7 @@ describe("Gate 2 — Parsing integration", () => {
       content: ADVERSARIAL_TXT,
       filename: "adversarial.txt",
       contentType: "text/plain",
-      legalIdentity: { ...LEGAL_IDENTITY, number: "8002" },
+      legalIdentity: { ...LEGAL_IDENTITY, number: `8002-${RUN}` },
     });
     expect(r.status).toBe(201);
 
@@ -181,7 +183,7 @@ describe("Gate 2 — Parsing integration", () => {
       content: ADVERSARIAL_TXT,
       filename: "adversarial.txt",
       contentType: "text/plain",
-      legalIdentity: { ...LEGAL_IDENTITY, number: "8003" },
+      legalIdentity: { ...LEGAL_IDENTITY, number: `8003-${RUN}` },
     });
     expect(r.status).toBe(201);
 
@@ -218,7 +220,7 @@ describe("Gate 2 — Parsing integration", () => {
       content: fakeDocx,
       filename: "corrupt.docx",
       contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      legalIdentity: { ...LEGAL_IDENTITY, number: "8004" },
+      legalIdentity: { ...LEGAL_IDENTITY, number: `8004-${RUN}` },
     });
     expect(r.status).toBe(201);
 
@@ -232,7 +234,7 @@ describe("Gate 2 — Parsing integration", () => {
       content: HB346_PDF,
       filename: "hb346.pdf",
       contentType: "application/pdf",
-      legalIdentity: { ...LEGAL_IDENTITY, number: "8050" },
+      legalIdentity: { ...LEGAL_IDENTITY, number: `8050-${RUN}` },
     });
     expect(r.status).toBe(201);
 
@@ -248,7 +250,7 @@ describe("Gate 2 — Parsing integration", () => {
       content: SIMPLE_BILL_DOCX,
       filename: "simple-bill.docx",
       contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      legalIdentity: { ...LEGAL_IDENTITY, number: "8006" },
+      legalIdentity: { ...LEGAL_IDENTITY, number: `8006-${RUN}` },
     });
     expect(r.status).toBe(201);
 
@@ -264,7 +266,7 @@ describe("Gate 2 — Parsing integration", () => {
       content: HB346_PDF,
       filename: "hb346-pdf-gate.pdf",
       contentType: "application/pdf",
-      legalIdentity: { ...LEGAL_IDENTITY, number: "8020" },
+      legalIdentity: { ...LEGAL_IDENTITY, number: `8020-${RUN}` },
     });
     expect(r.status).toBe(201);
 
@@ -286,7 +288,7 @@ describe("Gate 2 — Parsing integration", () => {
       content: HB346_PDF,
       filename: "hb346-pdf-linenums.pdf",
       contentType: "application/pdf",
-      legalIdentity: { ...LEGAL_IDENTITY, number: "8021" },
+      legalIdentity: { ...LEGAL_IDENTITY, number: `8021-${RUN}` },
     });
     expect(r.status).toBe(201);
 
@@ -311,7 +313,7 @@ describe("Gate 2 — Parsing integration", () => {
       content: HB346_PDF,
       filename: "hb346-compare.pdf",
       contentType: "application/pdf",
-      legalIdentity: { ...LEGAL_IDENTITY, number: "8022" },
+      legalIdentity: { ...LEGAL_IDENTITY, number: `8022-${RUN}` },
     });
     expect(rPdf.status).toBe(201);
 
@@ -319,7 +321,7 @@ describe("Gate 2 — Parsing integration", () => {
       content: HB346_TXT,
       filename: "hb346-compare.txt",
       contentType: "text/plain",
-      legalIdentity: { ...LEGAL_IDENTITY, number: "8023" },
+      legalIdentity: { ...LEGAL_IDENTITY, number: `8023-${RUN}` },
     });
     expect(rTxt.status).toBe(201);
 
@@ -345,7 +347,7 @@ describe("Gate 2 — Parsing integration", () => {
       content: HB346_TXT,
       filename: "hb346.txt",
       contentType: "text/plain",
-      legalIdentity: { ...LEGAL_IDENTITY, number: "8010" },
+      legalIdentity: { ...LEGAL_IDENTITY, number: `8010-${RUN}` },
     });
     expect(r.status).toBe(201);
 
@@ -360,7 +362,7 @@ describe("Gate 2 — Parsing integration", () => {
       content: HB346_LINENUMBERED,
       filename: "foia-records.txt",
       contentType: "text/plain",
-      legalIdentity: { ...LEGAL_IDENTITY, number: "8011" },
+      legalIdentity: { ...LEGAL_IDENTITY, number: `8011-${RUN}` },
     });
     expect(r.status).toBe(201);
 
@@ -378,7 +380,7 @@ describe("Gate 2 — Parsing integration", () => {
       content: HB346_TXT,
       filename: "hb346.txt",
       contentType: "text/plain",
-      legalIdentity: { ...LEGAL_IDENTITY, number: "8012" },
+      legalIdentity: { ...LEGAL_IDENTITY, number: `8012-${RUN}` },
     });
     expect(r.status).toBe(201);
 
@@ -397,7 +399,7 @@ describe("Gate 2 — Parsing integration", () => {
       content: SIMPLE_BILL_TXT,
       filename: "bill.txt",
       contentType: "text/plain",
-      legalIdentity: { ...LEGAL_IDENTITY, number: "8007" },
+      legalIdentity: { ...LEGAL_IDENTITY, number: `8007-${RUN}` },
     });
     expect(r.status).toBe(201);
 
@@ -425,7 +427,7 @@ describe("Segment ordering", () => {
       content: HB346_TXT,
       filename: "hb346-order.txt",
       contentType: "text/plain",
-      legalIdentity: { ...LEGAL_IDENTITY, number: "8030" },
+      legalIdentity: { ...LEGAL_IDENTITY, number: `8030-${RUN}` },
     });
     expect(r.status).toBe(201);
 
@@ -451,7 +453,7 @@ describe("Segment ordering", () => {
       content: SIMPLE_BILL_TXT,
       filename: "ordinal-seq.txt",
       contentType: "text/plain",
-      legalIdentity: { ...LEGAL_IDENTITY, number: "8031" },
+      legalIdentity: { ...LEGAL_IDENTITY, number: `8031-${RUN}` },
     });
     expect(r.status).toBe(201);
 
@@ -472,7 +474,7 @@ describe("Identity mismatch (deferred from Amendment 2)", () => {
       jurisdiction: "Virginia",
       session: "2025",
       instrumentType: "HB",
-      number: "8100",
+      number: `8100-${RUN}`,
       stage: "introduced",
       chapter: null,
     };
@@ -487,7 +489,7 @@ describe("Identity mismatch (deferred from Amendment 2)", () => {
     const documentId = r1.body.documentId;
 
     // Step 2: upload version 2 with same documentId but different number
-    const identity2 = { ...identity1, number: "8101" };
+    const identity2 = { ...identity1, number: `8101-${RUN}` };
 
     const r2 = await uploadDoc({
       content: "Second version with wrong number.",
@@ -506,7 +508,7 @@ describe("Identity mismatch (deferred from Amendment 2)", () => {
       jurisdiction: "Virginia",
       session: "2025",
       instrumentType: "HB",
-      number: "8102",
+      number: `8102-${RUN}`,
       stage: "introduced",
       chapter: null,
     };

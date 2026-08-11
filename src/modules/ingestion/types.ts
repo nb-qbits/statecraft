@@ -7,6 +7,7 @@ import type {
   ParseStatus,
   ScanStatus,
   ExtractionStatus,
+  AnchoringStatus,
 } from "../shared/types.js";
 
 export interface LegalIdentity {
@@ -34,6 +35,8 @@ export interface DocumentVersion {
   readonly scannerVersion: string | null;
   readonly extractionStatus: ExtractionStatus;
   readonly extractorVersion: string | null;
+  readonly anchoringStatus: AnchoringStatus;
+  readonly anchorerVersion: string | null;
   readonly retrievedAt: string;
   readonly createdAt: string;
 }

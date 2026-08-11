@@ -19,6 +19,9 @@ import { createExtractionRepository } from "./platform/db/extraction-repository.
 import { createExtractionService } from "./modules/extraction/service.js";
 import { createFixtureModelGateway } from "./modules/extraction/fixture-model-gateway.js";
 import { registerExtractionRoutes } from "./platform/server/routes/extract.js";
+import { createAnchoringRepository } from "./platform/db/anchoring-repository.js";
+import { createAnchoringService } from "./modules/anchoring/service.js";
+import { registerAnchoringRoutes } from "./platform/server/routes/anchor.js";
 import { createPlainTextParser } from "./platform/parsers/plain-text-parser.js";
 import { parseDocxAsync } from "./platform/parsers/docx-parser.js";
 import { createSidecarClient, createPdfParser } from "./platform/parsers/pdf-parser.js";
@@ -160,6 +163,17 @@ async function main(): Promise<void> {
   });
 
   registerExtractionRoutes(app, extractionService, logger);
+
+  const anchoringRepository = createAnchoringRepository(db);
+  const anchoringService = createAnchoringService({
+    ingestionRepository: repository,
+    parsingRepository,
+    extractionRepository,
+    anchoringRepository,
+    logger,
+  });
+
+  registerAnchoringRoutes(app, anchoringService, logger);
 
   await app.listen({ host: env.HOST, port: env.PORT });
   logger.info({ host: env.HOST, port: env.PORT }, "server listening");

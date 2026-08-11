@@ -36,6 +36,8 @@ function makeVersion(overrides: Partial<DocumentVersion> = {}): DocumentVersion 
     scannerVersion: null,
     extractionStatus: "unextracted",
     extractorVersion: null,
+    anchoringStatus: "unanchored",
+    anchorerVersion: null,
     authoritativeSource: null,
     asOfDate: null,
     retrievedAt: "2025-01-01T00:00:00.000Z",

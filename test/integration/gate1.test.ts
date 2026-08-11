@@ -111,11 +111,13 @@ async function upload(opts: {
   return { status: res.status, body: (await res.json()) as UploadResult & ErrorResult };
 }
 
+const RUN = Math.random().toString(36).slice(2, 8);
+
 const LEGAL_IDENTITY = {
   jurisdiction: "Virginia",
   session: "2025",
   instrumentType: "HB",
-  number: "9999",
+  number: `g1-${RUN}`,
   stage: "introduced",
   chapter: null,
 };
@@ -140,7 +142,7 @@ describe("Gate 1 — Ingestion integration", () => {
 
   it("identical bytes uploaded twice produce one version (dedup)", async () => {
     const text = "Dedup test content — identical bytes.";
-    const identity = { ...LEGAL_IDENTITY, number: "7001" };
+    const identity = { ...LEGAL_IDENTITY, number: `7001-${RUN}` };
 
     const r1 = await upload({
       content: text,
@@ -161,7 +163,7 @@ describe("Gate 1 — Ingestion integration", () => {
   });
 
   it("different bytes produce two versions", async () => {
-    const identity = { ...LEGAL_IDENTITY, number: "7002" };
+    const identity = { ...LEGAL_IDENTITY, number: `7002-${RUN}` };
 
     const r1 = await upload({
       content: "Version one text.",
@@ -183,7 +185,7 @@ describe("Gate 1 — Ingestion integration", () => {
 
   it("same legal identity without documentId routes to same document", async () => {
     const text = "Legal identity routing test.";
-    const identity = { ...LEGAL_IDENTITY, number: "7003" };
+    const identity = { ...LEGAL_IDENTITY, number: `7003-${RUN}` };
 
     const r1 = await upload({
       content: text,
@@ -206,7 +208,7 @@ describe("Gate 1 — Ingestion integration", () => {
       content: '{"not":"a bill"}',
       filename: "doc.json",
       contentType: "application/json",
-      legalIdentity: { ...LEGAL_IDENTITY, number: "7004" },
+      legalIdentity: { ...LEGAL_IDENTITY, number: `7004-${RUN}` },
     });
 
     expect(r.status).toBe(400);
@@ -219,7 +221,7 @@ describe("Gate 1 — Ingestion integration", () => {
       filename: "corrupt.docx",
       contentType:
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      legalIdentity: { ...LEGAL_IDENTITY, number: "7005" },
+      legalIdentity: { ...LEGAL_IDENTITY, number: `7005-${RUN}` },
     });
 
     expect(r.status).toBe(400);
@@ -231,7 +233,7 @@ describe("Gate 1 — Ingestion integration", () => {
       content: "Default status test.",
       filename: "bill.txt",
       contentType: "text/plain",
-      legalIdentity: { ...LEGAL_IDENTITY, number: "7006" },
+      legalIdentity: { ...LEGAL_IDENTITY, number: `7006-${RUN}` },
     });
 
     expect(r.body.legislativeStatus).toBe("unknown");
@@ -243,13 +245,13 @@ describe("Gate 1 — Ingestion integration", () => {
       content: "Unknown status bill.",
       filename: "bill.txt",
       contentType: "text/plain",
-      legalIdentity: { ...LEGAL_IDENTITY, number: "7007" },
+      legalIdentity: { ...LEGAL_IDENTITY, number: `7007-${RUN}` },
     });
     const rEnacted = await upload({
       content: "Enacted status bill.",
       filename: "bill.txt",
       contentType: "text/plain",
-      legalIdentity: { ...LEGAL_IDENTITY, number: "7008" },
+      legalIdentity: { ...LEGAL_IDENTITY, number: `7008-${RUN}` },
       legislativeStatus: "enacted",
       authoritativeSource: "https://lis.virginia.gov/bill/HB7008",
       asOfDate: "2025-07-01",
@@ -262,7 +264,7 @@ describe("Gate 1 — Ingestion integration", () => {
 
   it("dedup is durable (DB-backed, not in-memory)", async () => {
     const text = "Durable dedup test — persisted in Postgres.";
-    const identity = { ...LEGAL_IDENTITY, number: "7009" };
+    const identity = { ...LEGAL_IDENTITY, number: `7009-${RUN}` };
 
     const r1 = await upload({
       content: text,
@@ -288,7 +290,7 @@ describe("Gate 1 — Ingestion integration", () => {
       content: "No provenance bill.",
       filename: "bill.txt",
       contentType: "text/plain",
-      legalIdentity: { ...LEGAL_IDENTITY, number: "7010" },
+      legalIdentity: { ...LEGAL_IDENTITY, number: `7010-${RUN}` },
       legislativeStatus: "enacted",
     });
 
@@ -301,7 +303,7 @@ describe("Gate 1 — Ingestion integration", () => {
       content: "Partial provenance bill.",
       filename: "bill.txt",
       contentType: "text/plain",
-      legalIdentity: { ...LEGAL_IDENTITY, number: "7011" },
+      legalIdentity: { ...LEGAL_IDENTITY, number: `7011-${RUN}` },
       legislativeStatus: "enacted",
       authoritativeSource: "https://example.com",
     });
@@ -334,7 +336,7 @@ describe("Gate 1 — Ingestion integration", () => {
       },
       {
         name: "legalIdentity",
-        value: JSON.stringify({ ...LEGAL_IDENTITY, number: "7013" }),
+        value: JSON.stringify({ ...LEGAL_IDENTITY, number: `7013-${RUN}` }),
       },
       { name: "legislativeStatus", value: "banana" },
     ];
@@ -355,7 +357,7 @@ describe("Gate 1 — Ingestion integration", () => {
       content: "Jurisdiction normalization test.",
       filename: "bill.txt",
       contentType: "text/plain",
-      legalIdentity: { ...LEGAL_IDENTITY, number: "7014", jurisdiction: "Virginia" },
+      legalIdentity: { ...LEGAL_IDENTITY, number: `7014-${RUN}`, jurisdiction: "Virginia" },
     });
 
     expect(r.status).toBe(201);
@@ -369,13 +371,13 @@ describe("Gate 1 — Ingestion integration", () => {
       content: text,
       filename: "bill.txt",
       contentType: "text/plain",
-      legalIdentity: { ...LEGAL_IDENTITY, number: "7015", jurisdiction: "Virginia" },
+      legalIdentity: { ...LEGAL_IDENTITY, number: `7015-${RUN}`, jurisdiction: "Virginia" },
     });
     const r2 = await upload({
       content: text,
       filename: "bill.txt",
       contentType: "text/plain",
-      legalIdentity: { ...LEGAL_IDENTITY, number: "7015", jurisdiction: "us-va" },
+      legalIdentity: { ...LEGAL_IDENTITY, number: `7015-${RUN}`, jurisdiction: "us-va" },
     });
 
     expect(r1.body.documentId).toBe(r2.body.documentId);
@@ -389,7 +391,7 @@ describe("Gate 1 — Ingestion integration", () => {
       content: PDF_FIXTURE,
       filename: "bill.pdf",
       contentType: "application/pdf",
-      legalIdentity: { ...LEGAL_IDENTITY, number: "7017" },
+      legalIdentity: { ...LEGAL_IDENTITY, number: `7017-${RUN}` },
     });
 
     expect(r.status).toBe(201);
@@ -403,7 +405,7 @@ describe("Gate 1 — Ingestion integration", () => {
       content: "not a real pdf file",
       filename: "fake.pdf",
       contentType: "application/pdf",
-      legalIdentity: { ...LEGAL_IDENTITY, number: "7018" },
+      legalIdentity: { ...LEGAL_IDENTITY, number: `7018-${RUN}` },
     });
 
     expect(r.status).toBe(400);
@@ -415,7 +417,7 @@ describe("Gate 1 — Ingestion integration", () => {
       content: "Parse status check for text.",
       filename: "bill.txt",
       contentType: "text/plain",
-      legalIdentity: { ...LEGAL_IDENTITY, number: "7019" },
+      legalIdentity: { ...LEGAL_IDENTITY, number: `7019-${RUN}` },
     });
 
     expect(r.status).toBe(201);
@@ -426,7 +428,7 @@ describe("Gate 1 — Ingestion integration", () => {
 
   it("concurrent identical uploads produce one version, no 500s", async () => {
     const text = "Concurrent upload race condition test.";
-    const identity = { ...LEGAL_IDENTITY, number: "7016" };
+    const identity = { ...LEGAL_IDENTITY, number: `7016-${RUN}` };
 
     const results = await Promise.all(
       Array.from({ length: 5 }, () =>

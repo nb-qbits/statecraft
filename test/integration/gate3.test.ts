@@ -82,11 +82,13 @@ interface ErrorResult {
   error: { code: string; message: string };
 }
 
+const RUN = Math.random().toString(36).slice(2, 8);
+
 const LEGAL_IDENTITY = {
   jurisdiction: "Virginia",
   session: "2025",
   instrumentType: "HB",
-  number: "9001",
+  number: `g3-${RUN}`,
   stage: "introduced",
   chapter: null,
 };
@@ -126,7 +128,7 @@ describe("Gate 3 — Deterministic Candidate Scan", () => {
       content: SIMPLE_BILL_TXT,
       filename: "simple-bill.txt",
       contentType: "text/plain",
-      legalIdentity: { ...LEGAL_IDENTITY, number: "9001" },
+      legalIdentity: { ...LEGAL_IDENTITY, number: `9001-${RUN}` },
     });
     expect(r.status).toBe(201);
 
@@ -165,7 +167,7 @@ describe("Gate 3 — Deterministic Candidate Scan", () => {
       content: ADVERSARIAL_TXT,
       filename: "adversarial.txt",
       contentType: "text/plain",
-      legalIdentity: { ...LEGAL_IDENTITY, number: "9002" },
+      legalIdentity: { ...LEGAL_IDENTITY, number: `9002-${RUN}` },
     });
     expect(r.status).toBe(201);
 
@@ -199,7 +201,7 @@ describe("Gate 3 — Deterministic Candidate Scan", () => {
       content: HB346_TXT,
       filename: "hb346.txt",
       contentType: "text/plain",
-      legalIdentity: { ...LEGAL_IDENTITY, number: "9003" },
+      legalIdentity: { ...LEGAL_IDENTITY, number: `9003-${RUN}` },
     });
     expect(r.status).toBe(201);
 
@@ -241,7 +243,7 @@ describe("Gate 3 — Deterministic Candidate Scan", () => {
         jurisdiction: "us-federal",
         session: "119",
         instrumentType: "HR",
-        number: "3481",
+        number: `3481-${RUN}`,
         stage: "introduced",
         chapter: null,
       },
@@ -283,7 +285,7 @@ describe("Gate 3 — Deterministic Candidate Scan", () => {
         jurisdiction: "Virginia",
         session: "2026",
         instrumentType: "HB",
-        number: "35",
+        number: `35-${RUN}`,
         stage: "introduced",
         chapter: null,
       },
@@ -327,7 +329,7 @@ describe("Gate 3 — Deterministic Candidate Scan", () => {
       content: SIMPLE_BILL_TXT,
       filename: "simple-bill-idem.txt",
       contentType: "text/plain",
-      legalIdentity: { ...LEGAL_IDENTITY, number: "9005" },
+      legalIdentity: { ...LEGAL_IDENTITY, number: `9005-${RUN}` },
     });
     expect(r.status).toBe(201);
 
@@ -351,7 +353,7 @@ describe("Gate 3 — Deterministic Candidate Scan", () => {
       content: "Unparsed content for scan test.",
       filename: "unparsed.txt",
       contentType: "text/plain",
-      legalIdentity: { ...LEGAL_IDENTITY, number: "9006" },
+      legalIdentity: { ...LEGAL_IDENTITY, number: `9006-${RUN}` },
     });
     expect(r.status).toBe(201);
 
@@ -365,7 +367,7 @@ describe("Gate 3 — Deterministic Candidate Scan", () => {
       content: SIMPLE_BILL_TXT,
       filename: "simple-bill-inv7.txt",
       contentType: "text/plain",
-      legalIdentity: { ...LEGAL_IDENTITY, number: "9007" },
+      legalIdentity: { ...LEGAL_IDENTITY, number: `9007-${RUN}` },
     });
     expect(r.status).toBe(201);
 

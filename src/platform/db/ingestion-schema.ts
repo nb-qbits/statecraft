@@ -62,6 +62,10 @@ export const documentVersions = pgTable(
       .notNull()
       .default("unextracted"),
     extractorVersion: varchar("extractor_version", { length: 64 }),
+    anchoringStatus: varchar("anchoring_status", { length: 32 })
+      .notNull()
+      .default("unanchored"),
+    anchorerVersion: varchar("anchorer_version", { length: 64 }),
     authoritativeSource: varchar("authoritative_source", { length: 2048 }),
     asOfDate: varchar("as_of_date", { length: 10 }),
     retrievedAt: timestamp("retrieved_at", { withTimezone: true }).notNull(),
@@ -93,6 +97,10 @@ export const documentVersions = pgTable(
     check(
       "chk_extraction_status",
       sql`${table.extractionStatus} IN ('unextracted','extracted','extraction_failed')`,
+    ),
+    check(
+      "chk_anchoring_status",
+      sql`${table.anchoringStatus} IN ('unanchored','anchored','anchoring_failed')`,
     ),
   ],
 );
