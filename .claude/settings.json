@@ -19,7 +19,12 @@
       "Bash(npx eslint *)",
       "Bash(node -e ' *)",
       "WebFetch(domain:github.com)",
-      "WebFetch(domain:www.npmjs.com)"
+      "WebFetch(domain:www.npmjs.com)",
+      "Bash(npm info *)",
+      "Bash(chmod +x /Users/vgrover/Downloads/software/statecraft/scripts/gate6-demo.sh)",
+      "Bash(bash /Users/vgrover/Downloads/software/statecraft/scripts/gate6-demo.sh c2f04940-c1cb-493e-b6ed-192cd13db606)",
+      "Bash(bash /Users/vgrover/Downloads/software/statecraft/scripts/gate6-demo.sh fixtures/documents/adversarial-temporal.txt Virginia HB 999-adversarial)",
+      "Bash(bash /Users/vgrover/Downloads/software/statecraft/scripts/gate6-demo.sh fixtures/documents/va-hb35-restorative-housing.pdf Virginia HB 35-demo)"
     ],
     "deny": [
       "Read(./.env)",

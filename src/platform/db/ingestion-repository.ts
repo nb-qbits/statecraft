@@ -20,6 +20,7 @@ import type {
   ScanStatus,
   ExtractionStatus,
   AnchoringStatus,
+  GrammarStatus,
 } from "../../modules/shared/types.js";
 
 function rowToDocumentVersion(row: typeof documentVersions.$inferSelect): DocumentVersion {
@@ -39,6 +40,8 @@ function rowToDocumentVersion(row: typeof documentVersions.$inferSelect): Docume
     extractorVersion: row.extractorVersion,
     anchoringStatus: row.anchoringStatus as AnchoringStatus,
     anchorerVersion: row.anchorerVersion,
+    grammarStatus: row.grammarStatus as GrammarStatus,
+    grammarVersion: row.grammarVersion,
     authoritativeSource: row.authoritativeSource,
     asOfDate: row.asOfDate,
     retrievedAt: row.retrievedAt.toISOString(),

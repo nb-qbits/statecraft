@@ -51,6 +51,8 @@ function makeVersion(
     extractorVersion: "1.0.0",
     anchoringStatus: "unanchored",
     anchorerVersion: null,
+    grammarStatus: "unparsed_grammar",
+    grammarVersion: null,
     authoritativeSource: null,
     asOfDate: null,
     retrievedAt: "2025-01-01T00:00:00.000Z",

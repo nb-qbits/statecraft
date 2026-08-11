@@ -120,3 +120,10 @@ export const ExtractionStatus = {
 } as const;
 export type ExtractionStatus =
   (typeof ExtractionStatus)[keyof typeof ExtractionStatus];
+
+export const GrammarStatus = {
+  unparsed_grammar: "unparsed_grammar",
+  parsed_grammar: "parsed_grammar",
+} as const;
+export type GrammarStatus =
+  (typeof GrammarStatus)[keyof typeof GrammarStatus];

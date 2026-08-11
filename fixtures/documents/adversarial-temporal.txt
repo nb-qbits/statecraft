@@ -1,0 +1,20 @@
+CHAPTER 999
+
+An Act to test the refusal behaviour of the legal date grammar.
+
+SECTION 1. Vague Temporal References.
+
+The agency shall submit the report sometime next spring and shall
+complete implementation as soon as practicable after receiving
+guidance from the Governor.
+
+SECTION 2. Ambiguous Deadlines.
+
+All reviews shall be completed within a reasonable period following
+the filing of the initial petition. The department shall provide 30
+days notice to affected parties.
+
+SECTION 3. Complex Temporal Logic.
+
+The provisions of this act shall take effect on the first day of the
+fourth month following adjournment of the General Assembly.

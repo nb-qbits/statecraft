@@ -22,6 +22,9 @@ import { registerExtractionRoutes } from "./platform/server/routes/extract.js";
 import { createAnchoringRepository } from "./platform/db/anchoring-repository.js";
 import { createAnchoringService } from "./modules/anchoring/service.js";
 import { registerAnchoringRoutes } from "./platform/server/routes/anchor.js";
+import { createGrammarRepository } from "./platform/db/grammar-repository.js";
+import { createGrammarService } from "./modules/grammar/service.js";
+import { registerGrammarRoutes } from "./platform/server/routes/grammar.js";
 import { createPlainTextParser } from "./platform/parsers/plain-text-parser.js";
 import { parseDocxAsync } from "./platform/parsers/docx-parser.js";
 import { createSidecarClient, createPdfParser } from "./platform/parsers/pdf-parser.js";
@@ -142,6 +145,26 @@ async function main(): Promise<void> {
     ],
   };
 
+  const fixtureAdversarialVague = {
+    proposals: [
+      { segmentId: "seg_placeholder", quotedText: "sometime next spring", kind: "temporal_constraint" },
+      { segmentId: "seg_placeholder", quotedText: "as soon as practicable", kind: "duration" },
+    ],
+  };
+
+  const fixtureAdversarialAmbiguous = {
+    proposals: [
+      { segmentId: "seg_placeholder", quotedText: "within a reasonable period", kind: "duration" },
+      { segmentId: "seg_placeholder", quotedText: "30", kind: "duration" },
+    ],
+  };
+
+  const fixtureAdversarialComplex = {
+    proposals: [
+      { segmentId: "seg_placeholder", quotedText: "the first day of the fourth month following adjournment", kind: "temporal_constraint" },
+    ],
+  };
+
   const emptyFixture = { proposals: [] };
 
   const modelGateway = createFixtureModelGateway([
@@ -150,6 +173,9 @@ async function main(): Promise<void> {
     { promptHash: PH, segmentText: "medical evaluation and a mental health evaluation within one workday", responsePayload: JSON.stringify(fixtureMedicalEval), parsedContent: fixtureMedicalEval },
     { promptHash: PH, segmentText: "within 30 days after the effective date of this act", responsePayload: JSON.stringify(fixtureSimpleBill), parsedContent: fixtureSimpleBill },
     { promptHash: PH, segmentText: "shall become effective on July 1, 2025", responsePayload: JSON.stringify(fixtureEffectiveDate), parsedContent: fixtureEffectiveDate },
+    { promptHash: PH, segmentText: "sometime next spring", responsePayload: JSON.stringify(fixtureAdversarialVague), parsedContent: fixtureAdversarialVague },
+    { promptHash: PH, segmentText: "within a reasonable period", responsePayload: JSON.stringify(fixtureAdversarialAmbiguous), parsedContent: fixtureAdversarialAmbiguous },
+    { promptHash: PH, segmentText: "first day of the fourth month following adjournment", responsePayload: JSON.stringify(fixtureAdversarialComplex), parsedContent: fixtureAdversarialComplex },
     { promptHash: PH, segmentText: "__no_match__", responsePayload: JSON.stringify(emptyFixture), parsedContent: emptyFixture },
   ]);
   const extractionService = createExtractionService({
@@ -174,6 +200,16 @@ async function main(): Promise<void> {
   });
 
   registerAnchoringRoutes(app, anchoringService, logger);
+
+  const grammarRepository = createGrammarRepository(db);
+  const grammarService = createGrammarService({
+    ingestionRepository: repository,
+    anchoringRepository,
+    grammarRepository,
+    logger,
+  });
+
+  registerGrammarRoutes(app, grammarService, logger);
 
   await app.listen({ host: env.HOST, port: env.PORT });
   logger.info({ host: env.HOST, port: env.PORT }, "server listening");
