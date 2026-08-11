@@ -134,3 +134,10 @@ export const GrammarStatus = {
 } as const;
 export type GrammarStatus =
   (typeof GrammarStatus)[keyof typeof GrammarStatus];
+
+export const EvaluationStatus = {
+  unevaluated: "unevaluated",
+  evaluated: "evaluated",
+} as const;
+export type EvaluationStatus =
+  (typeof EvaluationStatus)[keyof typeof EvaluationStatus];

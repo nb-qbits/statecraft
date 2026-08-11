@@ -41,6 +41,12 @@ const envSchema = z.object({
     .optional()
     .describe("Model identifier for span extraction (e.g. claude-sonnet-4-20250514)"),
 
+  EVALUATOR_MODEL_ID: z
+    .string()
+    .min(1)
+    .optional()
+    .describe("Model identifier for support evaluation — must differ from MODEL_ID for lineage separation"),
+
   MODEL_API_KEY: z
     .string()
     .min(1)

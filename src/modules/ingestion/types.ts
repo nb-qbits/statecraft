@@ -10,6 +10,7 @@ import type {
   AnchoringStatus,
   GrammarStatus,
   ResolutionStatus,
+  EvaluationStatus,
 } from "../shared/types.js";
 
 export interface LegalIdentity {
@@ -43,6 +44,8 @@ export interface DocumentVersion {
   readonly grammarVersion: string | null;
   readonly resolutionStatus: ResolutionStatus;
   readonly resolverVersion: string | null;
+  readonly evaluationStatus: EvaluationStatus;
+  readonly evaluatorVersion: string | null;
   readonly retrievedAt: string;
   readonly createdAt: string;
 }

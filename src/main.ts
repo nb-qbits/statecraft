@@ -28,6 +28,11 @@ import { registerGrammarRoutes } from "./platform/server/routes/grammar.js";
 import { createResolverRepository } from "./platform/db/resolver-repository.js";
 import { createResolverService } from "./modules/resolver/service.js";
 import { registerResolveRoutes } from "./platform/server/routes/resolve.js";
+import { createEvaluationRepository } from "./platform/db/evaluation-repository.js";
+import { createEvaluationService } from "./modules/evaluation/service.js";
+import { createSupportEvaluator } from "./modules/evaluation/evaluator.js";
+import { SUPPORT_EVALUATION_PROMPT } from "./modules/evaluation/evaluator-prompt.js";
+import { registerEvaluateRoutes } from "./platform/server/routes/evaluate.js";
 import { createPlainTextParser } from "./platform/parsers/plain-text-parser.js";
 import { parseDocxAsync } from "./platform/parsers/docx-parser.js";
 import { createSidecarClient, createPdfParser } from "./platform/parsers/pdf-parser.js";
@@ -223,6 +228,36 @@ async function main(): Promise<void> {
   });
 
   registerResolveRoutes(app, resolverService, logger);
+
+  const evaluationRepository = createEvaluationRepository(db);
+  const evaluatorFixture = {
+    verdict: "ambiguous",
+    reasoning: "fixture evaluator — residual entailment not assessed in fixture mode",
+  };
+  const evaluatorModelGateway = createFixtureModelGateway([
+    {
+      promptHash: SUPPORT_EVALUATION_PROMPT.promptHash,
+      segmentText: "__eval_match__",
+      responsePayload: JSON.stringify(evaluatorFixture),
+      parsedContent: evaluatorFixture,
+    },
+  ]);
+  const supportEvaluator = createSupportEvaluator(
+    evaluatorModelGateway,
+    env.EVALUATOR_MODEL_ID ?? "fixture-evaluator",
+  );
+  const evaluationService = createEvaluationService({
+    ingestionRepository: repository,
+    parsingRepository,
+    anchoringRepository,
+    grammarRepository,
+    resolverRepository,
+    evaluationRepository,
+    evaluator: supportEvaluator,
+    logger,
+  });
+
+  registerEvaluateRoutes(app, evaluationService, logger);
 
   await app.listen({ host: env.HOST, port: env.PORT });
   logger.info({ host: env.HOST, port: env.PORT }, "server listening");
