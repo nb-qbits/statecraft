@@ -33,6 +33,9 @@ import { createEvaluationService } from "./modules/evaluation/service.js";
 import { createSupportEvaluator } from "./modules/evaluation/evaluator.js";
 import { SUPPORT_EVALUATION_PROMPT } from "./modules/evaluation/evaluator-prompt.js";
 import { registerEvaluateRoutes } from "./platform/server/routes/evaluate.js";
+import { createRoutingRepository } from "./platform/db/routing-repository.js";
+import { createRoutingService } from "./modules/routing/service.js";
+import { registerRouteRoutes } from "./platform/server/routes/route.js";
 import { createPlainTextParser } from "./platform/parsers/plain-text-parser.js";
 import { parseDocxAsync } from "./platform/parsers/docx-parser.js";
 import { createSidecarClient, createPdfParser } from "./platform/parsers/pdf-parser.js";
@@ -258,6 +261,20 @@ async function main(): Promise<void> {
   });
 
   registerEvaluateRoutes(app, evaluationService, logger);
+
+  const routingRepository = createRoutingRepository(db);
+  const routingService = createRoutingService({
+    ingestionRepository: repository,
+    parsingRepository,
+    scanningRepository,
+    evaluationRepository,
+    grammarRepository,
+    resolverRepository,
+    routingRepository,
+    logger,
+  });
+
+  registerRouteRoutes(app, routingService, logger);
 
   await app.listen({ host: env.HOST, port: env.PORT });
   logger.info({ host: env.HOST, port: env.PORT }, "server listening");

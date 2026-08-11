@@ -11,6 +11,7 @@ import type {
   GrammarStatus,
   ResolutionStatus,
   EvaluationStatus,
+  RoutingStatus,
 } from "../shared/types.js";
 
 export interface LegalIdentity {
@@ -46,6 +47,8 @@ export interface DocumentVersion {
   readonly resolverVersion: string | null;
   readonly evaluationStatus: EvaluationStatus;
   readonly evaluatorVersion: string | null;
+  readonly routingStatus: RoutingStatus;
+  readonly routerVersion: string | null;
   readonly retrievedAt: string;
   readonly createdAt: string;
 }

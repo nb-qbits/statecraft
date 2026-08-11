@@ -23,6 +23,7 @@ import type {
   GrammarStatus,
   ResolutionStatus,
   EvaluationStatus,
+  RoutingStatus,
 } from "../../modules/shared/types.js";
 
 function rowToDocumentVersion(row: typeof documentVersions.$inferSelect): DocumentVersion {
@@ -48,6 +49,8 @@ function rowToDocumentVersion(row: typeof documentVersions.$inferSelect): Docume
     resolverVersion: row.resolverVersion,
     evaluationStatus: row.evaluationStatus as EvaluationStatus,
     evaluatorVersion: row.evaluatorVersion,
+    routingStatus: row.routingStatus as RoutingStatus,
+    routerVersion: row.routerVersion,
     authoritativeSource: row.authoritativeSource,
     asOfDate: row.asOfDate,
     retrievedAt: row.retrievedAt.toISOString(),

@@ -141,3 +141,10 @@ export const EvaluationStatus = {
 } as const;
 export type EvaluationStatus =
   (typeof EvaluationStatus)[keyof typeof EvaluationStatus];
+
+export const RoutingStatus = {
+  unrouted: "unrouted",
+  routed: "routed",
+} as const;
+export type RoutingStatus =
+  (typeof RoutingStatus)[keyof typeof RoutingStatus];

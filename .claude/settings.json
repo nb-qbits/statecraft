@@ -34,7 +34,9 @@
       "Bash(node -e \"const h = require\\('./packs/us-va/v1/holidays.json'\\); h['2026'].forEach\\(e => console.log\\(JSON.stringify\\(e\\)\\)\\)\")",
       "Bash(bash scripts/gate8-demo.sh)",
       "Bash(chmod +x /Users/vgrover/Downloads/software/statecraft/scripts/gate9-demo.sh)",
-      "Bash(bash scripts/gate9-demo.sh)"
+      "Bash(bash scripts/gate9-demo.sh)",
+      "Bash(chmod +x /Users/vgrover/Downloads/software/statecraft/scripts/gate10-demo.sh)",
+      "Bash(bash scripts/gate10-demo.sh)"
     ],
     "deny": [
       "Read(./.env)",

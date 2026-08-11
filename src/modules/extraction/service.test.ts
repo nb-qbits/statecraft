@@ -59,6 +59,8 @@ function makeVersion(
     resolverVersion: null,
     evaluationStatus: "unevaluated",
     evaluatorVersion: null,
+    routingStatus: "unrouted",
+    routerVersion: null,
     authoritativeSource: null,
     asOfDate: null,
     retrievedAt: "2025-01-01T00:00:00.000Z",
