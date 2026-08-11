@@ -388,15 +388,34 @@ Plus observed dates per § 2.2-3300: Saturday → preceding Friday, Sunday → f
 - Virginia includes Election Day every year — federal is only presidential/midterm years
 - Virginia includes Friday after Thanksgiving — not a federal holiday
 
-**Absent:** Lee-Jackson Day was removed from § 2.2-3300 in 2020. Not present in the calendar, as expected.
+**Absent:** Lee-Jackson Day is absent from all years. This is a deliberate finding, not a library gap. Lee-Jackson Day was a Virginia state holiday until repealed by the General Assembly in 2020 (2020 Va. Acts ch. 1101), when it was replaced by Election Day as a state holiday. The calendar covers 2024–2035, so Lee-Jackson Day is correctly absent for the entire range. If the pack is ever extended to pre-2021 dates, Lee-Jackson Day (the Friday before the third Monday in January) would be required for those years.
 
-### Library gaps corrected
+### Election Day in odd-numbered years — confirmed present
 
-The `date-holidays` library missed two Virginia-specific holidays:
-- **Election Day in odd years** — the library only includes it in even (federal election) years; § 2.2-3300 mandates it every year
-- **Day after Thanksgiving** — entirely absent from the library
+Virginia holds statewide elections (Governor, Attorney General, House of Delegates) in odd-numbered years. Va. Code § 2.2-3300 lists Election Day as a state holiday without restricting it to even years. The `date-holidays` library only supplies Election Day in even years (federal election years). The seeder adds it in odd years from the statute.
 
-Both were computed programmatically in `scripts/seed-va-holidays.cjs` and added to the output.
+Confirmed present in odd years:
+
+```
+2025-11-04 Election Day | va-code-2.2-3300
+2027-11-02 Election Day | va-code-2.2-3300
+```
+
+### Holidays the library did NOT supply (34 entries from statute)
+
+Of 172 total entries, 34 were added by the seeder from Va. Code § 2.2-3300 because the `date-holidays` library did not supply them. These are seven distinct holidays:
+
+| Holiday | Years added | Why the library missed it |
+|---------|------------|--------------------------|
+| Day after Thanksgiving | all 12 years (2024–2035) | Not a federal holiday; library has no entry for it at all |
+| Election Day | 6 odd years (2025, 2027, 2029, 2031, 2033, 2035) | Library only includes federal election years (even); Virginia holds statewide elections in odd years |
+| Veterans Day (observed) | 4 years (2028, 2029, 2034, 2035) | Library filters out its own "substitute" entries for VA; seeder recomputes per § 2.2-3300 observed-day rule |
+| Independence Day (observed) | 3 years (2026, 2027, 2032) | Same — seeder recomputes observed dates |
+| Juneteenth (observed) | 3 years (2027, 2032, 2033) | Same |
+| Christmas Day (observed) | 3 years (2027, 2032, 2033) | Same |
+| New Year's Day (observed) | 3 years (2028, 2033, 2034) | Same |
+
+The remaining 138 entries come from the library (`holidays-lib-vacanza`), including Election Day in even years.
 
 ## § 1-210(F) — Governor-authorized closings
 
@@ -444,6 +463,8 @@ The rule is declared in the pack's `rules.json`. The mechanism is structural: ad
 2. **Calendar horizon is 2024–2035.** Resolutions involving dates outside this range will compute correctly for weekends but may miss holidays. Extending requires re-running the seeder with a wider range.
 
 3. **No runtime holiday generation.** The calendar is frozen JSON — it does not compute floating holidays at runtime. This is intentional: a resolution today must be reproducible in 2029 under the same pack. Runtime generation would make reproducibility depend on the computation logic remaining identical, which is a weaker guarantee than frozen data.
+
+4. **Lee-Jackson Day absent — correct for 2024–2035, required for pre-2021.** Lee-Jackson Day (the Friday before the third Monday in January) was a Virginia state holiday until repealed in 2020 (2020 Va. Acts ch. 1101). The calendar covers 2024–2035 so its absence is correct and deliberate. If the pack is ever extended backward to cover pre-2021 dates, Lee-Jackson Day must be added for those years.
 
 ## Decisions taken
 

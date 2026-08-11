@@ -68,6 +68,10 @@ One workflow warning that the tooling makes easy and your design forbids: <cite 
 
 **Use it to generate the initial calendar, then own the output as versioned pack data.** Two reasons this cannot be a live dependency: § 1-210(E) turns on legal holidays *and* days the relevant government office is closed, which is broader than a public-holiday list; and a resolution performed today must be reproducible in 2029, which a library upgrade would break. Generate, reconcile against the Virginia statutory holiday list, freeze as JSON, version it.
 
+Verified in Module 7. The library was incomplete for Virginia in 34 entries across 7 holidays over 2024–2035 — most significantly "Day after Thanksgiving" (absent in all 12 years) and 16 observed-date substitutes that the library filters out for VA. Both categories are exactly what § 1-210(E) rollover depends on, so using the library output unmodified would have produced wrong deadlines.
+
+This confirms the "seed then freeze" decision: the library is a starting point requiring statutory reconciliation, never a source of truth. Expect the same for any future jurisdiction.
+
 ### Commodity infrastructure — reuse without discussion
 
 `rapidfuzz` or `fastest-levenshtein` for bounded fuzzy anchoring. Chevrotain for the date grammar. `pg-boss` or `graphile-worker` for the durable queue. MinIO for S3-compatible local storage. Drizzle plus a migration tool. Zod for environment and schema validation. Pino for structured logging. Testcontainers for integration tests.
