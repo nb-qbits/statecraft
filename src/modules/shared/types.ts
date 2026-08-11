@@ -121,6 +121,13 @@ export const ExtractionStatus = {
 export type ExtractionStatus =
   (typeof ExtractionStatus)[keyof typeof ExtractionStatus];
 
+export const ResolutionStatus = {
+  unresolved_resolver: "unresolved_resolver",
+  resolved_resolver: "resolved_resolver",
+} as const;
+export type ResolutionStatus =
+  (typeof ResolutionStatus)[keyof typeof ResolutionStatus];
+
 export const GrammarStatus = {
   unparsed_grammar: "unparsed_grammar",
   parsed_grammar: "parsed_grammar",

@@ -1,0 +1,53 @@
+import type { AnchorId, SegmentId } from "../shared/types.js";
+import type { TemporalExpression } from "../grammar/types.js";
+
+export interface ParsedAnchoredExpression {
+  readonly anchorId: AnchorId;
+  readonly segmentId: SegmentId;
+  readonly text: string;
+  readonly expression: TemporalExpression;
+}
+
+export interface ResolutionInput {
+  readonly name: string;
+  readonly value: string;
+  readonly source: string;
+  readonly authority: string;
+  readonly citation: string;
+}
+
+export interface ResolvedDate {
+  readonly resolved: true;
+  readonly statutoryDate: string;
+  readonly adjustedDate: string;
+  readonly ruleIds: readonly string[];
+  readonly citations: readonly string[];
+  readonly packVersion: string;
+  readonly warnings: readonly string[];
+  readonly inputs: readonly ResolutionInput[];
+}
+
+export interface UnresolvedDate {
+  readonly resolved: false;
+  readonly reason: string;
+  readonly missingInputs: readonly string[];
+  readonly warnings: readonly string[];
+  readonly inputs: readonly ResolutionInput[];
+}
+
+export type ResolutionResult = ResolvedDate | UnresolvedDate;
+
+export interface AnchoredResolution {
+  readonly anchorId: AnchorId;
+  readonly segmentId: SegmentId;
+  readonly text: string;
+  readonly expression: TemporalExpression;
+  readonly result: ResolutionResult;
+}
+
+export const ResolutionStatus = {
+  unresolved_resolver: "unresolved_resolver",
+  resolved_resolver: "resolved_resolver",
+} as const;
+export type ResolutionStatus =
+  (typeof ResolutionStatus)[keyof typeof ResolutionStatus];

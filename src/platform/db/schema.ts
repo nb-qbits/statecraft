@@ -4,3 +4,4 @@ export { scanCandidates } from "./scanning-schema.js";
 export { modelCalls } from "./extraction-schema.js";
 export { anchorResults } from "./anchoring-schema.js";
 export { grammarResults } from "./grammar-schema.js";
+export { resolutionResults } from "./resolver-schema.js";

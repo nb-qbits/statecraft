@@ -55,6 +55,8 @@ function makeVersion(
     anchorerVersion: null,
     grammarStatus: "unparsed_grammar",
     grammarVersion: null,
+    resolutionStatus: "unresolved_resolver",
+    resolverVersion: null,
     authoritativeSource: null,
     asOfDate: null,
     retrievedAt: "2025-01-01T00:00:00.000Z",

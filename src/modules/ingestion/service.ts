@@ -14,6 +14,7 @@ import type {
   ExtractionStatus,
   AnchoringStatus,
   GrammarStatus,
+  ResolutionStatus,
 } from "../shared/types.js";
 import { AppError } from "../shared/errors.js";
 import {
@@ -240,6 +241,8 @@ export function createIngestionService(deps: {
         anchorerVersion: null,
         grammarStatus: "unparsed_grammar" as GrammarStatus,
         grammarVersion: null,
+        resolutionStatus: "unresolved_resolver" as ResolutionStatus,
+        resolverVersion: null,
         retrievedAt: now,
       });
 

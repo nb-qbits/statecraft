@@ -70,6 +70,10 @@ export const documentVersions = pgTable(
       .notNull()
       .default("unparsed_grammar"),
     grammarVersion: varchar("grammar_version", { length: 64 }),
+    resolutionStatus: varchar("resolution_status", { length: 32 })
+      .notNull()
+      .default("unresolved_resolver"),
+    resolverVersion: varchar("resolver_version", { length: 64 }),
     authoritativeSource: varchar("authoritative_source", { length: 2048 }),
     asOfDate: varchar("as_of_date", { length: 10 }),
     retrievedAt: timestamp("retrieved_at", { withTimezone: true }).notNull(),
@@ -109,6 +113,10 @@ export const documentVersions = pgTable(
     check(
       "chk_grammar_status",
       sql`${table.grammarStatus} IN ('unparsed_grammar','parsed_grammar')`,
+    ),
+    check(
+      "chk_resolution_status",
+      sql`${table.resolutionStatus} IN ('unresolved_resolver','resolved_resolver')`,
     ),
   ],
 );

@@ -25,6 +25,9 @@ import { registerAnchoringRoutes } from "./platform/server/routes/anchor.js";
 import { createGrammarRepository } from "./platform/db/grammar-repository.js";
 import { createGrammarService } from "./modules/grammar/service.js";
 import { registerGrammarRoutes } from "./platform/server/routes/grammar.js";
+import { createResolverRepository } from "./platform/db/resolver-repository.js";
+import { createResolverService } from "./modules/resolver/service.js";
+import { registerResolveRoutes } from "./platform/server/routes/resolve.js";
 import { createPlainTextParser } from "./platform/parsers/plain-text-parser.js";
 import { parseDocxAsync } from "./platform/parsers/docx-parser.js";
 import { createSidecarClient, createPdfParser } from "./platform/parsers/pdf-parser.js";
@@ -210,6 +213,16 @@ async function main(): Promise<void> {
   });
 
   registerGrammarRoutes(app, grammarService, logger);
+
+  const resolverRepository = createResolverRepository(db);
+  const resolverService = createResolverService({
+    ingestionRepository: repository,
+    grammarRepository,
+    resolverRepository,
+    logger,
+  });
+
+  registerResolveRoutes(app, resolverService, logger);
 
   await app.listen({ host: env.HOST, port: env.PORT });
   logger.info({ host: env.HOST, port: env.PORT }, "server listening");

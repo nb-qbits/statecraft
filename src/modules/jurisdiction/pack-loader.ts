@@ -37,9 +37,11 @@ export function loadPack(jurisdiction: string, packVersion: string): Jurisdictio
   const holidays = JSON.parse(readFileSync(holidaysPath, "utf-8")) as HolidayCalendar;
   const holidaySet = buildDateSet(holidays);
 
+  const qualifiedVersion = `${jurisdiction}/v${packVersion.split(".")[0]}`;
+
   const pack: JurisdictionPack = {
     jurisdiction,
-    packVersion,
+    packVersion: qualifiedVersion,
     rules,
     holidays,
 

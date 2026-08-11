@@ -9,7 +9,7 @@ describe("pack loader", () => {
   it("loads us-va v1 pack by jurisdiction and version", () => {
     const pack = loadPack("us-va", "1.0.0");
     expect(pack.jurisdiction).toBe("us-va");
-    expect(pack.packVersion).toBe("1.0.0");
+    expect(pack.packVersion).toBe("us-va/v1");
     expect(pack.rules.jurisdiction).toBe("us-va");
     expect(pack.rules.packVersion).toBe("1.0.0");
   });
@@ -97,7 +97,7 @@ describe("pack loader", () => {
 describe("two pack versions coexist", () => {
   it("loading v1 does not prevent loading a different version (when it exists)", () => {
     const pack1 = loadPack("us-va", "1.0.0");
-    expect(pack1.packVersion).toBe("1.0.0");
+    expect(pack1.packVersion).toBe("us-va/v1");
 
     expect(() => loadPack("us-va", "2.0.0")).toThrow(/pack not found/);
   });
@@ -107,6 +107,6 @@ describe("two pack versions coexist", () => {
     clearPackCache();
     const pack1b = loadPack("us-va", "1.0.0");
     expect(pack1b).not.toBe(pack1);
-    expect(pack1b.packVersion).toBe("1.0.0");
+    expect(pack1b.packVersion).toBe("us-va/v1");
   });
 });
