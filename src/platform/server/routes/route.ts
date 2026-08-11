@@ -1,8 +1,8 @@
 import type { FastifyInstance } from "fastify";
 import { AppError } from "../../../modules/shared/errors.js";
 import type { Logger } from "../../logger/logger.js";
-import type { DocumentVersionId } from "../../../modules/shared/types.js";
-import type { DocumentRoutingResult } from "../../../modules/routing/types.js";
+import type { DocumentVersionId, Lane } from "../../../modules/shared/types.js";
+import type { DocumentRoutingResult, LaneAssignment } from "../../../modules/routing/types.js";
 
 interface RoutingService {
   routeDocument(
@@ -10,9 +10,17 @@ interface RoutingService {
   ): Promise<DocumentRoutingResult>;
 }
 
+interface RoutingRepository {
+  getAssignmentsByLane(
+    lane: Lane,
+    opts: { limit: number; offset: number },
+  ): Promise<LaneAssignment[]>;
+}
+
 export function registerRouteRoutes(
   app: FastifyInstance,
   routingService: RoutingService,
+  routingRepository: RoutingRepository,
   logger: Logger,
 ): void {
   app.post<{
@@ -80,6 +88,48 @@ export function registerRouteRoutes(
           },
         });
       }
+    },
+  );
+
+  const VALID_LANES = new Set(["straight_through", "quick_confirmation", "exception_review", "blocked"]);
+
+  app.get<{
+    Params: { lane: string };
+    Querystring: { limit?: string; offset?: string };
+  }>(
+    "/api/v1/assignments/lane/:lane",
+    async (req, reply) => {
+      const { lane } = req.params;
+
+      if (!VALID_LANES.has(lane)) {
+        return reply.status(400).send({
+          error: {
+            code: "INVALID_LANE",
+            message: `Invalid lane "${lane}". Must be one of: ${[...VALID_LANES].join(", ")}`,
+          },
+        });
+      }
+
+      const limit = Math.min(parseInt(req.query.limit ?? "50", 10) || 50, 200);
+      const offset = parseInt(req.query.offset ?? "0", 10) || 0;
+
+      const assignments = await routingRepository.getAssignmentsByLane(
+        lane as Lane,
+        { limit, offset },
+      );
+
+      return reply.status(200).send({
+        lane,
+        limit,
+        offset,
+        count: assignments.length,
+        assignments: assignments.map((a) => ({
+          anchorId: a.anchorId,
+          segmentId: a.segmentId,
+          lane: a.lane,
+          reasons: a.reasons,
+        })),
+      });
     },
   );
 }

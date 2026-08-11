@@ -274,7 +274,7 @@ async function main(): Promise<void> {
     logger,
   });
 
-  registerRouteRoutes(app, routingService, logger);
+  registerRouteRoutes(app, routingService, routingRepository, logger);
 
   await app.listen({ host: env.HOST, port: env.PORT });
   logger.info({ host: env.HOST, port: env.PORT }, "server listening");

@@ -339,4 +339,67 @@ describe("Gate 10 — Lane Router and Coverage Accounting", () => {
     // simple-bill is "introduced" — no straight_through
     expect(g.body.laneSummary.straight_through).toBe(0);
   });
+
+  it("getAssignmentsByLane returns same set as JSONB unpack for the same document", async () => {
+    const r = await uploadDoc({
+      content: HB35_PDF,
+      filename: "va-hb35-gate10-consistency.pdf",
+      contentType: "application/pdf",
+      legalIdentity: {
+        jurisdiction: "Virginia",
+        session: "2026",
+        instrumentType: "HB",
+        number: `10040-${RUN}`,
+        stage: "introduced",
+        chapter: null,
+      },
+    });
+    expect(r.status).toBe(201);
+
+    await fullPipeline(r.body.documentVersionId);
+
+    const routeResult = await routeDoc(r.body.documentVersionId);
+    expect(routeResult.status).toBe(200);
+
+    const jsonbAssignments = routeResult.body.assignments;
+    expect(jsonbAssignments.length).toBeGreaterThan(0);
+
+    // Collect all unique lanes from the JSONB response
+    const lanesInJsonb = [...new Set(jsonbAssignments.map((a) => a.lane))];
+
+    // For each lane, fetch via the normalised GET endpoint and compare
+    const normalisedAssignments: LaneAssignmentResponse[] = [];
+    for (const lane of lanesInJsonb) {
+      const laneRes = await fetch(
+        `http://localhost:3000/api/v1/assignments/lane/${lane}?limit=200`,
+      );
+      expect(laneRes.status).toBe(200);
+      const laneBody = (await laneRes.json()) as {
+        lane: string;
+        count: number;
+        assignments: LaneAssignmentResponse[];
+      };
+      // Filter to only this document's assignments
+      const forThisDoc = laneBody.assignments.filter((a) =>
+        jsonbAssignments.some((j) => j.anchorId === a.anchorId),
+      );
+      normalisedAssignments.push(...forThisDoc);
+    }
+
+    // Sort both sets by anchorId for stable comparison
+    const sortByAnchor = (a: LaneAssignmentResponse, b: LaneAssignmentResponse) =>
+      a.anchorId.localeCompare(b.anchorId);
+
+    const sortedJsonb = [...jsonbAssignments].sort(sortByAnchor);
+    const sortedNormalised = [...normalisedAssignments].sort(sortByAnchor);
+
+    expect(sortedNormalised.length).toBe(sortedJsonb.length);
+
+    for (let i = 0; i < sortedJsonb.length; i++) {
+      expect(sortedNormalised[i]!.anchorId).toBe(sortedJsonb[i]!.anchorId);
+      expect(sortedNormalised[i]!.segmentId).toBe(sortedJsonb[i]!.segmentId);
+      expect(sortedNormalised[i]!.lane).toBe(sortedJsonb[i]!.lane);
+      expect(sortedNormalised[i]!.reasons).toEqual(sortedJsonb[i]!.reasons);
+    }
+  });
 });

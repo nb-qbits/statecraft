@@ -193,6 +193,8 @@ function createStubs() {
       getResultsByVersion: vi.fn(async () => null),
       deleteResultsByVersion: vi.fn(),
       updateRoutingStatus: vi.fn(),
+      getAssignmentsByLane: vi.fn(async () => []),
+      getAssignmentsByVersion: vi.fn(async () => []),
     } as unknown as RoutingRepository,
   };
 }

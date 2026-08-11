@@ -6,4 +6,4 @@ export { anchorResults } from "./anchoring-schema.js";
 export { grammarResults } from "./grammar-schema.js";
 export { resolutionResults } from "./resolver-schema.js";
 export { evaluationResults } from "./evaluation-schema.js";
-export { routingResults } from "./routing-schema.js";
+export { routingResults, laneAssignments } from "./routing-schema.js";

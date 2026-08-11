@@ -1,20 +1,32 @@
 import { eq } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
-import { routingResults } from "./routing-schema.js";
+import { routingResults, laneAssignments } from "./routing-schema.js";
 import { documentVersions } from "./ingestion-schema.js";
-import type { DocumentVersionId, RoutingStatus } from "../../modules/shared/types.js";
-import type { DocumentRoutingResult } from "../../modules/routing/types.js";
+import type { DocumentVersionId, RoutingStatus, Lane, AnchorId, SegmentId } from "../../modules/shared/types.js";
+import type { DocumentRoutingResult, LaneAssignment, LaneReason } from "../../modules/routing/types.js";
+
+function rowToLaneAssignment(
+  row: typeof laneAssignments.$inferSelect,
+): LaneAssignment {
+  return {
+    anchorId: row.anchorId as AnchorId,
+    segmentId: row.segmentId as SegmentId,
+    lane: row.lane as Lane,
+    reasons: row.reasons as unknown as readonly LaneReason[],
+  };
+}
 
 function rowToResult(
-  row: typeof routingResults.$inferSelect,
+  summaryRow: typeof routingResults.$inferSelect,
+  assignments: LaneAssignment[],
 ): DocumentRoutingResult {
   return {
-    documentVersionId: row.documentVersionId as DocumentVersionId,
-    routerVersion: row.routerVersion,
-    assignments: row.assignments as unknown as DocumentRoutingResult["assignments"],
-    coverage: row.coverage as unknown as DocumentRoutingResult["coverage"],
-    laneSummary: row.laneSummary as unknown as DocumentRoutingResult["laneSummary"],
-    totalAssignments: row.totalAssignments,
+    documentVersionId: summaryRow.documentVersionId as DocumentVersionId,
+    routerVersion: summaryRow.routerVersion,
+    assignments,
+    coverage: summaryRow.coverage as unknown as DocumentRoutingResult["coverage"],
+    laneSummary: summaryRow.laneSummary as unknown as DocumentRoutingResult["laneSummary"],
+    totalAssignments: summaryRow.totalAssignments,
   };
 }
 
@@ -34,6 +46,13 @@ export interface RoutingRepository {
     status: RoutingStatus,
     routerVersion: string,
   ): Promise<void>;
+  getAssignmentsByLane(
+    lane: Lane,
+    opts: { limit: number; offset: number },
+  ): Promise<LaneAssignment[]>;
+  getAssignmentsByVersion(
+    documentVersionId: DocumentVersionId,
+  ): Promise<LaneAssignment[]>;
 }
 
 export function createRoutingRepository(
@@ -52,23 +71,49 @@ export function createRoutingRepository(
         laneSummary: result.laneSummary as unknown as Record<string, unknown>,
         totalAssignments: result.totalAssignments,
       });
+
+      if (result.assignments.length > 0) {
+        await db.insert(laneAssignments).values(
+          result.assignments.map((a) => ({
+            anchorId: a.anchorId as string,
+            documentVersionId,
+            segmentId: a.segmentId as string,
+            lane: a.lane,
+            reasons: a.reasons as unknown as Record<string, unknown>,
+            routerVersion: result.routerVersion,
+          })),
+        );
+      }
     },
 
     async getResultsByVersion(
       documentVersionId: DocumentVersionId,
     ): Promise<DocumentRoutingResult | null> {
-      const rows = await db
+      const summaryRows = await db
         .select()
         .from(routingResults)
         .where(eq(routingResults.documentVersionId, documentVersionId))
         .limit(1);
 
-      return rows.length > 0 ? rowToResult(rows[0]!) : null;
+      if (summaryRows.length === 0) return null;
+
+      const assignmentRows = await db
+        .select()
+        .from(laneAssignments)
+        .where(eq(laneAssignments.documentVersionId, documentVersionId));
+
+      return rowToResult(
+        summaryRows[0]!,
+        assignmentRows.map(rowToLaneAssignment),
+      );
     },
 
     async deleteResultsByVersion(
       documentVersionId: DocumentVersionId,
     ): Promise<void> {
+      await db
+        .delete(laneAssignments)
+        .where(eq(laneAssignments.documentVersionId, documentVersionId));
       await db
         .delete(routingResults)
         .where(eq(routingResults.documentVersionId, documentVersionId));
@@ -83,6 +128,32 @@ export function createRoutingRepository(
         .update(documentVersions)
         .set({ routingStatus: status, routerVersion })
         .where(eq(documentVersions.documentVersionId, documentVersionId));
+    },
+
+    async getAssignmentsByLane(
+      lane: Lane,
+      opts: { limit: number; offset: number },
+    ): Promise<LaneAssignment[]> {
+      const rows = await db
+        .select()
+        .from(laneAssignments)
+        .where(eq(laneAssignments.lane, lane))
+        .orderBy(laneAssignments.documentVersionId, laneAssignments.anchorId)
+        .limit(opts.limit)
+        .offset(opts.offset);
+
+      return rows.map(rowToLaneAssignment);
+    },
+
+    async getAssignmentsByVersion(
+      documentVersionId: DocumentVersionId,
+    ): Promise<LaneAssignment[]> {
+      const rows = await db
+        .select()
+        .from(laneAssignments)
+        .where(eq(laneAssignments.documentVersionId, documentVersionId));
+
+      return rows.map(rowToLaneAssignment);
     },
   };
 }
