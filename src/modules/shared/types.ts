@@ -9,6 +9,8 @@ export type RecordVersionId = Brand<string, "RecordVersionId">;
 export type CorrelationId = Brand<string, "CorrelationId">;
 export type ContentHash = Brand<string, "ContentHash">;
 export type CandidateId = Brand<string, "CandidateId">;
+export type PromptHash = Brand<string, "PromptHash">;
+export type ModelCallId = Brand<string, "ModelCallId">;
 
 export const LegislativeStatus = {
   introduced: "introduced",
@@ -101,3 +103,11 @@ export const Lane = {
   blocked: "blocked",
 } as const;
 export type Lane = (typeof Lane)[keyof typeof Lane];
+
+export const ExtractionStatus = {
+  unextracted: "unextracted",
+  extracted: "extracted",
+  extraction_failed: "extraction_failed",
+} as const;
+export type ExtractionStatus =
+  (typeof ExtractionStatus)[keyof typeof ExtractionStatus];

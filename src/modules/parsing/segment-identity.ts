@@ -21,18 +21,6 @@ export interface OrdinalGroup {
   readonly contentHash: ContentHash;
 }
 
-export function assignOrdinals(
-  groups: readonly OrdinalGroup[],
-): number[] {
-  const counts = new Map<string, number>();
-  const ordinals: number[] = [];
-
-  for (const g of groups) {
-    const key = `${g.structuralPath}:${g.contentHash}`;
-    const current = counts.get(key) ?? 0;
-    ordinals.push(current);
-    counts.set(key, current + 1);
-  }
-
-  return ordinals;
+export function assignOrdinals(groups: readonly OrdinalGroup[]): number[] {
+  return groups.map((_, i) => i);
 }

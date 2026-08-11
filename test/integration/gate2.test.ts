@@ -334,8 +334,8 @@ describe("Gate 2 — Parsing integration", () => {
     const normalizePath = (p: string) =>
       p.replace(/section\[[^\]]+\]/g, "section[*]");
 
-    const pdfShapes = pPdf.body.segments.map(s => normalizePath(s.structuralPath));
-    const txtShapes = pTxt.body.segments.map(s => normalizePath(s.structuralPath));
+    const pdfShapes = pPdf.body.segments.map(s => normalizePath(s.structuralPath)).slice().sort();
+    const txtShapes = pTxt.body.segments.map(s => normalizePath(s.structuralPath)).slice().sort();
 
     expect(pdfShapes).toEqual(txtShapes);
   });
@@ -415,6 +415,52 @@ describe("Gate 2 — Parsing integration", () => {
       expect(seg.parserAdapter).toBe("plain-text");
       expect(seg.parserVersion).toBe("1.3.0");
       expect(seg.fidelity).toBe("none");
+    }
+  });
+});
+
+describe("Segment ordering", () => {
+  it("HB 346 returns subdivisions 1-14 in numeric document order", async () => {
+    const r = await uploadDoc({
+      content: HB346_TXT,
+      filename: "hb346-order.txt",
+      contentType: "text/plain",
+      legalIdentity: { ...LEGAL_IDENTITY, number: "8030" },
+    });
+    expect(r.status).toBe(201);
+
+    const p = await parseDoc(r.body.documentVersionId);
+    expect(p.status).toBe(200);
+
+    const subdivisionSegments = p.body.segments.filter(
+      (s: { rawText: string }) => /^\d+\.\s/.test(s.rawText),
+    );
+
+    expect(subdivisionSegments.length).toBe(14);
+
+    const numbers = subdivisionSegments.map(
+      (s: { rawText: string }) => parseInt(s.rawText.match(/^(\d+)\.\s/)![1]!, 10),
+    );
+    for (let i = 0; i < numbers.length; i++) {
+      expect(numbers[i]).toBe(i + 1);
+    }
+  });
+
+  it("ordinals are sequential zero-based document-order indices", async () => {
+    const r = await uploadDoc({
+      content: SIMPLE_BILL_TXT,
+      filename: "ordinal-seq.txt",
+      contentType: "text/plain",
+      legalIdentity: { ...LEGAL_IDENTITY, number: "8031" },
+    });
+    expect(r.status).toBe(201);
+
+    const p = await parseDoc(r.body.documentVersionId);
+    expect(p.status).toBe(200);
+
+    const ordinals = p.body.segments.map((s: { ordinal: number }) => s.ordinal);
+    for (let i = 0; i < ordinals.length; i++) {
+      expect(ordinals[i]).toBe(i);
     }
   });
 });

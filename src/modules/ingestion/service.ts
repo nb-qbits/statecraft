@@ -11,6 +11,7 @@ import type {
   StatusProvenance,
   ParseStatus,
   ScanStatus,
+  ExtractionStatus,
 } from "../shared/types.js";
 import { AppError } from "../shared/errors.js";
 import {
@@ -231,6 +232,8 @@ export function createIngestionService(deps: {
         parseStatus,
         scanStatus: "unscanned" as ScanStatus,
         scannerVersion: null,
+        extractionStatus: "unextracted" as ExtractionStatus,
+        extractorVersion: null,
         retrievedAt: now,
       });
 

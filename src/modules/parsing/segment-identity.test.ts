@@ -56,15 +56,16 @@ describe("computeContentHash", () => {
 });
 
 describe("assignOrdinals", () => {
-  it("assigns 0 to unique groups", () => {
+  it("assigns sequential zero-based document-order indices", () => {
     const groups = [
       { structuralPath: "/body/p[0]", contentHash: "h1" as ContentHash },
       { structuralPath: "/body/p[1]", contentHash: "h2" as ContentHash },
+      { structuralPath: "/body/p[2]", contentHash: "h3" as ContentHash },
     ];
-    expect(assignOrdinals(groups)).toEqual([0, 0]);
+    expect(assignOrdinals(groups)).toEqual([0, 1, 2]);
   });
 
-  it("assigns sequential ordinals to identical groups", () => {
+  it("gives identical groups distinct ordinals by position", () => {
     const groups = [
       { structuralPath: "/body/p[0]", contentHash: "same" as ContentHash },
       { structuralPath: "/body/p[0]", contentHash: "same" as ContentHash },
@@ -73,16 +74,21 @@ describe("assignOrdinals", () => {
     expect(assignOrdinals(groups)).toEqual([0, 1, 2]);
   });
 
-  it("groups by (structuralPath, contentHash) jointly", () => {
-    const groups = [
-      { structuralPath: "/body/p[0]", contentHash: "h1" as ContentHash },
-      { structuralPath: "/body/p[1]", contentHash: "h1" as ContentHash },
-      { structuralPath: "/body/p[0]", contentHash: "h1" as ContentHash },
-    ];
-    expect(assignOrdinals(groups)).toEqual([0, 0, 1]);
-  });
-
   it("returns empty array for empty input", () => {
     expect(assignOrdinals([])).toEqual([]);
+  });
+
+  it("identical structuralPath + contentHash get distinct IDs via ordinal", () => {
+    const path = "/body/p[0]";
+    const hash = "same" as ContentHash;
+    const ord0 = assignOrdinals([
+      { structuralPath: path, contentHash: hash },
+      { structuralPath: path, contentHash: hash },
+    ]);
+    expect(ord0[0]).not.toBe(ord0[1]);
+
+    const id0 = computeSegmentId(dvId, path, hash, ord0[0]!);
+    const id1 = computeSegmentId(dvId, path, hash, ord0[1]!);
+    expect(id0).not.toBe(id1);
   });
 });

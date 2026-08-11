@@ -35,6 +35,24 @@ const envSchema = z.object({
     .optional()
     .describe("Open States API key — if absent, legislativeStatus stays unknown"),
 
+  MODEL_ID: z
+    .string()
+    .min(1)
+    .optional()
+    .describe("Model identifier for span extraction (e.g. claude-sonnet-4-20250514)"),
+
+  MODEL_API_KEY: z
+    .string()
+    .min(1)
+    .optional()
+    .describe("API key for the model provider — required only for live extraction"),
+
+  MODEL_BASE_URL: z
+    .string()
+    .url()
+    .optional()
+    .describe("Base URL for the model provider API"),
+
   LOG_LEVEL: z
     .enum(["fatal", "error", "warn", "info", "debug", "trace"])
     .default("info"),

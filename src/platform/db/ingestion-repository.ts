@@ -18,6 +18,7 @@ import type {
   StatusProvenance,
   ParseStatus,
   ScanStatus,
+  ExtractionStatus,
 } from "../../modules/shared/types.js";
 
 function rowToDocumentVersion(row: typeof documentVersions.$inferSelect): DocumentVersion {
@@ -33,6 +34,8 @@ function rowToDocumentVersion(row: typeof documentVersions.$inferSelect): Docume
     parseStatus: row.parseStatus as ParseStatus,
     scanStatus: row.scanStatus as ScanStatus,
     scannerVersion: row.scannerVersion,
+    extractionStatus: row.extractionStatus as ExtractionStatus,
+    extractorVersion: row.extractorVersion,
     authoritativeSource: row.authoritativeSource,
     asOfDate: row.asOfDate,
     retrievedAt: row.retrievedAt.toISOString(),

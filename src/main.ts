@@ -15,6 +15,10 @@ import { createParsingRepository } from "./platform/db/parsing-repository.js";
 import { createParsingService } from "./modules/parsing/service.js";
 import { createScanningRepository } from "./platform/db/scanning-repository.js";
 import { createScanningService } from "./modules/scanning/service.js";
+import { createExtractionRepository } from "./platform/db/extraction-repository.js";
+import { createExtractionService } from "./modules/extraction/service.js";
+import { createFixtureModelGateway } from "./modules/extraction/fixture-model-gateway.js";
+import { registerExtractionRoutes } from "./platform/server/routes/extract.js";
 import { createPlainTextParser } from "./platform/parsers/plain-text-parser.js";
 import { parseDocxAsync } from "./platform/parsers/docx-parser.js";
 import { createSidecarClient, createPdfParser } from "./platform/parsers/pdf-parser.js";
@@ -96,6 +100,66 @@ async function main(): Promise<void> {
   });
 
   registerScanRoutes(app, scanningService, logger);
+
+  const extractionRepository = createExtractionRepository(db);
+
+  const PH = "ph_fixture" as import("./modules/shared/types.js").PromptHash;
+
+  const fixtureWithin30Days = {
+    proposals: [
+      { segmentId: "seg_placeholder", quotedText: "within 30 days", kind: "duration" },
+      { segmentId: "seg_placeholder", quotedText: "no longer than seven days", kind: "duration" },
+    ],
+  };
+
+  const fixtureWorkingDays = {
+    proposals: [
+      { segmentId: "seg_placeholder", quotedText: "every two business days", kind: "duration" },
+      { segmentId: "seg_placeholder", quotedText: "within one working day", kind: "duration" },
+      { segmentId: "seg_placeholder", quotedText: "within 24 hours", kind: "duration" },
+    ],
+  };
+
+  const fixtureMedicalEval = {
+    proposals: [
+      { segmentId: "seg_placeholder", quotedText: "within five business days of such placement", kind: "duration" },
+    ],
+  };
+
+  const fixtureSimpleBill = {
+    proposals: [
+      { segmentId: "seg_placeholder", quotedText: "within 30 days", kind: "duration" },
+      { segmentId: "seg_placeholder", quotedText: "effective date of this act", kind: "effective_date" },
+    ],
+  };
+
+  const fixtureEffectiveDate = {
+    proposals: [
+      { segmentId: "seg_placeholder", quotedText: "July 1, 2025", kind: "effective_date" },
+    ],
+  };
+
+  const emptyFixture = { proposals: [] };
+
+  const modelGateway = createFixtureModelGateway([
+    { promptHash: PH, segmentText: "within 30 days without approval from the regional administrator", responsePayload: JSON.stringify(fixtureWithin30Days), parsedContent: fixtureWithin30Days },
+    { promptHash: PH, segmentText: "every two business days", responsePayload: JSON.stringify(fixtureWorkingDays), parsedContent: fixtureWorkingDays },
+    { promptHash: PH, segmentText: "medical evaluation and a mental health evaluation within one workday", responsePayload: JSON.stringify(fixtureMedicalEval), parsedContent: fixtureMedicalEval },
+    { promptHash: PH, segmentText: "within 30 days after the effective date of this act", responsePayload: JSON.stringify(fixtureSimpleBill), parsedContent: fixtureSimpleBill },
+    { promptHash: PH, segmentText: "shall become effective on July 1, 2025", responsePayload: JSON.stringify(fixtureEffectiveDate), parsedContent: fixtureEffectiveDate },
+    { promptHash: PH, segmentText: "__no_match__", responsePayload: JSON.stringify(emptyFixture), parsedContent: emptyFixture },
+  ]);
+  const extractionService = createExtractionService({
+    ingestionRepository: repository,
+    parsingRepository,
+    scanningRepository,
+    extractionRepository,
+    modelGateway,
+    modelId: env.MODEL_ID ?? "fixture",
+    logger,
+  });
+
+  registerExtractionRoutes(app, extractionService, logger);
 
   await app.listen({ host: env.HOST, port: env.PORT });
   logger.info({ host: env.HOST, port: env.PORT }, "server listening");

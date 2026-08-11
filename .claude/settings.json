@@ -14,7 +14,10 @@
       "Bash(mkdir*)",
       "Bash(ls*)",
       "Bash(cat*)",
-      "Read(//Users/vgrover/**)"
+      "Read(//Users/vgrover/**)",
+      "Bash(npm list *)",
+      "Bash(npx eslint *)",
+      "Bash(node -e ' *)"
     ],
     "deny": [
       "Read(./.env)",
