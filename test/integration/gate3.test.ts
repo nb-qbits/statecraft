@@ -18,6 +18,7 @@ const SIMPLE_BILL_TXT = readFileSync(resolve(__dirname, "../../fixtures/document
 const ADVERSARIAL_TXT = readFileSync(resolve(__dirname, "../../fixtures/documents/adversarial-text.txt"), "utf-8");
 const HB346_TXT = readFileSync(resolve(__dirname, "../../fixtures/documents/hb346-extracted.txt"), "utf-8");
 const HR3481_TXT = readFileSync(resolve(__dirname, "../../fixtures/documents/hr3481-extracted.txt"), "utf-8");
+const HB35_PDF = readFileSync(resolve(__dirname, "../../fixtures/documents/va-hb35-restorative-housing.pdf"));
 
 const UPLOAD_URL = "http://localhost:3000/api/v1/documents/upload";
 const BASE_URL = "http://localhost:3000/api/v1/documents";
@@ -267,6 +268,54 @@ describe("Gate 3 — Deterministic Candidate Scan", () => {
       c.matchedText.toLowerCase().includes("striking") ||
       c.matchedText.toLowerCase().includes("inserting")
     )).toBe(true);
+
+    for (const seg of s.body.segments) {
+      expect(["candidates_found", "screened_no_candidate"]).toContain(seg.coverageState);
+    }
+  });
+
+  it("HB 35 PDF (restorative housing): finds durations, modals, citations, enactment clause", async () => {
+    const r = await uploadDoc({
+      content: HB35_PDF,
+      filename: "va-hb35.pdf",
+      contentType: "application/pdf",
+      legalIdentity: {
+        jurisdiction: "Virginia",
+        session: "2026",
+        instrumentType: "HB",
+        number: "35",
+        stage: "introduced",
+        chapter: null,
+      },
+    });
+    expect(r.status).toBe(201);
+
+    const p = await parseDoc(r.body.documentVersionId);
+    expect(p.status).toBe(200);
+
+    const s = await scanDoc(r.body.documentVersionId);
+    expect(s.status).toBe(200);
+
+    const allCandidates = s.body.segments.flatMap(seg => seg.candidates);
+    const nonSuppressed = allCandidates.filter(c => !c.suppressed);
+
+    const durations = nonSuppressed.filter(c => c.kind === "duration");
+    expect(durations.length).toBeGreaterThanOrEqual(4);
+    const durationTexts = durations.map(c => c.matchedText.toLowerCase());
+    expect(durationTexts.some(t => t.includes("within 30 days"))).toBe(true);
+    expect(durationTexts.some(t => t.includes("working day"))).toBe(true);
+    expect(durationTexts.some(t => t.includes("business day"))).toBe(true);
+
+    const modals = nonSuppressed.filter(c => c.kind === "modal_verb");
+    expect(modals.length).toBeGreaterThanOrEqual(40);
+
+    const citations = nonSuppressed.filter(c => c.kind === "citation");
+    expect(citations.length).toBeGreaterThanOrEqual(4);
+
+    const enactments = nonSuppressed.filter(c => c.kind === "enactment_clause");
+    expect(enactments.length).toBeGreaterThanOrEqual(2);
+
+    expect(s.body.segmentCount).toBeGreaterThanOrEqual(18);
 
     for (const seg of s.body.segments) {
       expect(["candidates_found", "screened_no_candidate"]).toContain(seg.coverageState);

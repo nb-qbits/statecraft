@@ -283,3 +283,27 @@ Renamed files
     The new hb346-extracted.txt is rebuilt from the PDF via sidecar to match.
 
 New dependencies: none
+
+Post-gate addition: VA HB 35 (restorative housing)
+
+  fixtures/documents/va-hb35-restorative-housing.pdf added as primary deadline-bearing
+  fixture. Virginia HB 35 (2026), Senate committee substitute, restorative housing.
+  18 segments, all candidates_found. 4 durations: "within 30 days", "within one working
+  day", "two business days", "one working day". 40 modal verbs, 4 citations, 2 enactment
+  clauses. This is the first fixture with real deadlines and becomes the primary fixture
+  for Modules 4-8.
+
+  Integration test added: gate3.test.ts "HB 35 PDF (restorative housing): finds durations,
+  modals, citations, enactment clause"
+
+  Open issues:
+
+  1. Module 7 dependency: "working day" and "business day" durations are exactly what
+     Va. Code § 1-210(E) governs. Module 7's Virginia jurisdiction pack will need the
+     Virginia holiday calendar to resolve them.
+
+  2. legislativeStatus enum gap: This document is an AMENDMENT IN THE NATURE OF A
+     SUBSTITUTE — it replaces the bill's entire text and carries a blank date line
+     ("on ______"). The current legislativeStatus enum (introduced/engrossed/enrolled/
+     enacted/vetoed/failed/unknown) does not cleanly represent a committee substitute.
+     Open question — do not change the enum now.

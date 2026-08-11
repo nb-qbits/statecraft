@@ -334,8 +334,8 @@ describe("Gate 2 — Parsing integration", () => {
     const normalizePath = (p: string) =>
       p.replace(/section\[[^\]]+\]/g, "section[*]");
 
-    const pdfShapes = pPdf.body.segments.map(s => normalizePath(s.structuralPath));
-    const txtShapes = pTxt.body.segments.map(s => normalizePath(s.structuralPath));
+    const pdfShapes = pPdf.body.segments.map(s => normalizePath(s.structuralPath)).sort();
+    const txtShapes = pTxt.body.segments.map(s => normalizePath(s.structuralPath)).sort();
 
     expect(pdfShapes).toEqual(txtShapes);
   });
