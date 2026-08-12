@@ -2,6 +2,7 @@
   "permissions": {
     "allow": [
       "Bash(npm run *)",
+      "Bash(npm install*)",
       "Bash(npm test*)",
       "Bash(npx vitest*)",
       "Bash(npx tsc*)",

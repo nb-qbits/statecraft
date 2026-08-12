@@ -467,102 +467,186 @@ uniqueIndex("uq_analysis_dvid_config").on(
 ),
 ```
 
-### Claim 10: Date provenance distinguishes computed from reviewer-asserted dates
+### Claim 10: dateProvenance "computed" is structurally impossible without resolution proof
 
-Every register record carries `dateProvenance`:
+Builder functions enforce this. The string `"computed"` never appears as a literal in handler code — it is only reachable through `buildComputedDateFields()`:
 
 ```typescript
-// src/modules/review/types.ts:49-54
-export const DateProvenance = {
-  computed: "computed",
-  reviewer_asserted: "reviewer_asserted",
-  verbatim_from_instrument: "verbatim_from_instrument",
-} as const;
+// src/modules/review/service.ts:143-187
+function buildComputedDateFields(proposal: ReviewProposal): ComputedDateFields {
+  if (!proposal.resolved || !proposal.statutoryDate) {
+    throw new AppError({
+      code: "COMPUTED_DATE_REQUIRES_RESOLUTION",
+      ...
+      message: "dateProvenance 'computed' requires a resolved date from the resolver",
+    });
+  }
+  const ruleIds = proposal.ruleIds as string[];
+  const citations = proposal.citations as string[];
+  if (ruleIds.length === 0 || !proposal.packVersion) {
+    throw new AppError({
+      code: "COMPUTED_DATE_MISSING_PROVENANCE",
+      ...
+      message: "dateProvenance 'computed' requires non-empty ruleIds and a packVersion from the resolver",
+    });
+  }
+  if (citations.length === 0) {
+    throw new AppError({
+      code: "COMPUTED_DATE_EMPTY_CITATIONS",
+      ...
+      message: "dateProvenance 'computed' requires non-empty citations — a date without a statutory citation is not defensible",
+    });
+  }
+  return {
+    dateProvenance: "computed",
+    deadlineDate: proposal.statutoryDate,
+    adjustedDate: proposal.adjustedDate ?? proposal.statutoryDate,
+    ruleIds,
+    citations,
+    packVersion: proposal.packVersion,
+  };
+}
 ```
 
-DB column with CHECK constraint:
-
+`handleAccept` calls the builder:
 ```typescript
-// src/platform/db/review-schema.ts:156
-dateProvenance: varchar("date_provenance", { length: 32 }).notNull(),
+// src/modules/review/service.ts:758
+const computed = buildComputedDateFields(proposal);
 ```
 
+`handleEditAndAccept` calls the builder only when the date is unchanged from the resolver:
 ```typescript
-// src/platform/db/review-schema.ts:170-173
-check(
-  "chk_date_provenance",
-  sql`${table.dateProvenance} IN ('computed','reviewer_asserted','verbatim_from_instrument')`,
-),
-```
-
-`handleAccept` sets `dateProvenance = "computed"`:
-```typescript
-// src/modules/review/service.ts:700
-dateProvenance: "computed",
-```
-
-`handleEditAndAccept` sets `dateProvenance = "reviewer_asserted"` when the reviewer supplies the date:
-```typescript
-// src/modules/review/service.ts:751-755
+// src/modules/review/service.ts:818-826
 const dateIsReviewerAsserted =
   !proposal.resolved ||
   (edits.deadlineDate !== undefined &&
     edits.deadlineDate !== proposal.statutoryDate);
-const dateProvenance = dateIsReviewerAsserted
-  ? ("reviewer_asserted" as const)
-  : ("computed" as const);
-```
 
-### Claim 11: No silent empty citations on reviewer-asserted dates
-
-When a reviewer asserts a date, the service auto-populates a citation recording the basis:
-
-```typescript
-// src/modules/review/service.ts:760-767
-const reviewerCitation = dateIsReviewerAsserted
-  ? `reviewer_asserted: date ${deadlineDate} supplied by ${input.reviewerId}` +
-    (resolverFailureReason ? ` — ${resolverFailureReason}` : "")
-  : null;
-const baseCitations = (edits.citations as string[]) ??
-  (proposal.citations as string[]);
-const recordCitations = reviewerCitation
-  ? [reviewerCitation, ...baseCitations]
-  : baseCitations;
-```
-
-The resolver failure reason is derived from the proposal's expression:
-
-```typescript
-// src/modules/review/service.ts:123-131
-function buildResolverFailureReason(proposal: ReviewProposal): string {
-  if (!proposal.parsedExpression) {
-    return "grammar parse failed";
-  }
-  const expr = proposal.parsedExpression;
-  if (expr.kind === "relative_duration" || expr.kind === "relative_date") {
-    return "triggerDate is required to resolve a relative duration";
-  }
-  return "automatic resolution could not derive a date";
+if (dateIsReviewerAsserted) {
+  ...buildReviewerAssertedDateFields(...)
+} else {
+  ...buildComputedDateFields(proposal)
 }
 ```
 
-Same pattern for `handleSplit` (line 935) and `addManualRecord` (line 359).
-
-Unit tests:
+`buildReviewerAssertedDateFields` auto-populates a citation:
 ```typescript
-// src/modules/review/service.test.ts — "no reviewer_asserted record can have empty citations"
-expect(result.records[0]!.dateProvenance).toBe("reviewer_asserted");
-expect(result.records[0]!.citations.length).toBeGreaterThan(0);
+// src/modules/review/service.ts:189-207
+function buildReviewerAssertedDateFields(
+  reviewerId: string,
+  deadlineDate: string,
+  adjustedDate: string,
+  reason: string,
+  baseCitations?: readonly string[],
+): ReviewerAssertedDateFields {
+  const citation =
+    `reviewer_asserted: date ${deadlineDate} supplied by ${reviewerId} — ${reason}`;
+  return {
+    dateProvenance: "reviewer_asserted",
+    deadlineDate,
+    adjustedDate,
+    citations: [citation, ...(baseCitations ?? [])],
+  };
+}
 ```
 
+Three unit tests enforce structural impossibility:
 ```typescript
-// src/modules/review/service.test.ts — "manual_add sets dateProvenance = reviewer_asserted with citation"
-expect(result.record.citations[0]).toContain("reviewer_asserted");
-expect(result.record.citations[0]).toContain("reviewer-manual");
-expect(result.record.citations[0]).toContain("manual_add");
+// src/modules/review/service.test.ts
+it("unresolved proposal cannot produce dateProvenance = computed", ...)
+it("accept with empty citations cannot produce dateProvenance = computed", ...)
+it("accept with empty ruleIds cannot produce dateProvenance = computed", ...)
 ```
 
-### Claim 12: Provenance sheet renders dateProvenance prominently
+### Claim 11: Computed path exercised end-to-end
+
+Integration test uploads simple-bill.txt, accepts the resolved "July 1, 2025" proposal, and asserts the full computed chain:
+
+```typescript
+// test/integration/gate11.test.ts:612-736
+it("computed path: accept a resolved proposal → dateProvenance 'computed' with full provenance", async () => {
+  ...
+  // Find the resolved fixed-date proposal ("July 1, 2025")
+  const resolved = proposalsBody.proposals.find(
+    (p) => p.resolved && p.statutoryDate && p.ruleIds.length > 0,
+  );
+  ...
+  // Accept it — the computed path
+  ...body: JSON.stringify({ action: "accept", reviewerId: "reviewer-gate11-computed" })...
+
+  // THE CLAIM: dateProvenance is "computed" — statutorily derived, not reviewer-asserted
+  expect(record.dateProvenance).toBe("computed");
+
+  // Full provenance chain present
+  expect(record.ruleIds.length).toBeGreaterThan(0);
+  expect(record.citations.length).toBeGreaterThan(0);
+  expect(record.packVersion).toBeTruthy();
+  expect(record.deadlineDate).toBe(resolved!.statutoryDate);
+
+  // Provenance sheet
+  expect(p.dateProvenance).toBe("computed");
+  expect(p.quotedSpan.text).toContain("July 1, 2025");
+  expect(p.anchoringMethod).toBeTruthy();
+  expect(p.deterministicParseResult).toBeTruthy();
+  expect(p.reviewAction).toBe("accept");
+});
+```
+
+Actual computed register row:
+```json
+{
+  "deadlineDate": "2025-07-01",
+  "adjustedDate": "2025-07-01",
+  "dateProvenance": "computed",
+  "ruleIds": ["verbatim-date", "va-1-210-E-evaluated-no-adjustment"],
+  "citations": [
+    "date stated in instrument: 'July 1, 2025'",
+    "Va. Code § 1-210(E) evaluated — date falls on a business day, no adjustment required"
+  ],
+  "packVersion": "us-va/v1"
+}
+```
+
+Actual computed provenance sheet:
+```json
+{
+  "quotedSpan": { "text": "July 1, 2025", "normalizedStart": 35, "normalizedEnd": 47 },
+  "anchoringMethod": "exact",
+  "deterministicParseResult": { "expression": { "kind": "fixed_date", "month": 7, "day": 1, "year": 2025 } },
+  "packVersion": "us-va/v1",
+  "ruleIds": ["verbatim-date", "va-1-210-E-evaluated-no-adjustment"],
+  "citations": ["date stated in instrument: 'July 1, 2025'", "Va. Code § 1-210(E) evaluated — date falls on a business day, no adjustment required"],
+  "dateProvenance": "computed",
+  "reviewAction": "accept",
+  "reviewDiff": []
+}
+```
+
+### Claim 12: Migration 0017 fixed 17 mislabelled rows
+
+Migration 0016 defaulted `date_provenance` to `'computed'` for all existing rows. This mislabelled reviewer-supplied dates as statutorily derived. Migration 0017 reclassifies them and recovers reviewer identity from the review_events table:
+
+```sql
+-- src/platform/db/migrations/0017_fix_mislabelled_date_provenance.sql:13-28
+UPDATE register_records rr
+SET
+  date_provenance = 'reviewer_asserted',
+  citations = jsonb_build_array(
+    'reviewer_asserted: date ' || rr.deadline_date
+    || ' supplied by ' || re.reviewer_id
+    || ' via ' || re.action
+    || ' — migrated: row was mislabelled as computed by migration 0016'
+  )
+FROM review_events re
+WHERE rr.review_event_id = re.event_id
+  AND rr.date_provenance = 'computed'
+  AND (
+    rr.citations = '[]'::jsonb
+    OR re.action IN ('edit_and_accept', 'split', 'manual_add')
+  );
+```
+
+### Claim 13: Provenance sheet renders dateProvenance prominently
 
 `dateProvenance` appears in the provenance sheet between the pipeline fields and the reviewer fields:
 
@@ -676,13 +760,24 @@ All 5 proposals from the HB 35 PDF are relative durations, all blocked/unresolve
 
 This is correct: HB 35 has no enactment date, so relative durations cannot be resolved. They are all `blocked` (from Module 10) and `ambiguous` (from Module 9 evaluator). The only way to approve them is `edit_and_accept`, where the reviewer provides the date and takes responsibility. The register row now records that the date is `reviewer_asserted` and carries a citation explaining why.
 
+## Known limitations
+
+**H-8 — No stable duty key.** The register has no duty-level identity independent
+of which upload produced the record. The same bill uploaded twice — by a
+colleague, or re-fetched from LIS — produces duplicate register entries that a
+reviewer must disambiguate by reading. Evidence: 8 computed register records
+exist from 8 separate uploads of simple-bill.txt, all describing the same
+obligation ("July 1, 2025" effective date). A duty key such as
+`(legalIdentity + structuralPath + normalised deliverable + actor)` would allow
+deduplication, but this also affects re-run behaviour, monitoring, and calendar
+sync idempotency (all out-of-scope per §5). The duty key is a design decision
+that should be settled deliberately, not patched. Ref: `docs/00-review-v1.md` H-8.
+
 ## Test results
 
-- **600 unit tests** — 42 files, all passing (5 new date provenance tests)
-- **94 integration tests** — gates 1–11, all passing
-- **20 review unit tests** (service.test.ts)
-- **11 gate11 integration tests** (updated with dateProvenance assertions)
+- **603 unit tests** — 42 files, all passing (23 review service tests, including 3 structural dateProvenance enforcement tests)
+- **95 integration tests** — gates 1–11, all passing (12 gate11 tests, including computed-path end-to-end)
 - Typecheck: clean
 - Lint: clean
 - Docker build: clean
-- Migrations 0015 + 0016: applied successfully
+- Migrations 0015, 0016, 0017: applied successfully
