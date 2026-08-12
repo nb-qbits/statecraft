@@ -12,6 +12,10 @@ export type CandidateId = Brand<string, "CandidateId">;
 export type PromptHash = Brand<string, "PromptHash">;
 export type ModelCallId = Brand<string, "ModelCallId">;
 export type AnchorId = Brand<string, "AnchorId">;
+export type ProjectId = Brand<string, "ProjectId">;
+export type AnalysisId = Brand<string, "AnalysisId">;
+export type ReviewEventId = Brand<string, "ReviewEventId">;
+export type RegisterRecordId = Brand<string, "RegisterRecordId">;
 
 export const LegislativeStatus = {
   introduced: "introduced",

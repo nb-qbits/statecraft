@@ -36,7 +36,11 @@
       "Bash(chmod +x /Users/vgrover/Downloads/software/statecraft/scripts/gate9-demo.sh)",
       "Bash(bash scripts/gate9-demo.sh)",
       "Bash(chmod +x /Users/vgrover/Downloads/software/statecraft/scripts/gate10-demo.sh)",
-      "Bash(bash scripts/gate10-demo.sh)"
+      "Bash(bash scripts/gate10-demo.sh)",
+      "Bash(chmod +x /Users/vgrover/Downloads/software/statecraft/scripts/gate11-demo.sh)",
+      "Bash(bash scripts/gate11-demo.sh)",
+      "Bash(chmod +x /Users/vgrover/Downloads/software/statecraft/scripts/demo-computed-path.sh)",
+      "Bash(bash /Users/vgrover/Downloads/software/statecraft/scripts/demo-computed-path.sh)"
     ],
     "deny": [
       "Read(./.env)",

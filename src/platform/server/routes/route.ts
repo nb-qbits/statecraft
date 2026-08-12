@@ -13,7 +13,7 @@ interface RoutingService {
 interface RoutingRepository {
   getAssignmentsByLane(
     lane: Lane,
-    opts: { limit: number; offset: number },
+    opts: { limit: number; offset: number; documentVersionId?: DocumentVersionId },
   ): Promise<LaneAssignment[]>;
 }
 
@@ -95,7 +95,7 @@ export function registerRouteRoutes(
 
   app.get<{
     Params: { lane: string };
-    Querystring: { limit?: string; offset?: string };
+    Querystring: { limit?: string; offset?: string; documentVersionId?: string };
   }>(
     "/api/v1/assignments/lane/:lane",
     async (req, reply) => {
@@ -112,10 +112,13 @@ export function registerRouteRoutes(
 
       const limit = Math.min(parseInt(req.query.limit ?? "50", 10) || 50, 200);
       const offset = parseInt(req.query.offset ?? "0", 10) || 0;
+      const dvFilter = req.query.documentVersionId
+        ? (req.query.documentVersionId as DocumentVersionId)
+        : undefined;
 
       const assignments = await routingRepository.getAssignmentsByLane(
         lane as Lane,
-        { limit, offset },
+        { limit, offset, ...(dvFilter ? { documentVersionId: dvFilter } : {}) },
       );
 
       return reply.status(200).send({

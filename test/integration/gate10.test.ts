@@ -367,11 +367,11 @@ describe("Gate 10 — Lane Router and Coverage Accounting", () => {
     // Collect all unique lanes from the JSONB response
     const lanesInJsonb = [...new Set(jsonbAssignments.map((a) => a.lane))];
 
-    // For each lane, fetch via the normalised GET endpoint and compare
+    // For each lane, fetch via the normalised GET endpoint scoped to this document
     const normalisedAssignments: LaneAssignmentResponse[] = [];
     for (const lane of lanesInJsonb) {
       const laneRes = await fetch(
-        `http://localhost:3000/api/v1/assignments/lane/${lane}?limit=200`,
+        `http://localhost:3000/api/v1/assignments/lane/${lane}?limit=200&documentVersionId=${r.body.documentVersionId}`,
       );
       expect(laneRes.status).toBe(200);
       const laneBody = (await laneRes.json()) as {
@@ -379,11 +379,7 @@ describe("Gate 10 — Lane Router and Coverage Accounting", () => {
         count: number;
         assignments: LaneAssignmentResponse[];
       };
-      // Filter to only this document's assignments
-      const forThisDoc = laneBody.assignments.filter((a) =>
-        jsonbAssignments.some((j) => j.anchorId === a.anchorId),
-      );
-      normalisedAssignments.push(...forThisDoc);
+      normalisedAssignments.push(...laneBody.assignments);
     }
 
     // Sort both sets by anchorId for stable comparison

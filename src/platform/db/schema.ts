@@ -7,3 +7,11 @@ export { grammarResults } from "./grammar-schema.js";
 export { resolutionResults } from "./resolver-schema.js";
 export { evaluationResults } from "./evaluation-schema.js";
 export { routingResults, laneAssignments } from "./routing-schema.js";
+export {
+  projects,
+  analyses,
+  proposals,
+  reviewEvents,
+  registerRecords,
+  idempotencyKeys,
+} from "./review-schema.js";

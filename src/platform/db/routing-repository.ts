@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { routingResults, laneAssignments } from "./routing-schema.js";
 import { documentVersions } from "./ingestion-schema.js";
@@ -48,7 +48,7 @@ export interface RoutingRepository {
   ): Promise<void>;
   getAssignmentsByLane(
     lane: Lane,
-    opts: { limit: number; offset: number },
+    opts: { limit: number; offset: number; documentVersionId?: DocumentVersionId },
   ): Promise<LaneAssignment[]>;
   getAssignmentsByVersion(
     documentVersionId: DocumentVersionId,
@@ -132,12 +132,16 @@ export function createRoutingRepository(
 
     async getAssignmentsByLane(
       lane: Lane,
-      opts: { limit: number; offset: number },
+      opts: { limit: number; offset: number; documentVersionId?: DocumentVersionId },
     ): Promise<LaneAssignment[]> {
+      const conditions = opts.documentVersionId
+        ? and(eq(laneAssignments.lane, lane), eq(laneAssignments.documentVersionId, opts.documentVersionId))
+        : eq(laneAssignments.lane, lane);
+
       const rows = await db
         .select()
         .from(laneAssignments)
-        .where(eq(laneAssignments.lane, lane))
+        .where(conditions)
         .orderBy(laneAssignments.documentVersionId, laneAssignments.anchorId)
         .limit(opts.limit)
         .offset(opts.offset);

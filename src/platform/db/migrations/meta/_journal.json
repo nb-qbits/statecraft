@@ -106,6 +106,27 @@
       "when": 1787200000000,
       "tag": "0014_normalise_lane_assignments",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1787300000000,
+      "tag": "0015_review_workflow",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1787400000000,
+      "tag": "0016_date_provenance",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1787500000000,
+      "tag": "0017_fix_mislabelled_date_provenance",
+      "breakpoints": true
     }
   ]
 }

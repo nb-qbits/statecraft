@@ -36,6 +36,9 @@ import { registerEvaluateRoutes } from "./platform/server/routes/evaluate.js";
 import { createRoutingRepository } from "./platform/db/routing-repository.js";
 import { createRoutingService } from "./modules/routing/service.js";
 import { registerRouteRoutes } from "./platform/server/routes/route.js";
+import { createReviewRepository } from "./platform/db/review-repository.js";
+import { createReviewService } from "./modules/review/service.js";
+import { registerReviewRoutes } from "./platform/server/routes/review.js";
 import { createPlainTextParser } from "./platform/parsers/plain-text-parser.js";
 import { parseDocxAsync } from "./platform/parsers/docx-parser.js";
 import { createSidecarClient, createPdfParser } from "./platform/parsers/pdf-parser.js";
@@ -275,6 +278,32 @@ async function main(): Promise<void> {
   });
 
   registerRouteRoutes(app, routingService, routingRepository, logger);
+
+  const reviewRepository = createReviewRepository(db);
+  const reviewService = createReviewService({
+    reviewRepository,
+    ingestionRepository: repository,
+    parsingRepository,
+    anchoringRepository,
+    grammarRepository,
+    resolverRepository,
+    evaluationRepository,
+    routingRepository,
+    extractionRepository,
+    pipeline: {
+      parse: (dvId) => parsingService.parseDocument(dvId).then(() => {}),
+      scan: (dvId) => scanningService.scanDocument(dvId).then(() => {}),
+      extract: (dvId) => extractionService.extractDocument(dvId).then(() => {}),
+      anchor: (dvId) => anchoringService.anchorDocument(dvId).then(() => {}),
+      parseGrammar: (dvId) => grammarService.parseDocument(dvId).then(() => {}),
+      resolve: (dvId) => resolverService.resolveDocument(dvId).then(() => {}),
+      evaluate: (dvId) => evaluationService.evaluateDocument(dvId).then(() => {}),
+      route: (dvId) => routingService.routeDocument(dvId).then(() => {}),
+    },
+    logger,
+  });
+
+  registerReviewRoutes(app, reviewService, reviewRepository, logger);
 
   await app.listen({ host: env.HOST, port: env.PORT });
   logger.info({ host: env.HOST, port: env.PORT }, "server listening");
