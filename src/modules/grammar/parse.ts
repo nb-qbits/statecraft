@@ -8,7 +8,7 @@ import type {
   TemporalExpression,
 } from "./types.js";
 
-export const GRAMMAR_VERSION = "1.0.0";
+export const GRAMMAR_VERSION = "1.1.0";
 
 export function parseTemporalExpression(span: AnchoredSpan): SpanParseResult {
   const result = parseText(span.text);

@@ -4,7 +4,7 @@ import type { SegmentId, CandidateId } from "../shared/types.js";
 import { SCAN_RULES } from "./rules.js";
 import type { CandidateMatch, SegmentScanResult } from "./types.js";
 
-export const SCANNER_VERSION = "1.0.0";
+export const SCANNER_VERSION = "1.1.0";
 
 export function computeCandidateId(
   segmentId: SegmentId,
@@ -38,9 +38,25 @@ export function scanSegment(
     };
   }
 
-  const suppressionRule = SCAN_RULES.find(r => r.isSuppression);
-  const isFullySuppressed =
-    suppressionRule !== undefined && suppressionRule.pattern.test(normalizedText);
+  let isFullySuppressed = false;
+  const suppressionZones: Array<{ start: number; end: number }> = [];
+
+  for (const rule of SCAN_RULES) {
+    if (!rule.isSuppression) continue;
+
+    if (!rule.pattern.global) {
+      const regex = new RegExp(rule.pattern.source, rule.pattern.flags);
+      if (regex.test(normalizedText)) {
+        isFullySuppressed = true;
+      }
+    } else {
+      const regex = new RegExp(rule.pattern.source, rule.pattern.flags);
+      let m: RegExpExecArray | null;
+      while ((m = regex.exec(normalizedText)) !== null) {
+        suppressionZones.push({ start: m.index, end: m.index + m[0].length });
+      }
+    }
+  }
 
   const candidates: CandidateMatch[] = [];
 
@@ -54,6 +70,10 @@ export function scanSegment(
       const matchStart = match.index;
       const matchEnd = match.index + match[0].length;
 
+      const inZone = suppressionZones.some(
+        z => matchStart >= z.start && matchEnd <= z.end,
+      );
+
       candidates.push({
         candidateId: computeCandidateId(segmentId, rule.ruleId, matchStart, matchEnd),
         segmentId,
@@ -62,7 +82,7 @@ export function scanSegment(
         matchedText: match[0],
         matchStart,
         matchEnd,
-        suppressed: isFullySuppressed,
+        suppressed: isFullySuppressed || inZone,
       });
     }
   }

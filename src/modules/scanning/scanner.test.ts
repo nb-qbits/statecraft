@@ -65,7 +65,7 @@ describe("deriveCoverageState", () => {
 
 describe("scanSegment", () => {
   it("has a scanner version", () => {
-    expect(SCANNER_VERSION).toBe("1.0.0");
+    expect(SCANNER_VERSION).toBe("1.1.0");
   });
 
   it("returns screened_no_candidate for empty text", () => {
@@ -268,6 +268,57 @@ describe("scanSegment", () => {
       expect(result.coverageState).toBe(CoverageState.candidates_found);
       const dates = result.candidates.filter(c => c.kind === "date" && !c.suppressed);
       expect(dates.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe("metadata header suppression", () => {
+    it("suppresses dates in 'Offered <date>' metadata lines", () => {
+      const text = "HOUSE BILL NO. 1456 Offered January 22, 2026 Patron -- Walker";
+      const result = scanSegment(SEG, text);
+      const dates = result.candidates.filter(c => c.kind === "date");
+      expect(dates).toHaveLength(1);
+      expect(dates[0]!.matchedText).toBe("January 22, 2026");
+      expect(dates[0]!.suppressed).toBe(true);
+    });
+
+    it("suppresses dates in 'Prefiled <date>' metadata lines", () => {
+      const text = "SENATE BILL NO. 21 Offered January 14, 2026 Prefiled November 17, 2025";
+      const result = scanSegment(SEG, text);
+      const dates = result.candidates.filter(c => c.kind === "date");
+      expect(dates).toHaveLength(2);
+      for (const d of dates) {
+        expect(d.suppressed).toBe(true);
+      }
+    });
+
+    it("does not suppress dates outside metadata context", () => {
+      const text =
+        "HOUSE BILL NO. 1456 Offered January 22, 2026 Patron -- Walker " +
+        "Be it enacted by the General Assembly of Virginia: " +
+        "This act shall become effective on July 1, 2026.";
+      const result = scanSegment(SEG, text);
+      const dates = result.candidates.filter(c => c.kind === "date");
+      const suppressed = dates.filter(c => c.suppressed);
+      const live = dates.filter(c => !c.suppressed);
+      expect(suppressed).toHaveLength(1);
+      expect(suppressed[0]!.matchedText).toBe("January 22, 2026");
+      expect(live).toHaveLength(1);
+      expect(live[0]!.matchedText).toBe("July 1, 2026");
+    });
+
+    it("segment with only suppressed metadata dates gets screened_no_candidate", () => {
+      const text = "Offered January 14, 2026 Prefiled November 17, 2025";
+      const result = scanSegment(SEG, text);
+      const dates = result.candidates.filter(c => c.kind === "date");
+      expect(dates.every(d => d.suppressed)).toBe(true);
+    });
+
+    it("does not suppress dates that happen to contain month names but are not metadata", () => {
+      const text = "shall submit a report by January 15, 2027.";
+      const result = scanSegment(SEG, text);
+      const dates = result.candidates.filter(c => c.kind === "date");
+      expect(dates).toHaveLength(1);
+      expect(dates[0]!.suppressed).toBe(false);
     });
   });
 

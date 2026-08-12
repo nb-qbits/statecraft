@@ -1,0 +1,82 @@
+HOUSE BILL NO. 1456
+Offered January 22, 2026
+
+A BILL to amend the Code of Virginia by adding in Title 2.2 a chapter numbered 15.2, consisting of sections numbered 2.2-1500 through 2.2-1542, relating to government efficiency; agency reporting requirements; Joint Subcommittee on Government Efficiency established.
+
+Patron -- Walker
+
+Be it enacted by the General Assembly of Virginia:
+
+1. That the Code of Virginia is amended by adding in Title 2.2 a chapter numbered 15.2, consisting of sections numbered 2.2-1500 through 2.2-1542, as follows:
+
+CHAPTER 15.2.
+GOVERNMENT EFFICIENCY AND FISCAL ACCOUNTABILITY.
+
+Article 1.
+General Provisions.
+
+§ 2.2-1500. Short title; purpose.
+
+This chapter may be cited as the Virginia Government Efficiency and Fiscal Accountability Act. The purpose of this chapter is to codify and make permanent the efficiency initiatives established by Executive Orders Number One, Two, Three, Five, Six, and Nine (2026), and to position Virginia as a national leader in government efficiency, fiscal responsibility, and taxpayer accountability.
+
+§ 2.2-1501. Definitions.
+
+As used in this chapter, unless the context requires a different meaning:
+
+"Agency" means any authority, board, department, instrumentality, institution, agency, or other unit of state government in the executive branch listed in the appropriation act.
+
+"Joint Subcommittee" means the Joint Subcommittee on Government Efficiency established pursuant to § 2.2-1510.
+
+Article 2.
+Agency Reporting and Cost Reduction.
+
+§ 2.2-1503. Mandatory cost reduction reports.
+
+Within 90 days of the effective date of this chapter, and annually thereafter by October 1, each agency shall submit a cost reduction report to the Governor and to the Joint Subcommittee identifying cost-saving measures within the agency's jurisdiction. Such report shall include:
+
+1. Total expenditures for the prior fiscal year by category;
+2. Specific cost-saving measures implemented during the reporting period;
+3. Quantified savings attributable to each measure;
+4. Proposed cost-saving measures for the next fiscal year; and
+5. Any barriers to achieving further efficiencies.
+
+Reports shall be submitted concurrently to the Chief Data Officer in the standardized format prescribed pursuant to § 2.2-1540.
+
+§ 2.2-1504. Hiring and procurement review.
+
+Each agency shall, within 60 days of the effective date of this chapter, submit to the Governor a report detailing all positions filled and procurement contracts executed during the prior fiscal year. The report shall identify which positions and contracts are essential to the core mission of the agency and which may be consolidated, eliminated, or renegotiated.
+
+Article 3.
+Technology Systems Audit and Consolidation.
+
+§ 2.2-1520. Technology systems inventory.
+
+Within 180 days of the effective date of this chapter, the Virginia Information Technologies Agency shall submit to the Joint Subcommittee a comprehensive inventory of all agency-specific software systems in use across state government. The inventory shall identify consolidation opportunities where a single system could replace multiple agency-specific systems. The Virginia Information Technologies Agency shall prioritize identification of duplicative systems in the areas of human resources, payroll, financial management, case management, and constituent services.
+
+Article 4.
+Health Financing Task Force.
+
+§ 2.2-1508. Interagency Health Financing Task Force; quarterly reports.
+
+There is hereby established the Interagency Health Financing Task Force within the Office of the Secretary of Health and Human Resources, established to codify and make permanent the initiative established by Executive Order Number Two (2026). The Task Force shall publish quarterly reports on managed care organization performance against benchmarks, submitted to the Governor, the House Committee on Health, Welfare and Institutions, and the Senate Committee on Education and Health.
+
+§ 2.2-1509. Annual report on managed care organization performance.
+
+The Task Force shall publish an annual report on managed care organization performance against benchmarks, submitted to the Governor, the House Committee on Health, Welfare and Institutions, and the Senate Committee on Education and Health.
+
+Article 5.
+Joint Subcommittee on Government Efficiency.
+
+§ 2.2-1510. Joint Subcommittee on Government Efficiency established; membership; duties.
+
+There is hereby established in the legislative branch of state government the Joint Subcommittee on Government Efficiency. The Joint Subcommittee shall review and evaluate the efficiency and effectiveness of state government operations and recommend measures to reduce waste, duplication, and unnecessary expenditures.
+
+2. That the provisions of this act shall become effective on July 1, 2026.
+
+3. That the initial cost reduction reports required by § 2.2-1503 shall be submitted within 90 days of the effective date of this act.
+
+4. That the initial hiring and procurement review required by § 2.2-1504 shall be submitted within 60 days of the effective date of this act.
+
+5. That the initial quarterly report of the Interagency Health Financing Task Force required by § 2.2-1508 shall be submitted by October 1, 2026.
+
+6. That the initial annual report on managed care organization performance required by § 2.2-1509 shall be submitted by January 1, 2027.

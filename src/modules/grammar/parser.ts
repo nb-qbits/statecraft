@@ -1,9 +1,11 @@
 import { CstParser } from "chevrotain";
 import {
-  Within, NoLongerThan, Every, After, Of, From, The,
+  Within, NoLongerThan, NoLaterThan, OnOrBefore, BecomesEffective,
+  Every, After, Of, From, The, This, On, By,
   EffectiveDate, Enactment, Passage,
   Calendar, Business, Working,
   Days, Hours, Month,
+  Act, Chapter, Section,
   NumberWord, NumberLiteral, Comma,
   allTokens,
 } from "./lexer.js";
@@ -18,6 +20,8 @@ export class TemporalParser extends CstParser {
     this.OR([
       { ALT: () => this.SUBRULE(this.recurrenceExpression) },
       { ALT: () => this.SUBRULE(this.relativeDuration) },
+      { ALT: () => this.SUBRULE(this.deadlineExpression) },
+      { ALT: () => this.SUBRULE(this.effectiveOnExpression) },
       { ALT: () => this.SUBRULE(this.fixedDate) },
     ]);
   });
@@ -27,6 +31,21 @@ export class TemporalParser extends CstParser {
     this.CONSUME(NumberLiteral, { LABEL: "day" });
     this.CONSUME(Comma);
     this.CONSUME2(NumberLiteral, { LABEL: "year" });
+  });
+
+  deadlineExpression = this.RULE("deadlineExpression", () => {
+    this.OR([
+      { ALT: () => this.CONSUME(By) },
+      { ALT: () => this.CONSUME(NoLaterThan) },
+      { ALT: () => this.CONSUME(OnOrBefore) },
+    ]);
+    this.SUBRULE(this.fixedDate);
+  });
+
+  effectiveOnExpression = this.RULE("effectiveOnExpression", () => {
+    this.CONSUME(BecomesEffective);
+    this.CONSUME(On);
+    this.SUBRULE(this.fixedDate);
   });
 
   relativeDuration = this.RULE("relativeDuration", () => {
@@ -73,6 +92,7 @@ export class TemporalParser extends CstParser {
     this.SUBRULE(this.preposition);
     this.OPTION(() => this.CONSUME(The));
     this.SUBRULE(this.referenceEvent);
+    this.OPTION2(() => this.SUBRULE(this.trailingScope));
   });
 
   preposition = this.RULE("preposition", () => {
@@ -88,6 +108,16 @@ export class TemporalParser extends CstParser {
       { ALT: () => this.CONSUME(EffectiveDate) },
       { ALT: () => this.CONSUME(Enactment) },
       { ALT: () => this.CONSUME(Passage) },
+    ]);
+  });
+
+  trailingScope = this.RULE("trailingScope", () => {
+    this.CONSUME(Of);
+    this.CONSUME(This);
+    this.OR([
+      { ALT: () => this.CONSUME(Act) },
+      { ALT: () => this.CONSUME(Chapter) },
+      { ALT: () => this.CONSUME(Section) },
     ]);
   });
 }

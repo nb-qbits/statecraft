@@ -17,6 +17,11 @@ services:
       S3_BUCKET: "policyaction"
       S3_FORCE_PATH_STYLE: "true"
       SIDECAR_URL: "http://sidecar:8000"
+      MODEL_PROVIDER: "${MODEL_PROVIDER:-}"
+      MODEL_API_KEY: "${MODEL_API_KEY:-}"
+      MODEL_BASE_URL: "${MODEL_BASE_URL:-}"
+      MODEL_ID: "${MODEL_ID:-}"
+      EVALUATOR_MODEL_ID: "${EVALUATOR_MODEL_ID:-}"
       LOG_LEVEL: "info"
     depends_on:
       postgres:

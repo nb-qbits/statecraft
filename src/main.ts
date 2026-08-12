@@ -18,6 +18,7 @@ import { createScanningService } from "./modules/scanning/service.js";
 import { createExtractionRepository } from "./platform/db/extraction-repository.js";
 import { createExtractionService } from "./modules/extraction/service.js";
 import { createFixtureModelGateway } from "./modules/extraction/fixture-model-gateway.js";
+import { createLiveModelGateway } from "./modules/extraction/live-model-gateway.js";
 import { registerExtractionRoutes } from "./platform/server/routes/extract.js";
 import { createAnchoringRepository } from "./platform/db/anchoring-repository.js";
 import { createAnchoringService } from "./modules/anchoring/service.js";
@@ -39,6 +40,8 @@ import { registerRouteRoutes } from "./platform/server/routes/route.js";
 import { createReviewRepository } from "./platform/db/review-repository.js";
 import { createReviewService } from "./modules/review/service.js";
 import { registerReviewRoutes } from "./platform/server/routes/review.js";
+import { registerAnalyzeRoutes } from "./platform/server/routes/analyze.js";
+import { registerFindingsRoutes } from "./platform/server/routes/findings.js";
 import { createPlainTextParser } from "./platform/parsers/plain-text-parser.js";
 import { parseDocxAsync } from "./platform/parsers/docx-parser.js";
 import { createSidecarClient, createPdfParser } from "./platform/parsers/pdf-parser.js";
@@ -123,75 +126,35 @@ async function main(): Promise<void> {
 
   const extractionRepository = createExtractionRepository(db);
 
-  const PH = "ph_fixture" as import("./modules/shared/types.js").PromptHash;
+  const modelGateway = (() => {
+    if (env.MODEL_PROVIDER && env.MODEL_API_KEY) {
+      logger.info({ provider: env.MODEL_PROVIDER }, "live model gateway enabled");
+      return createLiveModelGateway({
+        provider: env.MODEL_PROVIDER,
+        apiKey: env.MODEL_API_KEY,
+        baseUrl: env.MODEL_BASE_URL,
+      });
+    }
 
-  const fixtureWithin30Days = {
-    proposals: [
-      { segmentId: "seg_placeholder", quotedText: "within 30 days", kind: "duration" },
-      { segmentId: "seg_placeholder", quotedText: "no longer than seven days", kind: "duration" },
-    ],
-  };
+    logger.info("no MODEL_PROVIDER configured — using fixture model gateway");
+    const PH = "ph_fixture" as import("./modules/shared/types.js").PromptHash;
+    const f = (proposals: Array<{ segmentId: string; quotedText: string; kind: string }>) => ({
+      proposals,
+    });
+    const seg = "seg_placeholder";
+    return createFixtureModelGateway([
+      { promptHash: PH, segmentText: "within 30 days without approval from the regional administrator", responsePayload: JSON.stringify(f([{ segmentId: seg, quotedText: "within 30 days", kind: "duration" }, { segmentId: seg, quotedText: "no longer than seven days", kind: "duration" }])), parsedContent: f([{ segmentId: seg, quotedText: "within 30 days", kind: "duration" }, { segmentId: seg, quotedText: "no longer than seven days", kind: "duration" }]) },
+      { promptHash: PH, segmentText: "every two business days", responsePayload: JSON.stringify(f([{ segmentId: seg, quotedText: "every two business days", kind: "duration" }, { segmentId: seg, quotedText: "within one working day", kind: "duration" }, { segmentId: seg, quotedText: "within 24 hours", kind: "duration" }])), parsedContent: f([{ segmentId: seg, quotedText: "every two business days", kind: "duration" }, { segmentId: seg, quotedText: "within one working day", kind: "duration" }, { segmentId: seg, quotedText: "within 24 hours", kind: "duration" }]) },
+      { promptHash: PH, segmentText: "medical evaluation and a mental health evaluation within one workday", responsePayload: JSON.stringify(f([{ segmentId: seg, quotedText: "within five business days of such placement", kind: "duration" }])), parsedContent: f([{ segmentId: seg, quotedText: "within five business days of such placement", kind: "duration" }]) },
+      { promptHash: PH, segmentText: "within 30 days after the effective date of this act", responsePayload: JSON.stringify(f([{ segmentId: seg, quotedText: "within 30 days", kind: "duration" }, { segmentId: seg, quotedText: "effective date of this act", kind: "effective_date" }])), parsedContent: f([{ segmentId: seg, quotedText: "within 30 days", kind: "duration" }, { segmentId: seg, quotedText: "effective date of this act", kind: "effective_date" }]) },
+      { promptHash: PH, segmentText: "shall become effective on July 1, 2025", responsePayload: JSON.stringify(f([{ segmentId: seg, quotedText: "July 1, 2025", kind: "effective_date" }])), parsedContent: f([{ segmentId: seg, quotedText: "July 1, 2025", kind: "effective_date" }]) },
+      { promptHash: PH, segmentText: "sometime next spring", responsePayload: JSON.stringify(f([{ segmentId: seg, quotedText: "sometime next spring", kind: "temporal_constraint" }, { segmentId: seg, quotedText: "as soon as practicable", kind: "duration" }])), parsedContent: f([{ segmentId: seg, quotedText: "sometime next spring", kind: "temporal_constraint" }, { segmentId: seg, quotedText: "as soon as practicable", kind: "duration" }]) },
+      { promptHash: PH, segmentText: "within a reasonable period", responsePayload: JSON.stringify(f([{ segmentId: seg, quotedText: "within a reasonable period", kind: "duration" }, { segmentId: seg, quotedText: "30", kind: "duration" }])), parsedContent: f([{ segmentId: seg, quotedText: "within a reasonable period", kind: "duration" }, { segmentId: seg, quotedText: "30", kind: "duration" }]) },
+      { promptHash: PH, segmentText: "first day of the fourth month following adjournment", responsePayload: JSON.stringify(f([{ segmentId: seg, quotedText: "the first day of the fourth month following adjournment", kind: "temporal_constraint" }])), parsedContent: f([{ segmentId: seg, quotedText: "the first day of the fourth month following adjournment", kind: "temporal_constraint" }]) },
+      { promptHash: PH, segmentText: "__no_match__", responsePayload: JSON.stringify(f([])), parsedContent: f([]) },
+    ]);
+  })();
 
-  const fixtureWorkingDays = {
-    proposals: [
-      { segmentId: "seg_placeholder", quotedText: "every two business days", kind: "duration" },
-      { segmentId: "seg_placeholder", quotedText: "within one working day", kind: "duration" },
-      { segmentId: "seg_placeholder", quotedText: "within 24 hours", kind: "duration" },
-    ],
-  };
-
-  const fixtureMedicalEval = {
-    proposals: [
-      { segmentId: "seg_placeholder", quotedText: "within five business days of such placement", kind: "duration" },
-    ],
-  };
-
-  const fixtureSimpleBill = {
-    proposals: [
-      { segmentId: "seg_placeholder", quotedText: "within 30 days", kind: "duration" },
-      { segmentId: "seg_placeholder", quotedText: "effective date of this act", kind: "effective_date" },
-    ],
-  };
-
-  const fixtureEffectiveDate = {
-    proposals: [
-      { segmentId: "seg_placeholder", quotedText: "July 1, 2025", kind: "effective_date" },
-    ],
-  };
-
-  const fixtureAdversarialVague = {
-    proposals: [
-      { segmentId: "seg_placeholder", quotedText: "sometime next spring", kind: "temporal_constraint" },
-      { segmentId: "seg_placeholder", quotedText: "as soon as practicable", kind: "duration" },
-    ],
-  };
-
-  const fixtureAdversarialAmbiguous = {
-    proposals: [
-      { segmentId: "seg_placeholder", quotedText: "within a reasonable period", kind: "duration" },
-      { segmentId: "seg_placeholder", quotedText: "30", kind: "duration" },
-    ],
-  };
-
-  const fixtureAdversarialComplex = {
-    proposals: [
-      { segmentId: "seg_placeholder", quotedText: "the first day of the fourth month following adjournment", kind: "temporal_constraint" },
-    ],
-  };
-
-  const emptyFixture = { proposals: [] };
-
-  const modelGateway = createFixtureModelGateway([
-    { promptHash: PH, segmentText: "within 30 days without approval from the regional administrator", responsePayload: JSON.stringify(fixtureWithin30Days), parsedContent: fixtureWithin30Days },
-    { promptHash: PH, segmentText: "every two business days", responsePayload: JSON.stringify(fixtureWorkingDays), parsedContent: fixtureWorkingDays },
-    { promptHash: PH, segmentText: "medical evaluation and a mental health evaluation within one workday", responsePayload: JSON.stringify(fixtureMedicalEval), parsedContent: fixtureMedicalEval },
-    { promptHash: PH, segmentText: "within 30 days after the effective date of this act", responsePayload: JSON.stringify(fixtureSimpleBill), parsedContent: fixtureSimpleBill },
-    { promptHash: PH, segmentText: "shall become effective on July 1, 2025", responsePayload: JSON.stringify(fixtureEffectiveDate), parsedContent: fixtureEffectiveDate },
-    { promptHash: PH, segmentText: "sometime next spring", responsePayload: JSON.stringify(fixtureAdversarialVague), parsedContent: fixtureAdversarialVague },
-    { promptHash: PH, segmentText: "within a reasonable period", responsePayload: JSON.stringify(fixtureAdversarialAmbiguous), parsedContent: fixtureAdversarialAmbiguous },
-    { promptHash: PH, segmentText: "first day of the fourth month following adjournment", responsePayload: JSON.stringify(fixtureAdversarialComplex), parsedContent: fixtureAdversarialComplex },
-    { promptHash: PH, segmentText: "__no_match__", responsePayload: JSON.stringify(emptyFixture), parsedContent: emptyFixture },
-  ]);
   const extractionService = createExtractionService({
     ingestionRepository: repository,
     parsingRepository,
@@ -236,21 +199,30 @@ async function main(): Promise<void> {
   registerResolveRoutes(app, resolverService, logger);
 
   const evaluationRepository = createEvaluationRepository(db);
-  const evaluatorFixture = {
-    verdict: "ambiguous",
-    reasoning: "fixture evaluator — residual entailment not assessed in fixture mode",
-  };
-  const evaluatorModelGateway = createFixtureModelGateway([
-    {
-      promptHash: SUPPORT_EVALUATION_PROMPT.promptHash,
-      segmentText: "__eval_match__",
-      responsePayload: JSON.stringify(evaluatorFixture),
-      parsedContent: evaluatorFixture,
-    },
-  ]);
+  const evaluatorModelGateway = (() => {
+    if (env.MODEL_PROVIDER && env.MODEL_API_KEY) {
+      return createLiveModelGateway({
+        provider: env.MODEL_PROVIDER,
+        apiKey: env.MODEL_API_KEY,
+        baseUrl: env.MODEL_BASE_URL,
+      });
+    }
+    const evaluatorFixture = {
+      verdict: "ambiguous",
+      reasoning: "fixture evaluator — residual entailment not assessed in fixture mode",
+    };
+    return createFixtureModelGateway([
+      {
+        promptHash: SUPPORT_EVALUATION_PROMPT.promptHash,
+        segmentText: "__eval_match__",
+        responsePayload: JSON.stringify(evaluatorFixture),
+        parsedContent: evaluatorFixture,
+      },
+    ]);
+  })();
   const supportEvaluator = createSupportEvaluator(
     evaluatorModelGateway,
-    env.EVALUATOR_MODEL_ID ?? "fixture-evaluator",
+    env.EVALUATOR_MODEL_ID ?? env.MODEL_ID ?? "fixture-evaluator",
   );
   const evaluationService = createEvaluationService({
     ingestionRepository: repository,
@@ -279,6 +251,17 @@ async function main(): Promise<void> {
 
   registerRouteRoutes(app, routingService, routingRepository, logger);
 
+  const pipelineServices = {
+    parse: (dvId: import("./modules/shared/types.js").DocumentVersionId) => parsingService.parseDocument(dvId).then(() => {}),
+    scan: (dvId: import("./modules/shared/types.js").DocumentVersionId) => scanningService.scanDocument(dvId).then(() => {}),
+    extract: (dvId: import("./modules/shared/types.js").DocumentVersionId) => extractionService.extractDocument(dvId).then(() => {}),
+    anchor: (dvId: import("./modules/shared/types.js").DocumentVersionId) => anchoringService.anchorDocument(dvId).then(() => {}),
+    parseGrammar: (dvId: import("./modules/shared/types.js").DocumentVersionId) => grammarService.parseDocument(dvId).then(() => {}),
+    resolve: (dvId: import("./modules/shared/types.js").DocumentVersionId) => resolverService.resolveDocument(dvId).then(() => {}),
+    evaluate: (dvId: import("./modules/shared/types.js").DocumentVersionId) => evaluationService.evaluateDocument(dvId).then(() => {}),
+    route: (dvId: import("./modules/shared/types.js").DocumentVersionId) => routingService.routeDocument(dvId).then(() => {}),
+  };
+
   const reviewRepository = createReviewRepository(db);
   const reviewService = createReviewService({
     reviewRepository,
@@ -290,20 +273,37 @@ async function main(): Promise<void> {
     evaluationRepository,
     routingRepository,
     extractionRepository,
-    pipeline: {
-      parse: (dvId) => parsingService.parseDocument(dvId).then(() => {}),
-      scan: (dvId) => scanningService.scanDocument(dvId).then(() => {}),
-      extract: (dvId) => extractionService.extractDocument(dvId).then(() => {}),
-      anchor: (dvId) => anchoringService.anchorDocument(dvId).then(() => {}),
-      parseGrammar: (dvId) => grammarService.parseDocument(dvId).then(() => {}),
-      resolve: (dvId) => resolverService.resolveDocument(dvId).then(() => {}),
-      evaluate: (dvId) => evaluationService.evaluateDocument(dvId).then(() => {}),
-      route: (dvId) => routingService.routeDocument(dvId).then(() => {}),
-    },
+    pipeline: pipelineServices,
     logger,
   });
 
   registerReviewRoutes(app, reviewService, reviewRepository, logger);
+
+  registerAnalyzeRoutes(app, {
+    ingestionRepository: repository,
+    parsingRepository,
+    scanningRepository,
+    anchoringRepository,
+    grammarRepository,
+    resolverRepository,
+    evaluationRepository,
+    routingRepository,
+    reviewRepository,
+    pipeline: pipelineServices,
+    logger,
+  });
+
+  registerFindingsRoutes(app, {
+    ingestionRepository: repository,
+    parsingRepository,
+    anchoringRepository,
+    grammarRepository,
+    resolverRepository,
+    evaluationRepository,
+    routingRepository,
+    reviewRepository,
+    logger,
+  });
 
   await app.listen({ host: env.HOST, port: env.PORT });
   logger.info({ host: env.HOST, port: env.PORT }, "server listening");

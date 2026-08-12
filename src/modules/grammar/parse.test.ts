@@ -13,7 +13,7 @@ function span(text: string): AnchoredSpan {
 
 describe("grammar version", () => {
   it("exports a version string", () => {
-    expect(GRAMMAR_VERSION).toBe("1.0.0");
+    expect(GRAMMAR_VERSION).toBe("1.1.0");
   });
 });
 
@@ -167,6 +167,131 @@ describe("recurrence", () => {
       frequency: "every",
       quantity: 30, unit: "days", dayKind: null,
     });
+  });
+});
+
+describe("deadline expressions — by/no later than/on or before", () => {
+  it("parses 'by November 1, 2026'", () => {
+    const r = parseTemporalExpression(span("by November 1, 2026"));
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "fixed_date", month: 11, day: 1, year: 2026,
+    });
+  });
+
+  it("parses 'No later than November 1, 2026'", () => {
+    const r = parseTemporalExpression(span("No later than November 1, 2026"));
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "fixed_date", month: 11, day: 1, year: 2026,
+    });
+  });
+
+  it("parses 'no later than July 1, 2027'", () => {
+    const r = parseTemporalExpression(span("no later than July 1, 2027"));
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "fixed_date", month: 7, day: 1, year: 2027,
+    });
+  });
+
+  it("parses 'on or before October 1, 2026'", () => {
+    const r = parseTemporalExpression(span("on or before October 1, 2026"));
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "fixed_date", month: 10, day: 1, year: 2026,
+    });
+  });
+
+  it("parses 'by January 1, 2027'", () => {
+    const r = parseTemporalExpression(span("by January 1, 2027"));
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "fixed_date", month: 1, day: 1, year: 2027,
+    });
+  });
+
+  it("rejects 'by February 30, 2026' (invalid date with modifier)", () => {
+    const r = parseTemporalExpression(span("by February 30, 2026"));
+    expect(r.result.parsed).toBe(false);
+  });
+
+  it("rejects 'by sometime' (modifier without valid date)", () => {
+    const r = parseTemporalExpression(span("by sometime"));
+    expect(r.result.parsed).toBe(false);
+  });
+});
+
+describe("effective on expressions", () => {
+  it("parses 'become effective on July 1, 2026'", () => {
+    const r = parseTemporalExpression(span("become effective on July 1, 2026"));
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "fixed_date", month: 7, day: 1, year: 2026,
+    });
+  });
+
+  it("parses 'becomes effective on January 1, 2027'", () => {
+    const r = parseTemporalExpression(span("becomes effective on January 1, 2027"));
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "fixed_date", month: 1, day: 1, year: 2027,
+    });
+  });
+
+  it("rejects 'becomes effective eventually' (no date)", () => {
+    const r = parseTemporalExpression(span("becomes effective eventually"));
+    expect(r.result.parsed).toBe(false);
+  });
+});
+
+describe("trailing scope after reference event", () => {
+  it("parses 'within 90 days of the effective date of this chapter'", () => {
+    const r = parseTemporalExpression(span("within 90 days of the effective date of this chapter"));
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "relative_duration",
+      quantity: 90, unit: "days", dayKind: null,
+      preposition: "of", referenceEvent: "effective_date",
+      boundKind: "within",
+    });
+  });
+
+  it("parses 'within 60 days of the effective date of this act'", () => {
+    const r = parseTemporalExpression(span("within 60 days of the effective date of this act"));
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "relative_duration",
+      quantity: 60, unit: "days", dayKind: null,
+      preposition: "of", referenceEvent: "effective_date",
+      boundKind: "within",
+    });
+  });
+
+  it("parses 'within 180 days of the effective date of this section'", () => {
+    const r = parseTemporalExpression(span("within 180 days of the effective date of this section"));
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "relative_duration",
+      quantity: 180, unit: "days", dayKind: null,
+      preposition: "of", referenceEvent: "effective_date",
+      boundKind: "within",
+    });
+  });
+
+  it("still rejects trailing text not in the grammar", () => {
+    const r = parseTemporalExpression(span("within 30 days of the effective date of this random thing"));
+    expect(r.result.parsed).toBe(false);
   });
 });
 

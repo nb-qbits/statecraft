@@ -47,6 +47,11 @@ const envSchema = z.object({
     .optional()
     .describe("Model identifier for support evaluation — must differ from MODEL_ID for lineage separation"),
 
+  MODEL_PROVIDER: z
+    .enum(["anthropic", "openai"])
+    .optional()
+    .describe("Model provider — when set with MODEL_API_KEY, enables live extraction"),
+
   MODEL_API_KEY: z
     .string()
     .min(1)
@@ -66,10 +71,19 @@ const envSchema = z.object({
 
 export type Env = z.infer<typeof envSchema>;
 
+const OPTIONAL_KEYS = [
+  "OPENSTATES_API_KEY", "MODEL_ID", "EVALUATOR_MODEL_ID",
+  "MODEL_PROVIDER", "MODEL_API_KEY", "MODEL_BASE_URL",
+] as const;
+
 export function validateEnv(
   source: Record<string, string | undefined> = process.env,
 ): Env {
-  const result = envSchema.safeParse(source);
+  const cleaned = { ...source };
+  for (const key of OPTIONAL_KEYS) {
+    if (cleaned[key] === "") cleaned[key] = undefined;
+  }
+  const result = envSchema.safeParse(cleaned);
   if (!result.success) {
     const formatted = result.error.issues
       .map((i) => `  ${i.path.join(".")}: ${i.message}`)

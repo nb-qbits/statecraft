@@ -8,6 +8,12 @@ export const SCAN_RULES: readonly ScanRule[] = [
     pattern: /^\d{4},\s+c\.\s+\d+(?:;\s*\d{4},\s+c\.\s+\d+)*\.?\s*$/,
     isSuppression: true,
   },
+  {
+    ruleId: "suppress.metadata_header",
+    kind: CandidateKind.date,
+    pattern: /(?:Offered|Prefiled)\s+(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},\s*\d{4}/gi,
+    isSuppression: true,
+  },
 
   {
     ruleId: "date.explicit_month_day_year",

@@ -41,7 +41,12 @@
       "Bash(chmod +x /Users/vgrover/Downloads/software/statecraft/scripts/gate11-demo.sh)",
       "Bash(bash scripts/gate11-demo.sh)",
       "Bash(chmod +x /Users/vgrover/Downloads/software/statecraft/scripts/demo-computed-path.sh)",
-      "Bash(bash /Users/vgrover/Downloads/software/statecraft/scripts/demo-computed-path.sh)"
+      "Bash(bash /Users/vgrover/Downloads/software/statecraft/scripts/demo-computed-path.sh)",
+      "WebFetch(domain:lis.virginia.gov)",
+      "WebFetch(domain:legiscan.com)",
+      "WebFetch(domain:lis.blob.core.windows.net)",
+      "Bash(node scripts/verify-live-pipeline.mjs)",
+      "Bash(grep -c '^$' /Users/vgrover/Downloads/software/statecraft/fixtures/documents/hb346-extracted.txt)"
     ],
     "deny": [
       "Read(./.env)",

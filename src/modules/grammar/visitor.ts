@@ -35,6 +35,12 @@ class TemporalVisitor extends BaseCstVisitor {
     if (ctx["relativeDuration"]) {
       return this.visit(ctx["relativeDuration"]!) as TemporalExpression;
     }
+    if (ctx["deadlineExpression"]) {
+      return this.visit(ctx["deadlineExpression"]!) as TemporalExpression;
+    }
+    if (ctx["effectiveOnExpression"]) {
+      return this.visit(ctx["effectiveOnExpression"]!) as TemporalExpression;
+    }
     return this.visit(ctx["fixedDate"]!) as TemporalExpression;
   }
 
@@ -44,6 +50,14 @@ class TemporalVisitor extends BaseCstVisitor {
     const year = parseInt(ctx["year"]![0]!.image, 10);
 
     return { kind: "fixed_date", month: MONTH_MAP[monthStr]!, day, year };
+  }
+
+  deadlineExpression(ctx: Record<string, CstNode[]>): TemporalExpression {
+    return this.visit(ctx["fixedDate"]!) as TemporalExpression;
+  }
+
+  effectiveOnExpression(ctx: Record<string, CstNode[]>): TemporalExpression {
+    return this.visit(ctx["fixedDate"]!) as TemporalExpression;
   }
 
   relativeDuration(ctx: Record<string, CstNode[] | IToken[]>): TemporalExpression {
@@ -130,6 +144,10 @@ class TemporalVisitor extends BaseCstVisitor {
     if (ctx["EffectiveDate"]) return "effective_date";
     if (ctx["Enactment"]) return "enactment";
     return "passage";
+  }
+
+  trailingScope(): void {
+    // consumed by the parser to allow trailing text — no semantic value
   }
 }
 
