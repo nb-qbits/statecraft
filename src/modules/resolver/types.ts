@@ -37,6 +37,13 @@ export interface UnresolvedDate {
 
 export type ResolutionResult = ResolvedDate | UnresolvedDate;
 
+export interface DerivedEffectiveDate {
+  readonly date: string;
+  readonly ruleId: string;
+  readonly citation: string;
+  readonly sessionSource: string;
+}
+
 export interface AnchoredResolution {
   readonly anchorId: AnchorId;
   readonly segmentId: SegmentId;

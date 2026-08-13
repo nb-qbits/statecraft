@@ -52,6 +52,14 @@ export const ActType = {
 } as const;
 export type ActType = (typeof ActType)[keyof typeof ActType];
 
+export interface SessionRecord {
+  readonly sessionType: SessionType;
+  readonly adjournmentDate: string;
+  readonly adjournmentKind: "sine_die" | "scheduled";
+  readonly source: string;
+  readonly retrievedAt: string;
+}
+
 export interface SessionMetadata {
   readonly sessionType: SessionType;
   readonly adjournmentDate: string;
@@ -99,6 +107,7 @@ export interface JurisdictionPack {
   readonly packVersion: string;
   readonly rules: PackRules;
   readonly holidays: HolidayCalendar;
+  getSessionMetadata(session: string): SessionRecord | null;
   deriveEffectiveDate(session: SessionMetadata): EffectiveDateResult;
   adjustForNonBusinessDay(date: string): AdjustedDateResult;
   computeDeadline(

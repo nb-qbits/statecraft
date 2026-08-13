@@ -42,6 +42,12 @@ module report, and STOP. Do not start the next module.
 9. Module reports must quote the actual implementing lines for each gate claim,
 with file and line number — not describe them. A claim without quoted code
 is not evidence.
+10. Never fabricate a factual value — a date, a statutory citation, a legal
+threshold, a session detail, a holiday. If a value is needed and cannot be
+sourced, stop and say so. A plausible value that produces a correct-looking
+result is worse than no value, because nothing downstream can detect it.
+This applies with particular force to jurisdiction pack data, where a
+fabricated fact is indistinguishable from a sourced one once written to file.
 
 ## Scope
 

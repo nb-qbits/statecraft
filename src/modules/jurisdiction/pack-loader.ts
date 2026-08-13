@@ -1,7 +1,7 @@
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { readFileSync, existsSync } from "node:fs";
-import type { JurisdictionPack, PackRules, HolidayCalendar, SessionMetadata, AdjustedDateResult, ComputedDeadline } from "./types.js";
+import type { JurisdictionPack, PackRules, HolidayCalendar, SessionMetadata, SessionRecord, AdjustedDateResult, ComputedDeadline } from "./types.js";
 import { buildDateSet } from "./holidays.js";
 import { deriveEffectiveDate } from "./effective-date.js";
 import { adjustForNonBusinessDay, computeDeadline } from "./time-computation.js";
@@ -37,6 +37,11 @@ export function loadPack(jurisdiction: string, packVersion: string): Jurisdictio
   const holidays = JSON.parse(readFileSync(holidaysPath, "utf-8")) as HolidayCalendar;
   const holidaySet = buildDateSet(holidays);
 
+  const sessionsPath = resolve(packDir, "sessions.json");
+  const sessions: Record<string, SessionRecord> = existsSync(sessionsPath)
+    ? JSON.parse(readFileSync(sessionsPath, "utf-8")) as Record<string, SessionRecord>
+    : {};
+
   const qualifiedVersion = `${jurisdiction}/v${packVersion.split(".")[0]}`;
 
   const pack: JurisdictionPack = {
@@ -44,6 +49,10 @@ export function loadPack(jurisdiction: string, packVersion: string): Jurisdictio
     packVersion: qualifiedVersion,
     rules,
     holidays,
+
+    getSessionMetadata(session: string): SessionRecord | null {
+      return sessions[session] ?? null;
+    },
 
     deriveEffectiveDate(session: SessionMetadata) {
       return deriveEffectiveDate(session);

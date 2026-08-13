@@ -8,10 +8,12 @@ import { resolve, RESOLVER_VERSION } from "./resolve.js";
 import { loadPack } from "../jurisdiction/pack-loader.js";
 import type {
   AnchoredResolution,
+  DerivedEffectiveDate,
   ParsedAnchoredExpression,
   ResolutionInput,
 } from "./types.js";
 import type { TemporalExpression } from "../grammar/types.js";
+import type { SessionMetadata } from "../jurisdiction/types.js";
 
 export { RESOLVER_VERSION };
 
@@ -81,6 +83,36 @@ export function createResolverService(deps: ResolverServiceDeps) {
       const jurisdiction = version.legalIdentity.jurisdiction;
       const pack = await loadPack(jurisdiction, "1");
 
+      let derivedEffectiveDate: DerivedEffectiveDate | undefined;
+      const sessionRecord = pack.getSessionMetadata(version.legalIdentity.session);
+      if (sessionRecord) {
+        const sessionMeta: SessionMetadata = {
+          sessionType: sessionRecord.sessionType,
+          adjournmentDate: sessionRecord.adjournmentDate,
+          actType: "ordinary",
+          specifiedDate: null,
+          passageDate: null,
+        };
+        const edResult = pack.deriveEffectiveDate(sessionMeta);
+        if (edResult.resolved) {
+          derivedEffectiveDate = {
+            date: edResult.date,
+            ruleId: edResult.ruleId,
+            citation: edResult.citation,
+            sessionSource: sessionRecord.source,
+          };
+          logger.info(
+            {
+              documentVersionId,
+              session: version.legalIdentity.session,
+              effectiveDate: edResult.date,
+              ruleId: edResult.ruleId,
+            },
+            "derived effective date from jurisdiction pack",
+          );
+        }
+      }
+
       const resolutions: AnchoredResolution[] = [];
       for (const gr of parsedOnly) {
         if (!gr.result.parsed) continue;
@@ -93,7 +125,7 @@ export function createResolverService(deps: ResolverServiceDeps) {
           expression,
         };
 
-        const result = resolve(pae, suppliedInputs, pack);
+        const result = resolve(pae, suppliedInputs, pack, derivedEffectiveDate);
 
         resolutions.push({
           anchorId: gr.anchorId,

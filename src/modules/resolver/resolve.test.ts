@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { resolve, RESOLVER_VERSION } from "./resolve.js";
-import type { ParsedAnchoredExpression, ResolutionInput } from "./types.js";
+import type { ParsedAnchoredExpression, ResolutionInput, DerivedEffectiveDate } from "./types.js";
 import type { AnchorId, SegmentId } from "../shared/types.js";
 import type { TemporalExpression } from "../grammar/types.js";
 import { loadPack, clearPackCache } from "../jurisdiction/pack-loader.js";
@@ -54,6 +54,7 @@ const testPack: JurisdictionPack = {
     timeComputationRules: [],
   },
   holidays: testHolidays,
+  getSessionMetadata: () => null,
   deriveEffectiveDate: () => ({ resolved: false, reason: "not implemented in test", missingInputs: [] }),
   adjustForNonBusinessDay: (date: string) => adjustForNonBusinessDay(date, holidaySet),
   computeDeadline: (triggerDate: string, days: number, dayKind: "calendar" | "business" | "working") =>
@@ -439,7 +440,172 @@ describe("reproducibility — same inputs produce same output", () => {
 
 describe("resolver version", () => {
   it("exports RESOLVER_VERSION", () => {
-    expect(RESOLVER_VERSION).toBe("1.0.0");
+    expect(RESOLVER_VERSION).toBe("1.1.0");
+  });
+});
+
+describe("derived effective date — auto-trigger for effective_date references", () => {
+  const derivedED: DerivedEffectiveDate = {
+    date: "2026-07-01",
+    ruleId: "va-1-214-A-default",
+    citation: "Va. Code § 1-214(A)",
+    sessionSource: "test fixture — sine die 2026-03-14",
+  };
+
+  it("resolves 'within 90 days of the effective date' using derived effective date", () => {
+    const expr = makeExpr(
+      {
+        kind: "relative_duration",
+        quantity: 90,
+        unit: "days",
+        dayKind: null,
+        preposition: "of",
+        referenceEvent: "effective_date",
+        boundKind: "within",
+      },
+      "within 90 days of the effective date of this chapter",
+    );
+    const result = resolve(expr, [], testPack, derivedED);
+    expect(result.resolved).toBe(true);
+    if (!result.resolved) return;
+    expect(result.statutoryDate).toBe("2026-09-29");
+    expect(result.ruleIds).toContain("va-1-214-A-default");
+    expect(result.ruleIds).toContain("va-1-210-A");
+    expect(result.citations).toContain("Va. Code § 1-214(A)");
+    expect(result.citations).toContain("Va. Code § 1-210(A)");
+  });
+
+  it("resolves 'within 60 days of the effective date' using derived effective date", () => {
+    const expr = makeExpr(
+      {
+        kind: "relative_duration",
+        quantity: 60,
+        unit: "days",
+        dayKind: null,
+        preposition: "of",
+        referenceEvent: "effective_date",
+        boundKind: "within",
+      },
+      "within 60 days of the effective date of this act",
+    );
+    const result = resolve(expr, [], testPack, derivedED);
+    expect(result.resolved).toBe(true);
+    if (!result.resolved) return;
+    expect(result.statutoryDate).toBe("2026-08-30");
+    expect(result.ruleIds).toContain("va-1-214-A-default");
+    expect(result.ruleIds).toContain("va-1-210-A");
+    expect(result.citations).toContain("Va. Code § 1-214(A)");
+    expect(result.citations).toContain("Va. Code § 1-210(A)");
+  });
+
+  it("includes derived effectiveDate input with provenance, not user-supplied", () => {
+    const expr = makeExpr(
+      {
+        kind: "relative_duration",
+        quantity: 30,
+        unit: "days",
+        dayKind: null,
+        preposition: "of",
+        referenceEvent: "effective_date",
+        boundKind: "within",
+      },
+      "within 30 days of the effective date",
+    );
+    const result = resolve(expr, [], testPack, derivedED);
+    expect(result.resolved).toBe(true);
+    if (!result.resolved) return;
+    expect(result.inputs.length).toBe(1);
+    const input = result.inputs[0]!;
+    expect(input.name).toBe("effectiveDate");
+    expect(input.value).toBe("2026-07-01");
+    expect(input.source).toBe("derived: Va. Code § 1-214(A) (adjournment: test fixture — sine die 2026-03-14)");
+    expect(input.authority).toBe("jurisdiction_pack");
+    expect(input.citation).toBe("Va. Code § 1-214(A)");
+  });
+
+  it("explicit triggerDate takes precedence over derived effective date", () => {
+    const trigger: ResolutionInput = {
+      name: "triggerDate",
+      value: "2026-01-01",
+      source: "user_supplied",
+      authority: "user",
+      citation: "user-supplied trigger date",
+    };
+    const expr = makeExpr(
+      {
+        kind: "relative_duration",
+        quantity: 30,
+        unit: "days",
+        dayKind: null,
+        preposition: "of",
+        referenceEvent: "effective_date",
+        boundKind: "within",
+      },
+      "within 30 days of the effective date",
+    );
+    const result = resolve(expr, [trigger], testPack, derivedED);
+    expect(result.resolved).toBe(true);
+    if (!result.resolved) return;
+    expect(result.statutoryDate).toBe("2026-01-31");
+    expect(result.inputs).toEqual([trigger]);
+    expect(result.ruleIds).not.toContain("va-1-214-A-default");
+  });
+
+  it("does NOT apply derived effective date to expressions without referenceEvent", () => {
+    const expr = makeExpr(
+      {
+        kind: "relative_duration",
+        quantity: 30,
+        unit: "days",
+        dayKind: null,
+        preposition: null,
+        referenceEvent: null,
+        boundKind: "within",
+      },
+      "within 30 days",
+    );
+    const result = resolve(expr, [], testPack, derivedED);
+    expect(result.resolved).toBe(false);
+    if (result.resolved) return;
+    expect(result.missingInputs).toContain("triggerDate");
+  });
+
+  it("does NOT apply derived effective date to non-effective_date references", () => {
+    const expr = makeExpr(
+      {
+        kind: "relative_duration",
+        quantity: 30,
+        unit: "days",
+        dayKind: null,
+        preposition: "after",
+        referenceEvent: "enactment",
+        boundKind: "within",
+      },
+      "within 30 days after enactment",
+    );
+    const result = resolve(expr, [], testPack, derivedED);
+    expect(result.resolved).toBe(false);
+    if (result.resolved) return;
+    expect(result.missingInputs).toContain("triggerDate");
+  });
+
+  it("remains unresolved when derivedEffectiveDate not provided", () => {
+    const expr = makeExpr(
+      {
+        kind: "relative_duration",
+        quantity: 90,
+        unit: "days",
+        dayKind: null,
+        preposition: "of",
+        referenceEvent: "effective_date",
+        boundKind: "within",
+      },
+      "within 90 days of the effective date",
+    );
+    const result = resolve(expr, [], testPack);
+    expect(result.resolved).toBe(false);
+    if (result.resolved) return;
+    expect(result.missingInputs).toContain("triggerDate");
   });
 });
 
@@ -472,5 +638,60 @@ describe("real pack integration", () => {
     expect(result.statutoryDate).toBe("2026-07-31");
     expect(result.ruleIds).toContain("va-1-210-A");
     expect(result.packVersion).toBe("us-va/v1");
+  });
+
+  it("session 2026 metadata loads from pack and produces resolved effective date", () => {
+    clearPackCache();
+    const pack = loadPack("us-va", "1.0.0");
+    const sessionRecord = pack.getSessionMetadata("2026");
+    expect(sessionRecord).not.toBeNull();
+    expect(sessionRecord!.sessionType).toBe("regular");
+    expect(sessionRecord!.adjournmentDate).toBe("2026-03-14");
+    expect(sessionRecord!.adjournmentKind).toBe("sine_die");
+    expect(sessionRecord!.source).toBeTruthy();
+    expect(sessionRecord!.retrievedAt).toBeTruthy();
+
+    const edResult = pack.deriveEffectiveDate({
+      sessionType: sessionRecord!.sessionType,
+      adjournmentDate: sessionRecord!.adjournmentDate,
+      actType: "ordinary",
+      specifiedDate: null,
+      passageDate: null,
+    });
+    expect(edResult.resolved).toBe(true);
+    if (!edResult.resolved) return;
+    expect(edResult.date).toBe("2026-07-01");
+    expect(edResult.ruleId).toBe("va-1-214-A-default");
+  });
+
+  it("session with no entry produces null — never a default", () => {
+    clearPackCache();
+    const pack = loadPack("us-va", "1.0.0");
+    const noEntry = pack.getSessionMetadata("2099");
+    expect(noEntry).toBeNull();
+  });
+
+  it("missing session entry leaves effective_date durations unresolved", () => {
+    clearPackCache();
+    const pack = loadPack("us-va", "1.0.0");
+    const expr = makeExpr(
+      {
+        kind: "relative_duration",
+        quantity: 90,
+        unit: "days",
+        dayKind: null,
+        preposition: "of",
+        referenceEvent: "effective_date",
+        boundKind: "within",
+      },
+      "within 90 days of the effective date of this chapter",
+    );
+    // No derivedEffectiveDate — simulating missing session entry
+    const result = resolve(expr, [], pack);
+    expect(result.resolved).toBe(false);
+    if (result.resolved) return;
+    expect(result.missingInputs).toContain("triggerDate");
+    expect(result.warnings.length).toBeGreaterThan(0);
+    expect(result.warnings[0]).toContain("effective_date");
   });
 });

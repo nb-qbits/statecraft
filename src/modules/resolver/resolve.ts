@@ -3,14 +3,16 @@ import type {
   ParsedAnchoredExpression,
   ResolutionInput,
   ResolutionResult,
+  DerivedEffectiveDate,
 } from "./types.js";
 
-export const RESOLVER_VERSION = "1.0.0";
+export const RESOLVER_VERSION = "1.1.0";
 
 export function resolve(
   expr: ParsedAnchoredExpression,
   suppliedInputs: readonly ResolutionInput[],
   pack: JurisdictionPack,
+  derivedEffectiveDate?: DerivedEffectiveDate,
 ): ResolutionResult {
   const { expression } = expr;
 
@@ -18,7 +20,7 @@ export function resolve(
     case "fixed_date":
       return resolveFixedDate(expression, expr, pack);
     case "relative_duration":
-      return resolveRelativeDuration(expression, suppliedInputs, pack);
+      return resolveRelativeDuration(expression, suppliedInputs, pack, derivedEffectiveDate);
     case "recurrence":
       return resolveRecurrence(expression, suppliedInputs);
   }
@@ -78,8 +80,27 @@ function resolveRelativeDuration(
   },
   suppliedInputs: readonly ResolutionInput[],
   pack: JurisdictionPack,
+  derivedEffectiveDate?: DerivedEffectiveDate,
 ): ResolutionResult {
-  const triggerInput = suppliedInputs.find((i) => i.name === "triggerDate");
+  let triggerInput = suppliedInputs.find((i) => i.name === "triggerDate");
+
+  const effectiveDateRefs = ["effective_date"];
+  const referencesEffectiveDate =
+    expression.referenceEvent !== null &&
+    effectiveDateRefs.includes(expression.referenceEvent);
+
+  let derivedInput: ResolutionInput | undefined;
+
+  if (!triggerInput && referencesEffectiveDate && derivedEffectiveDate) {
+    derivedInput = {
+      name: "effectiveDate",
+      value: derivedEffectiveDate.date,
+      source: `derived: ${derivedEffectiveDate.citation} (adjournment: ${derivedEffectiveDate.sessionSource})`,
+      authority: "jurisdiction_pack",
+      citation: derivedEffectiveDate.citation,
+    };
+    triggerInput = { ...derivedInput, name: "triggerDate" };
+  }
 
   if (!triggerInput) {
     const warnings: string[] = [];
@@ -120,8 +141,20 @@ function resolveRelativeDuration(
     dayKind,
   );
 
-  const ruleIds: string[] = [...deadline.ruleIds];
-  const citations: string[] = [...deadline.citations];
+  const ruleIds: string[] = [];
+  const citations: string[] = [];
+
+  if (derivedInput && derivedEffectiveDate) {
+    ruleIds.push(derivedEffectiveDate.ruleId);
+    citations.push(derivedEffectiveDate.citation);
+  }
+
+  ruleIds.push(...deadline.ruleIds);
+  citations.push(...deadline.citations);
+
+  const inputs: ResolutionInput[] = derivedInput
+    ? [derivedInput]
+    : [triggerInput];
 
   return {
     resolved: true,
@@ -131,7 +164,7 @@ function resolveRelativeDuration(
     citations,
     packVersion: pack.packVersion,
     warnings: [],
-    inputs: [triggerInput],
+    inputs,
   };
 }
 
