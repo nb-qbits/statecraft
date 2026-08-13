@@ -64,6 +64,7 @@ export type AnchorResult =
   | {
       anchored: false;
       reason: string;
+      containedBy?: string;
     };
 
 export const SupportLevel = {

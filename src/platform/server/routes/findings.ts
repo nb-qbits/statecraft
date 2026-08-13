@@ -117,11 +117,42 @@ export function registerFindingsRoutes(
         });
 
         const rejectedSpans = anchorResults
-          .filter((a) => !a.result.anchored)
+          .filter((a) => !a.result.anchored
+            && a.result.reason !== "over_extraction_substring"
+            && a.result.reason !== "duplicate_span")
           .map((a) => ({
             quotedText: a.quotedText,
             reason: a.result.anchored === false ? a.result.reason : "unknown",
           }));
+
+        const anchoredBySegment = new Map<string, typeof anchorResults>();
+        for (const a of anchorResults) {
+          if (!a.result.anchored) continue;
+          const group = anchoredBySegment.get(a.segmentId) ?? [];
+          group.push(a);
+          anchoredBySegment.set(a.segmentId, group);
+        }
+
+        const suppressedSpans = anchorResults
+          .filter((a) => !a.result.anchored
+            && (a.result.reason === "over_extraction_substring"
+              || a.result.reason === "duplicate_span"))
+          .map((a) => {
+            let containedBy: string | null = null;
+            if (!a.result.anchored && a.result.reason === "over_extraction_substring") {
+              const siblings = anchoredBySegment.get(a.segmentId) ?? [];
+              const container = siblings.find(
+                (s) => s.quotedText.includes(a.quotedText) && s.quotedText !== a.quotedText,
+              );
+              if (container) containedBy = container.quotedText;
+            }
+            return {
+              quotedText: a.quotedText,
+              segmentId: a.segmentId,
+              reason: (a.result as { reason: string }).reason,
+              containedBy,
+            };
+          });
 
         const coverage = routingResult?.coverage ?? {
           totalSegments: segments.length,
@@ -147,6 +178,7 @@ export function registerFindingsRoutes(
           },
           laneSummary,
           rejectedSpans,
+          suppressedSpans,
         });
       } catch (err) {
         if (err instanceof AppError) {

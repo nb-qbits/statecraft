@@ -49,7 +49,15 @@
       "Bash(grep -c '^$' /Users/vgrover/Downloads/software/statecraft/fixtures/documents/hb346-extracted.txt)",
       "WebFetch(domain:www.vaco.org)",
       "WebFetch(domain:cardinalnews.org)",
-      "WebFetch(domain:sgr.virginia.edu)"
+      "WebFetch(domain:sgr.virginia.edu)",
+      "Bash(mkdir -p /Users/vgrover/Downloads/software/statecraft/web/app/analyze/\\\\[dvId\\\\])",
+      "Bash(mkdir -p /Users/vgrover/Downloads/software/statecraft/web/app/findings/\\\\[dvId\\\\])",
+      "Bash(docker exec *)",
+      "Bash(grep -v \"^$\")",
+      "Bash(npx tsx -e ' *)",
+      "Bash(DATABASE_URL=postgres://postgres:postgres@localhost:5432/policyaction npm run db:migrate)",
+      "Bash(DATABASE_URL=postgresql://policyaction:policyaction@localhost:5432/policyaction npm run db:migrate)",
+      "Bash(PGPASSWORD=policyaction psql -h localhost -U policyaction -d policyaction -c ' *)"
     ],
     "deny": [
       "Read(./.env)",
@@ -68,6 +76,10 @@
       "Bash(pip install*)",
       "Bash(git push*)",
       "Bash(gh *)"
+    ],
+    "additionalDirectories": [
+      "/Users/vgrover/Downloads/software/statecraft/web/app/analyze",
+      "/Users/vgrover/Downloads/software/statecraft/web/app/findings"
     ]
   }
 }

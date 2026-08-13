@@ -134,14 +134,23 @@ export function registerAnalyzeRoutes(
         await pipeline.anchor(dvId);
         const anchorResults = await anchoringRepository.getResultsByVersion(dvId);
         const anchored = anchorResults.filter((a) => a.result.anchored);
-        const rejected = anchorResults.filter((a) => !a.result.anchored);
+        const rejected = anchorResults.filter((a) => !a.result.anchored
+          && a.result.reason !== "over_extraction_substring"
+          && a.result.reason !== "duplicate_span");
+        const overExtractionSuppressed = anchorResults.filter((a) => !a.result.anchored && a.result.reason === "over_extraction_substring");
+        const duplicateSpansSuppressed = anchorResults.filter((a) => !a.result.anchored && a.result.reason === "duplicate_span");
         reply.raw.write(sseEvent({
           stage: "proposed", status: "completed",
           counts: { spansIdentified: anchorResults.length },
         }));
         reply.raw.write(sseEvent({
           stage: "verified", status: "completed",
-          counts: { anchoredToSource: anchored.length, rejected: rejected.length },
+          counts: {
+            anchoredToSource: anchored.length,
+            rejected: rejected.length,
+            overExtractionSuppressed: overExtractionSuppressed.length,
+            duplicateSpansSuppressed: duplicateSpansSuppressed.length,
+          },
         }));
 
         await pipeline.parseGrammar(dvId);
@@ -206,11 +215,20 @@ export function registerAnalyzeRoutes(
 
     const anchorResults = await anchoringRepository.getResultsByVersion(dvId);
     const anchored = anchorResults.filter((a) => a.result.anchored);
-    const rejected = anchorResults.filter((a) => !a.result.anchored);
+    const rejected = anchorResults.filter((a) => !a.result.anchored
+      && a.result.reason !== "over_extraction_substring"
+      && a.result.reason !== "duplicate_span");
+    const overExtractionSuppressed = anchorResults.filter((a) => !a.result.anchored && a.result.reason === "over_extraction_substring");
+    const duplicateSpansSuppressed = anchorResults.filter((a) => !a.result.anchored && a.result.reason === "duplicate_span");
     raw.write(sseEvent({ stage: "proposed", status: "completed", counts: { spansIdentified: anchorResults.length } }));
     raw.write(sseEvent({
       stage: "verified", status: "completed",
-      counts: { anchoredToSource: anchored.length, rejected: rejected.length },
+      counts: {
+        anchoredToSource: anchored.length,
+        rejected: rejected.length,
+        overExtractionSuppressed: overExtractionSuppressed.length,
+        duplicateSpansSuppressed: duplicateSpansSuppressed.length,
+      },
     }));
 
     const grammarResults = await grammarRepository.getResultsByVersion(dvId);

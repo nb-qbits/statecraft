@@ -13,7 +13,7 @@ function span(text: string): AnchoredSpan {
 
 describe("grammar version", () => {
   it("exports a version string", () => {
-    expect(GRAMMAR_VERSION).toBe("1.1.0");
+    expect(GRAMMAR_VERSION).toBe("1.2.0");
   });
 });
 
@@ -295,6 +295,44 @@ describe("trailing scope after reference event", () => {
   });
 });
 
+describe("leading context before deadline keyword", () => {
+  it("parses 'submitted by October 1, 2026'", () => {
+    const r = parseTemporalExpression(span("submitted by October 1, 2026"));
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "fixed_date", month: 10, day: 1, year: 2026,
+    });
+  });
+
+  it("parses 'submitted by January 1, 2027'", () => {
+    const r = parseTemporalExpression(span("submitted by January 1, 2027"));
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "fixed_date", month: 1, day: 1, year: 2027,
+    });
+  });
+
+  it("parses 'must be filed by November 30, 2026' (multiple leading words)", () => {
+    const r = parseTemporalExpression(span("must be filed by November 30, 2026"));
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "fixed_date", month: 11, day: 30, year: 2026,
+    });
+  });
+
+  it("parses 'report due by July 1, 2025'", () => {
+    const r = parseTemporalExpression(span("report due by July 1, 2025"));
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "fixed_date", month: 7, day: 1, year: 2025,
+    });
+  });
+});
+
 describe("adversarial — must fail to parse", () => {
   it("rejects 'sometime next spring'", () => {
     const r = parseTemporalExpression(span("sometime next spring"));
@@ -347,6 +385,16 @@ describe("adversarial — must fail to parse", () => {
 
   it("rejects 'within days' (no quantity)", () => {
     const r = parseTemporalExpression(span("within days"));
+    expect(r.result.parsed).toBe(false);
+  });
+
+  it("rejects 'reviewed by the oversight committee' (no date after by)", () => {
+    const r = parseTemporalExpression(span("reviewed by the oversight committee"));
+    expect(r.result.parsed).toBe(false);
+  });
+
+  it("rejects 'submitted by email' (no date after by)", () => {
+    const r = parseTemporalExpression(span("submitted by email"));
     expect(r.result.parsed).toBe(false);
   });
 });

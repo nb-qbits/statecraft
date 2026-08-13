@@ -400,6 +400,14 @@ Known limitations
 Manual verification
   <exact commands the reviewer runs to confirm>
 
+Live-model verification (required for extraction, anchoring, or suppression changes)
+  <stage counts from a live-model run (MODEL_PROVIDER=anthropic) on a real bill,
+   pasted verbatim. Fixture verification alone is not sufficient — fabrication,
+   over-extraction, and duplicate spans surface only under live-model output.
+   Where the fix targets a stochastic live-model behaviour, state that a single
+   passing run does not confirm the fix, and describe what would (e.g., N
+   repeated runs with the defect rate measured before and after).>
+
 Rollback
   <how to revert this module cleanly>
 

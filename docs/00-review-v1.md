@@ -444,3 +444,72 @@ Phase 0 delivers the gold schema, the annotation guide, and the scorer. None of 
 ### One founder-level observation
 
 The largest risk in this document is not technical. Gate 4 asks whether review time falls materially below a manual baseline that has never been measured, using a system whose targets (90% recall / 85% precision / no bulk accept) may guarantee that the reviewer still reads the whole document. If that turns out to be true, the engine can pass every safety gate and still not be worth using. **Measure the manual baseline during Phase 0, on the same documents, before writing a single prompt.** It is the cheapest experiment on the roadmap and the one most likely to change the product.
+
+---
+
+## 11. Implementation follow-ups (added during Module U2)
+
+### U2-F1 — Fabrication is stochastic; single runs cannot measure hallucination rate
+
+During HB 35 end-to-end testing (Module U2 gate), the live model (claude-sonnet-4-6) proposed "within five business days of such placement" on one run — a quote that does not appear in the document — and did not on a subsequent run with the same prompt and model. Both runs used identical document text, legal identity, and model configuration.
+
+This is the first empirical evidence that hallucination is non-deterministic at fixed temperature. Consequences:
+
+1. A single-run pass on a document does not certify the absence of fabrication for that document. The "zero fabricated fixed dates" gate (C-12, M-12) must be evaluated over repeated runs.
+2. Module 12's variance reporting (H-18, "require ≥3 repeated benchmark runs per config, report variance") is not optional — it is the minimum needed to observe fabrication rate. This becomes meaningful only with a live model, not fixtures.
+3. The rejected-span UI path is exercised only when the model fabricates. Testing with fixtures alone leaves the rejection display untested against real data.
+
+**Observed on:** 2026-08-13, HB 35 (va-hb35-restorative-housing.pdf), claude-sonnet-4-6.
+**Reference:** Module U2 gate report, rejected span verification section.
+
+### U2-F2 — Model over-extraction is an unmodelled precision problem
+
+On the live-model run of HB 1456, 6 of 24 proposed spans were fragments of expressions already proposed in their entirety within the same segment. Examples:
+
+- "the effective date of this chapter" alongside "Within 90 days of the effective date of this chapter" (same segment, 3 instances)
+- "the effective date of this act" alongside "within 90 days of the effective date of this act" (same segment, 2 instances)
+- "90 days" alongside "Within 90 days of the effective date of this chapter" (1 instance)
+
+These fragments are not fabrications — they anchor successfully — but they fail grammar parsing (the grammar expects a complete expression, not a bare sub-phrase) and appear as "blocked" findings, cluttering the reviewer's queue with duplicates of already-resolved expressions.
+
+The fixture model gateway never produced this behavior. It was invisible until end-to-end testing with a live model.
+
+**Mitigation (implemented):** Over-extraction suppression in the anchoring service (anchorer v1.2.0). All proposals are anchored first, then suppression checks positional containment: a span is suppressed only when its anchored offsets (originalStart, originalEnd) fall entirely within another anchored span's offsets in the same segment. This is stricter than textual substring matching — two spans with identical text at different positions in the same segment are distinct obligations and are not suppressed. The suppression is recorded (reason: "over_extraction_substring", containedBy: the containing span's text) and counted separately from genuine rejections.
+
+**Not mitigated:** The root cause is in the extraction prompt. The model is asked for deadline-bearing spans per segment and sometimes produces both a composite expression and its sub-parts. Prompt refinement in a later module could reduce this, but the deterministic suppression serves as a safety net regardless.
+
+**Observed on:** 2026-08-13, HB 1456 (va-hb1456-gov-efficiency.txt), claude-sonnet-4-6.
+
+### U2-F3 — Session data is manually maintained
+
+`packs/us-va/v1/sessions.json` contains session metadata (adjournment date, adjournment kind, source, retrievedAt) for the 2026 Virginia regular session. This data is currently maintained by hand from public sources (VACo calendar, Cardinal News, Va. Const. Art. IV §6).
+
+Open States (openstates.org) supplies session metadata including adjournment dates and is already behind an adapter interface from Module 1. Automating session data retrieval is a Module 1 follow-up, not a Module U2 concern, but every derived effective date depends on the accuracy of this file.
+
+### U2-F4 — Duplicate span proposals from the live model
+
+The live model (claude-sonnet-4-6) proposed the identical span three times from the same segment — same quoted text, same anchored offsets. All three anchored to the same position. The positional containment check (over-extraction suppression) does not catch this: for two spans with identical offsets, mutual containment holds both ways, so either both suppress each other or neither does. Neither did.
+
+This is a distinct failure mode from over-extraction. Over-extraction produces a fragment and its composite; duplication produces the same span repeatedly.
+
+**Mitigation (implemented):** Duplicate span deduplication in the anchoring service (anchorer v1.2.0). After anchoring all proposals, spans with the same (segmentId, originalStart, originalEnd) are collapsed: the first is kept, the rest are marked with reason "duplicate_span". Deduplication runs before over-extraction suppression so duplicates do not interfere with positional containment checks.
+
+The fixture model gateway does not produce duplicates. This defect surfaced only under live-model output.
+
+**Observed on:** 2026-08-13, HB 1456 (va-hb1456-gov-efficiency.txt), claude-sonnet-4-6.
+
+### U2-F5 — Fixture verification is insufficient for extraction/anchoring/suppression changes
+
+Three defect classes have surfaced only under live-model output: fabrication (U2-F1), over-extraction (U2-F2), and duplicate spans (U2-F4). The fixture model gateway cannot produce any of them. Changes to extraction, anchoring, or suppression logic that are verified only against fixture output leave these failure modes untested.
+
+**Mitigation (implemented):** Added a live-model verification section to the module report format (§7 of the implementation brief). Any module that modifies extraction, anchoring, or suppression must include stage counts from a live-model run (MODEL_PROVIDER=anthropic) on a real bill, pasted verbatim. Fixture verification alone is not sufficient for that class of change.
+
+### U2-F6 — Live-model defects are stochastic; single runs cannot confirm fixes
+
+The defect classes observed under live-model output — fabrication (U2-F1) and duplicate spans (U2-F4) — are intermittent. Fabrication appeared in 1 of 3 HB 35 runs. Duplicate spans appeared in 1 of 3 HB 1456 runs. Over-extraction (U2-F2) appeared consistently but the other two did not. A single live run that shows 0 duplicates or 0 fabrications does not establish that the defect is absent, and a single passing run after a fix does not confirm the fix works against real output.
+
+This qualifies U2-F5: live-model verification is necessary but not sufficient. The live-model verification step in the module report catches defects that fixtures cannot produce, but it cannot measure their rate or confirm that a mitigation works, because the defects may not appear on any given run.
+
+**Implication for Module 12:** Measuring fabrication rate and over-extraction rate requires the same document run repeatedly, not many documents run once. The variance reporting mechanism (H-18, "require ≥3 repeated benchmark runs per config, report variance") is the right tool. It needs a live model and a repeat-count parameter. The current fixture-based scorer cannot observe these rates.
+
+**Addition to module report format:** Where a fix targets a stochastic live-model behaviour, the report must state that a single passing run does not confirm the fix, and describe what would (e.g., "N repeated runs on the same document with the defect rate measured before and after").

@@ -2,7 +2,7 @@ import { normalizeForEvidenceMatchV1 } from "../parsing/normalize.js";
 import type { AnchorResult, AnchorMethod } from "../shared/types.js";
 import type { OffsetMap } from "../parsing/types.js";
 
-export const ANCHORER_VERSION = "1.0.0";
+export const ANCHORER_VERSION = "1.2.0";
 
 const MIN_FUZZY_LENGTH = 10;
 const MAX_DISTANCE_RATIO = 0.1;

@@ -8,7 +8,7 @@ import type {
   TemporalExpression,
 } from "./types.js";
 
-export const GRAMMAR_VERSION = "1.1.0";
+export const GRAMMAR_VERSION = "1.2.0";
 
 export function parseTemporalExpression(span: AnchoredSpan): SpanParseResult {
   const result = parseText(span.text);
@@ -30,6 +30,17 @@ function parseText(text: string): ParseResult {
 
   if (lexResult.errors.length > 0) {
     const err = lexResult.errors[0]!;
+
+    // If the lexer fails at the very start (offset 0), the input may have
+    // leading context words before a deadline keyword.  Try stripping
+    // everything before the first "by <Month>" and re-parse.
+    if (err.offset === 0) {
+      const stripped = stripLeadingContext(trimmed);
+      if (stripped !== null) {
+        return parseText(stripped);
+      }
+    }
+
     return {
       parsed: false,
       reason: `unexpected character '${trimmed[err.offset]}'`,
@@ -84,4 +95,21 @@ function parseText(text: string): ParseResult {
   }
 
   return { parsed: true, expression };
+}
+
+const MONTHS =
+  "January|February|March|April|May|June|July|August|September|October|November|December";
+const LEADING_CONTEXT_RE = new RegExp(
+  `^.+?\\b(by\\s+(?:${MONTHS})\\b.*)$`,
+  "is",
+);
+
+/**
+ * If the text has unrecognised leading words before "by <Month>...",
+ * return the substring starting at "by".  Returns null when no such
+ * pattern is found (e.g. "reviewed by the oversight committee").
+ */
+function stripLeadingContext(text: string): string | null {
+  const m = LEADING_CONTEXT_RE.exec(text);
+  return m ? m[1]! : null;
 }
