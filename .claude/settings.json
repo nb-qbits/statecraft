@@ -72,7 +72,9 @@
       "Read(//tmp/**)",
       "Bash(open -a Calendar /tmp/deadlines.ics)",
       "Bash(xxd /tmp/deadlines.ics)",
-      "Bash(open -a Calendar /tmp/deadlines-final.ics)"
+      "Bash(open -a Calendar /tmp/deadlines-final.ics)",
+      "Bash(open -a Calendar /tmp/deadlines-v3.ics)",
+      "Bash(open -a Calendar /tmp/deadlines-exdate.ics)"
     ],
     "deny": [
       "Read(./.env)",

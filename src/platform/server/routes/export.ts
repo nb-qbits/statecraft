@@ -83,14 +83,20 @@ export function registerExportRoutes(
         for (const record of records) {
           const summary = buildSummary(record);
 
-          const description = [
+          const descParts = [
             `Statutory date: ${record.deadlineDate}`,
             `Adjusted date: ${record.adjustedDate}`,
-            record.deliverable ? `Deliverable: ${record.deliverable}` : null,
-            record.actor ? `Actor: ${record.actor}` : null,
-            `Rules: ${record.ruleIds.join(", ")}`,
-            `Citations: ${record.citations.join(", ")}`,
-          ].filter(Boolean).join("\\n");
+          ];
+          if (record.deadlineDate !== record.adjustedDate) {
+            descParts.push(
+              `Adjustment: statutory date adjusted per ${record.citations.find((c) => c.includes("§ 1-210")) ?? record.ruleIds.join(", ")}`,
+            );
+          }
+          if (record.deliverable) descParts.push(`Deliverable: ${record.deliverable}`);
+          if (record.actor) descParts.push(`Actor: ${record.actor}`);
+          descParts.push(`Rules: ${record.ruleIds.join(", ")}`);
+          descParts.push(`Citations: ${record.citations.join(", ")}`);
+          const description = descParts.join("\n");
 
           lines.push("BEGIN:VEVENT");
           lines.push(`UID:${record.recordVersionId}@policyaction`);
@@ -102,6 +108,16 @@ export function registerExportRoutes(
 
           if (record.rrule) {
             lines.push(`RRULE:${record.rrule}`);
+
+            const occurrences = await reviewRepository.getOccurrencesByRecord(
+              record.recordVersionId,
+            );
+            for (const occ of occurrences) {
+              if (occ.occurrenceDate !== occ.adjustedDate) {
+                lines.push(`EXDATE;VALUE=DATE:${formatIcsDate(occ.occurrenceDate)}`);
+                lines.push(`RDATE;VALUE=DATE:${formatIcsDate(occ.adjustedDate)}`);
+              }
+            }
           }
 
           lines.push("END:VEVENT");
