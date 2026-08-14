@@ -8,7 +8,7 @@ import type {
   TemporalExpression,
 } from "./types.js";
 
-export const GRAMMAR_VERSION = "1.2.0";
+export const GRAMMAR_VERSION = "1.4.0";
 
 export function parseTemporalExpression(span: AnchoredSpan): SpanParseResult {
   const result = parseText(span.text);
@@ -78,20 +78,27 @@ function parseText(text: string): ParseResult {
 
   if (expression.kind === "fixed_date") {
     const { month, day, year } = expression;
-    if (year < 1900 || year > 2200) {
-      return { parsed: false, reason: `year ${year} out of range`, position: 0 };
-    }
-    const maxDays = new Date(year, month, 0).getDate();
-    if (day < 1 || day > maxDays) {
-      return { parsed: false, reason: `day ${day} invalid for month ${month}`, position: 0 };
+    if (year !== null) {
+      if (year < 1900 || year > 2200) {
+        return { parsed: false, reason: `year ${year} out of range`, position: 0 };
+      }
+      const maxDays = new Date(year, month, 0).getDate();
+      if (day < 1 || day > maxDays) {
+        return { parsed: false, reason: `day ${day} invalid for month ${month}`, position: 0 };
+      }
+    } else {
+      if (day < 1 || day > 31) {
+        return { parsed: false, reason: `day ${day} invalid`, position: 0 };
+      }
     }
   }
 
-  if (
-    (expression.kind === "relative_duration" || expression.kind === "recurrence") &&
-    expression.quantity <= 0
-  ) {
+  if (expression.kind === "relative_duration" && expression.quantity <= 0) {
     return { parsed: false, reason: "quantity must be positive", position: 0 };
+  }
+
+  if (expression.kind === "recurrence" && expression.interval <= 0) {
+    return { parsed: false, reason: "interval must be positive", position: 0 };
   }
 
   return { parsed: true, expression };

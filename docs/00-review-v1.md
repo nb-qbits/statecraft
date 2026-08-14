@@ -513,3 +513,84 @@ This qualifies U2-F5: live-model verification is necessary but not sufficient. T
 **Implication for Module 12:** Measuring fabrication rate and over-extraction rate requires the same document run repeatedly, not many documents run once. The variance reporting mechanism (H-18, "require ≥3 repeated benchmark runs per config, report variance") is the right tool. It needs a live model and a repeat-count parameter. The current fixture-based scorer cannot observe these rates.
 
 **Addition to module report format:** Where a fix targets a stochastic live-model behaviour, the report must state that a single passing run does not confirm the fix, and describe what would (e.g., "N repeated runs on the same document with the defect rate measured before and after").
+
+### U2-F7 — RECALL FAILURE: chaptered acts produce mega-segments that bury all deadlines
+
+Chapter 1126 (S 225), Virginia Clean Energy Innovation Bank — a chaptered act from the 2026 Acts of Assembly — contains 8 real deadlines across §§ 45.2-118 through 45.2-122. The system found **zero** of them. This is the first measured recall failure in the build.
+
+**Root cause:** Segmentation. The chaptered act PDF (extracted by pdfplumber) produced the entire enacted body — 18,184 characters spanning 9 numbered sections — as a single segment. The parser's `splitByBlankLines` function splits only on blank lines and recognizes `SECTION`/`CHAPTER`/`ARTICLE` headings for structural paths. It does not recognize `§` section symbols as segment boundaries. The `splitByStructure` function does handle `§` at line starts, but it is only used when the document has no blank lines. The chaptered act has blank lines between its header, chapter heading, and body, but no blank lines or line breaks between `§` sections within the body — pdfplumber extracted the entire body as one continuous text block.
+
+**Before fix:** 3 segments (header, chapter heading, 18K-char mega-segment). 13 findings, 0 resolved.
+
+**Fix (implemented):** `splitOnEmbeddedSections()` in `structural-segmentation.ts` — a post-processing pass that splits paragraphs containing 2+ embedded `§ X.X-NNN. Title` section definitions. The pattern `§\s*(\d[\d.:-]+)\.\s+[A-Z][a-z]` matches section definitions (e.g., `§ 45.2-118. Strategic plan.`) but not cross-references (e.g., `pursuant to § 45.2-118`) because cross-references lack the period-space-capitalized-title pattern and are typically preceded by prepositions filtered by a negative lookbehind. The pass emits a preamble paragraph (enactment clause text before the first `§`) and one paragraph per section with structural path `section[X.X-NNN]/p[0]`. Applied in both `pdf-parser.ts` and `plain-text-parser.ts` after the initial blank-line or structural split. PDF parser version bumped to 1.1.0, plain-text parser version bumped to 1.4.0.
+
+**After fix:** 12 segments (header, chapter heading, enactment preamble, 9 `§` sections). 21 findings, 2 resolved.
+
+All 8 expected deadlines found:
+
+| Deadline | Section | Status |
+|---|---|---|
+| Strategic plan by December 15, 2026 | § 45.2-118 | Resolved (2026-12-15) |
+| Each December 15 in even-numbered years | § 45.2-118 | Unresolved (recurrence) |
+| Draft to advisory board by August 1 | § 45.2-118 | Unresolved |
+| To General Assembly by October 15 | § 45.2-118 | Unresolved |
+| Investment strategy by December 15, 2026 | § 45.2-119 | Resolved (2026-12-15) |
+| Every four years thereafter | § 45.2-119 | Unresolved (recurrence) |
+| Quarterly public meetings | § 45.2-120 | Unresolved (recurrence) |
+| Annual report by first day of session | § 45.2-122 | Unresolved |
+
+The 6 unresolved deadlines involve recurrence patterns, relative timing, or session-anchored dates that the resolver cannot yet handle. That is expected — the system found them and correctly reports them as unresolved rather than missing them.
+
+**Significance:** Every previous check verified precision — whether what the system found was correct. This is the first check of recall — whether the system found everything. The failure class is not extraction or anchoring but segmentation: the deadlines were never surfaced to the extractor because their containing text was never split into scannable segments. This means segmentation failures are silent — no error, no rejected span, no warning. The system confidently reports 0 findings for sections it never examined.
+
+**Observed on:** 2026-08-13, Chapter 1126 (S 225), Virginia Clean Energy Innovation Bank, PDF (application/pdf).
+**Fix:** `splitOnEmbeddedSections()` in `src/platform/parsers/structural-segmentation.ts`, lines 174–218. PDF parser v1.1.0, plain-text parser v1.4.0.
+
+### U2-F8 — Grammar additions: "at least N days" and yearless deadline dates
+
+Two genuine grammar gaps identified from Chapter 1126 analysis, now implemented:
+
+**1. "at least N days" — minimum-bound pattern (mirrors "no longer than")**
+
+Added `AtLeast` token to the lexer, third alternative in the `relativeDuration` parser rule, and `at_least` as a new `BoundKind` value alongside `within` and `no_longer_than`.
+
+- `src/modules/grammar/lexer.ts`: `AtLeast` token (`/at least/i`), inserted before single-word tokens
+- `src/modules/grammar/parser.ts`: `AtLeast` alternative in `relativeDuration` rule
+- `src/modules/grammar/visitor.ts`: `boundKind` ternary chain — `ctx["Within"] ? "within" : ctx["AtLeast"] ? "at_least" : "no_longer_than"`
+- `src/modules/grammar/types.ts`: `RelativeDurationExpression.boundKind` extended to `"within" | "no_longer_than" | "at_least"`
+- Grammar version bumped to 1.3.0
+
+**2. "no later than <month> <day>" — yearless fixed date in deadline context**
+
+Added `fixedDateOptionalYear` parser rule used only in `deadlineExpression`. Standalone `fixedDate` and `effectiveOnExpression` still require year. When year is absent, the expression parses as `fixed_date` with `year: null`. The resolver returns `{ resolved: false, reason: "year not specified in expression", missingInputs: ["year"] }`.
+
+Design choice: yearless dates are accepted only after deadline prefixes (`by`, `no later than`, `on or before`). A bare "August 1" does not parse — it requires context to be a deadline. The resolver does NOT assume the current year. It produces an unresolved result with a named missing input, so downstream logic can supply the year from an anchor (effective date, session metadata) when one is derivable.
+
+- `src/modules/grammar/parser.ts`: `fixedDateOptionalYear` rule with optional comma+year
+- `src/modules/grammar/visitor.ts`: `fixedDateOptionalYear` visitor returns `year: null` when absent
+- `src/modules/grammar/types.ts`: `FixedDateExpression.year` changed to `number | null`
+- `src/modules/grammar/parse.ts`: semantic validation skips year-range check when null, applies basic day bounds (1-31)
+- `src/modules/resolver/resolve.ts`: early return for null year with `missingInputs: ["year"]`
+- Grammar version 1.3.0
+
+### U2-F9 — "Approved <date>" structural suppression
+
+"Approved May 14, 2026" is a chaptered-act signature date — the governor's signing date. Same metadata class as Offered/Prefiled dates. Added `Approved` to the existing `suppress.metadata_header` pattern in `src/modules/scanning/rules.ts`.
+
+### U2-F10 — Unmodelled recurrence patterns (maps to H-9)
+
+Five recurring obligation patterns from Chapter 1126 that the resolver cannot represent. These are real duties with repeating schedules, not single deadlines. They map to H-9 (no occurrence model for recurring deadlines).
+
+**Patterns observed:**
+
+| Pattern | Example | Why unmodelled |
+|---|---|---|
+| Year-parity date | "no later than October 15 in any even-numbered year" | Date + year-parity constraint. Not a single date or simple recurrence. |
+| Year-parity recurrence | "each December 15 in even-numbered years thereafter" | Biennial recurrence anchored to a specific day. |
+| Interval recurrence | "every four years thereafter" | Multi-year interval from an anchor date. |
+| Legislative session anchor | "no later than the first day of each regular session" | Deadline anchored to a legislative calendar event, not a civil date. Requires session metadata to resolve. |
+| Periodic obligation | "quarterly public meetings", "annual audit", "annual executive summary" | Repeating duty with no single date. Requires an occurrence model to enumerate instances. |
+
+**Decision:** These are recurrence, not grammar gaps. The grammar can parse "every four years" and similar constructions as `recurrence` expressions. The gap is in the resolver — it has no occurrence model to enumerate instances (H-9). Recording here rather than implementing, per the user's instruction: "record them with #3 rather than forcing them into the grammar now."
+
+**Implication for H-9:** When an occurrence model is built, these patterns define its minimum viable scope. A simple RRULE-style model covers interval recurrence and periodic obligations. Year-parity and legislative-session-anchored patterns require richer semantics — either a constraint language or jurisdiction-specific rules.

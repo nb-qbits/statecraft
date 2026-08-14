@@ -11,7 +11,7 @@ export const SCAN_RULES: readonly ScanRule[] = [
   {
     ruleId: "suppress.metadata_header",
     kind: CandidateKind.date,
-    pattern: /(?:Offered|Prefiled)\s+(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},\s*\d{4}/gi,
+    pattern: /(?:Offered|Prefiled|Approved)\s+(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},\s*\d{4}/gi,
     isSuppression: true,
   },
 

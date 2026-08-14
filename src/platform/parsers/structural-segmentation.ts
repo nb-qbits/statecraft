@@ -171,6 +171,57 @@ export function buildPath(sectionStack: readonly string[], paragraphIndex: numbe
   return `/body${sections}/p[${paragraphIndex}]`;
 }
 
+const SECTION_DEF_BOUNDARY = /(?<!(?:[Ii]n|[Tt]o|[Oo]f|[Pp]er|[Uu]nder|[Ff]rom|[Bb]y|[Aa]t|[Ii]nto)\s)§\s*(\d[\d.:-]+)\.\s+[A-Z][a-z]/g;
+
+export function splitOnEmbeddedSections(paragraphs: ParsedParagraph[]): ParsedParagraph[] {
+  const result: ParsedParagraph[] = [];
+
+  for (const p of paragraphs) {
+    const text = p.runs.map(r => r.text).join("");
+    const matches = [...text.matchAll(SECTION_DEF_BOUNDARY)];
+
+    if (matches.length < 2) {
+      result.push(p);
+      continue;
+    }
+
+    const parentPath = extractParentPath(p.structuralPath);
+    let subIndex = 0;
+
+    for (let i = 0; i < matches.length; i++) {
+      const match = matches[i]!;
+      const start = match.index!;
+      const end = i + 1 < matches.length ? matches[i + 1]!.index! : text.length;
+
+      if (i === 0 && start > 0) {
+        const preambleText = text.slice(0, start).trim();
+        if (preambleText.length > 0) {
+          result.push({
+            structuralPath: `${parentPath}/p[${subIndex}]`,
+            runs: [{ text: preambleText, properties: { italic: false, strikethrough: false } }],
+          });
+          subIndex++;
+        }
+      }
+
+      const sectionId = match[1]!.replace(/[.:]$/, "");
+      const sectionText = text.slice(start, end).trim();
+
+      result.push({
+        structuralPath: `${parentPath}/section[${sectionId}]/p[0]`,
+        runs: [{ text: sectionText, properties: { italic: false, strikethrough: false } }],
+      });
+    }
+  }
+
+  return result;
+}
+
+function extractParentPath(structuralPath: string): string {
+  const match = structuralPath.match(/^(.*)\/p\[\d+\]$/);
+  return match ? match[1]! : structuralPath;
+}
+
 export function updateSectionStack(current: readonly string[], heading: string): string[] {
   const match = /^(SECTION|Section|ARTICLE|Article|CHAPTER|Chapter|TITLE|Title|PART|Part)\s+(\S+)/i.exec(heading);
   if (!match) return [...current];

@@ -4,6 +4,7 @@ import {
   updateSectionStack,
   splitByBlankLines,
   splitByStructure,
+  splitOnEmbeddedSections,
   isPageFooter,
 } from "./structural-segmentation.js";
 
@@ -173,5 +174,115 @@ describe("splitByStructure", () => {
     const result = splitByStructure(lines);
     expect(result.paragraphs).toHaveLength(1);
     expect(result.consumedCount).toBe(2);
+  });
+});
+
+describe("splitOnEmbeddedSections", () => {
+  function makeParagraph(path: string, text: string) {
+    return {
+      structuralPath: path,
+      runs: [{ text, properties: { italic: false as const, strikethrough: false as const } }],
+    };
+  }
+
+  it("passes through paragraphs with no § section definitions", () => {
+    const paragraphs = [makeParagraph("/body/p[0]", "No sections here.")];
+    const result = splitOnEmbeddedSections(paragraphs);
+    expect(result).toHaveLength(1);
+    expect(result[0]!.runs[0]!.text).toBe("No sections here.");
+  });
+
+  it("passes through paragraph with only one § section definition", () => {
+    const paragraphs = [makeParagraph("/body/p[0]", "§ 45.2-114. Virginia Clean Energy Innovation Bank.")];
+    const result = splitOnEmbeddedSections(paragraphs);
+    expect(result).toHaveLength(1);
+  });
+
+  it("splits paragraph with two embedded § section definitions", () => {
+    const text = "§ 45.2-114. Bank Advisory Board. The Board shall meet quarterly. § 45.2-115. Definitions. As used in this article.";
+    const paragraphs = [makeParagraph("/body/chapter[1126]/p[1]", text)];
+    const result = splitOnEmbeddedSections(paragraphs);
+    expect(result).toHaveLength(2);
+    expect(result[0]!.runs[0]!.text).toContain("§ 45.2-114");
+    expect(result[0]!.runs[0]!.text).toContain("meet quarterly");
+    expect(result[0]!.runs[0]!.text).not.toContain("§ 45.2-115");
+    expect(result[1]!.runs[0]!.text).toContain("§ 45.2-115");
+    expect(result[1]!.runs[0]!.text).toContain("As used in this article");
+  });
+
+  it("emits preamble text before first § as a separate paragraph", () => {
+    const text = "Be it enacted by the General Assembly: § 45.2-114. Bank. The Board. § 45.2-115. Definitions. Terms.";
+    const paragraphs = [makeParagraph("/body/chapter[1126]/p[1]", text)];
+    const result = splitOnEmbeddedSections(paragraphs);
+    expect(result).toHaveLength(3);
+    expect(result[0]!.runs[0]!.text).toBe("Be it enacted by the General Assembly:");
+    expect(result[0]!.structuralPath).toBe("/body/chapter[1126]/p[0]");
+    expect(result[1]!.runs[0]!.text).toContain("§ 45.2-114");
+    expect(result[2]!.runs[0]!.text).toContain("§ 45.2-115");
+  });
+
+  it("assigns section[X.X-NNN] structural paths", () => {
+    const text = "§ 2.2-3704. Records. Content. § 2.2-3705. Exclusions. More content.";
+    const paragraphs = [makeParagraph("/body/p[0]", text)];
+    const result = splitOnEmbeddedSections(paragraphs);
+    expect(result[0]!.structuralPath).toBe("/body/section[2.2-3704]/p[0]");
+    expect(result[1]!.structuralPath).toBe("/body/section[2.2-3705]/p[0]");
+  });
+
+  it("does NOT split on cross-references preceded by prepositions", () => {
+    const text = "§ 45.2-114. Bank. Meaning as provided in § 56-576. More text here. Under § 10-200. Also provisions of § 99-1. Done. § 45.2-115. Definitions. Terms.";
+    const paragraphs = [makeParagraph("/body/p[0]", text)];
+    const result = splitOnEmbeddedSections(paragraphs);
+    expect(result).toHaveLength(2);
+    expect(result[0]!.runs[0]!.text).toContain("§ 56-576");
+    expect(result[0]!.runs[0]!.text).toContain("§ 10-200");
+    expect(result[0]!.runs[0]!.text).toContain("§ 99-1");
+  });
+
+  it("does NOT split on cross-references without period like 'pursuant to § 45.2-118 and'", () => {
+    const text = "§ 45.2-114. Bank. Pursuant to § 45.2-118 and other rules. § 45.2-115. Definitions. Terms.";
+    const paragraphs = [makeParagraph("/body/p[0]", text)];
+    const result = splitOnEmbeddedSections(paragraphs);
+    expect(result).toHaveLength(2);
+    expect(result[0]!.runs[0]!.text).toContain("§ 45.2-118 and other rules");
+  });
+
+  it("preserves paragraphs that are not split", () => {
+    const paragraphs = [
+      makeParagraph("/body/p[0]", "Header text"),
+      makeParagraph("/body/chapter[1]/p[0]", "§ 1-100. First. Content. § 1-101. Second. More."),
+      makeParagraph("/body/p[2]", "Footer text"),
+    ];
+    const result = splitOnEmbeddedSections(paragraphs);
+    expect(result).toHaveLength(4);
+    expect(result[0]!.runs[0]!.text).toBe("Header text");
+    expect(result[1]!.structuralPath).toContain("section[1-100]");
+    expect(result[2]!.structuralPath).toContain("section[1-101]");
+    expect(result[3]!.runs[0]!.text).toBe("Footer text");
+  });
+
+  it("handles chaptered-act-shaped text with 9 sections", () => {
+    const sections = [];
+    for (let i = 114; i <= 122; i++) {
+      sections.push(`§ 45.2-${i}. Section title ${i}. Body text for section ${i}.`);
+    }
+    const text = "Be it enacted: " + sections.join(" ");
+    const paragraphs = [makeParagraph("/body/chapter[1126]/p[1]", text)];
+    const result = splitOnEmbeddedSections(paragraphs);
+    expect(result).toHaveLength(10);
+    expect(result[0]!.runs[0]!.text).toBe("Be it enacted:");
+    for (let i = 1; i <= 9; i++) {
+      expect(result[i]!.structuralPath).toContain(`section[45.2-${113 + i}]`);
+    }
+  });
+
+  it("no text is lost in the split", () => {
+    const text = "Preamble text. § 45.2-114. Bank. Content here. § 45.2-115. Definitions. More terms.";
+    const paragraphs = [makeParagraph("/body/p[0]", text)];
+    const result = splitOnEmbeddedSections(paragraphs);
+    const reconstructed = result.map(p => p.runs[0]!.text).join(" ");
+    expect(reconstructed).toContain("Preamble text");
+    expect(reconstructed).toContain("Content here");
+    expect(reconstructed).toContain("More terms");
   });
 });

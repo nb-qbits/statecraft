@@ -59,7 +59,7 @@ export function assignLane(input: LaneInput): LaneAssignment {
   }
 
   if (expression.kind === "recurrence") {
-    reasons.push({ rule: "EXCEPTION_RECURRENCE", detail: `recurrence: every ${expression.quantity} ${expression.unit}` });
+    reasons.push({ rule: "EXCEPTION_RECURRENCE", detail: `recurrence: ${expression.frequency} interval=${expression.interval}` });
     return result(evaluation, "exception_review", reasons);
   }
 

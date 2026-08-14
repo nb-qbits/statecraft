@@ -50,7 +50,7 @@ export interface FixedDateExpression {
   readonly kind: "fixed_date";
   readonly month: number;
   readonly day: number;
-  readonly year: number;
+  readonly year: number | null;
 }
 
 export interface RelativeDurationExpression {
@@ -60,14 +60,41 @@ export interface RelativeDurationExpression {
   readonly dayKind: DayKind | null;
   readonly preposition: string | null;
   readonly referenceEvent: ReferenceEvent | null;
-  readonly boundKind: "within" | "no_longer_than";
+  readonly boundKind: "within" | "no_longer_than" | "at_least";
 }
+
+export const RecurrenceFrequency = {
+  yearly: "yearly",
+  quarterly: "quarterly",
+  monthly: "monthly",
+  weekly: "weekly",
+  daily: "daily",
+} as const;
+export type RecurrenceFrequency =
+  (typeof RecurrenceFrequency)[keyof typeof RecurrenceFrequency];
+
+export const YearParity = {
+  even: "even",
+  odd: "odd",
+} as const;
+export type YearParity = (typeof YearParity)[keyof typeof YearParity];
+
+export const RecurrenceBoundKind = {
+  on: "on",
+  no_later_than: "no_later_than",
+} as const;
+export type RecurrenceBoundKind =
+  (typeof RecurrenceBoundKind)[keyof typeof RecurrenceBoundKind];
 
 export interface RecurrenceExpression {
   readonly kind: "recurrence";
-  readonly frequency: string;
-  readonly quantity: number;
-  readonly unit: TimeUnit;
+  readonly frequency: RecurrenceFrequency;
+  readonly interval: number;
+  readonly byMonth: number | null;
+  readonly byMonthDay: number | null;
+  readonly yearParity: YearParity | null;
+  readonly anchorEvent: string | null;
+  readonly boundKind: RecurrenceBoundKind;
   readonly dayKind: DayKind | null;
 }
 

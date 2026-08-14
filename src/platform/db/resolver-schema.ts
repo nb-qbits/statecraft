@@ -20,6 +20,8 @@ export const resolutionResults = pgTable("resolution_results", {
   resolved: boolean("resolved").notNull(),
   statutoryDate: varchar("statutory_date", { length: 10 }),
   adjustedDate: varchar("adjusted_date", { length: 10 }),
+  rrule: varchar("rrule", { length: 512 }),
+  recurrenceData: jsonb("recurrence_data"),
   ruleIds: jsonb("rule_ids"),
   citations: jsonb("citations"),
   packVersion: varchar("pack_version", { length: 64 }),

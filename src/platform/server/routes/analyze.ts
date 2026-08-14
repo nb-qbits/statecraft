@@ -304,8 +304,9 @@ export function registerAnalyzeRoutes(
           ? (grammar.result.expression as unknown as Record<string, unknown>)
           : null,
         resolved: resolution?.result.resolved ?? false,
-        statutoryDate: resolution?.result.resolved ? resolution.result.statutoryDate : null,
-        adjustedDate: resolution?.result.resolved ? resolution.result.adjustedDate : null,
+        statutoryDate: resolution?.result.resolved && "statutoryDate" in resolution.result ? resolution.result.statutoryDate : null,
+        adjustedDate: resolution?.result.resolved && "adjustedDate" in resolution.result ? resolution.result.adjustedDate : null,
+        rrule: resolution?.result.resolved && "rrule" in resolution.result ? resolution.result.rrule : null,
         ruleIds: resolution?.result.resolved ? (resolution.result.ruleIds as string[]) : [],
         citations: resolution?.result.resolved ? (resolution.result.citations as string[]) : [],
         packVersion: resolution?.result.resolved ? resolution.result.packVersion : null,

@@ -13,7 +13,7 @@ function span(text: string): AnchoredSpan {
 
 describe("grammar version", () => {
   it("exports a version string", () => {
-    expect(GRAMMAR_VERSION).toBe("1.2.0");
+    expect(GRAMMAR_VERSION).toBe("1.4.0");
   });
 });
 
@@ -146,27 +146,191 @@ describe("relative durations — within N days", () => {
   });
 });
 
-describe("recurrence", () => {
-  it("parses 'every two business days'", () => {
+describe("repeating intervals — every N days", () => {
+  it("parses 'every two business days' as relative_duration", () => {
     const r = parseTemporalExpression(span("every two business days"));
     expect(r.result.parsed).toBe(true);
     if (!r.result.parsed) return;
     expect(r.result.expression).toEqual({
-      kind: "recurrence",
-      frequency: "every",
+      kind: "relative_duration",
       quantity: 2, unit: "days", dayKind: "business",
+      preposition: null, referenceEvent: null, boundKind: "no_longer_than",
     });
   });
 
-  it("parses 'every 30 days'", () => {
+  it("parses 'every 30 days' as relative_duration", () => {
     const r = parseTemporalExpression(span("every 30 days"));
     expect(r.result.parsed).toBe(true);
     if (!r.result.parsed) return;
     expect(r.result.expression).toEqual({
-      kind: "recurrence",
-      frequency: "every",
+      kind: "relative_duration",
       quantity: 30, unit: "days", dayKind: null,
+      preposition: null, referenceEvent: null, boundKind: "no_longer_than",
     });
+  });
+});
+
+describe("recurrence — bare intervals", () => {
+  it("parses 'quarterly'", () => {
+    const r = parseTemporalExpression(span("quarterly"));
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "recurrence", frequency: "quarterly", interval: 1,
+      byMonth: null, byMonthDay: null, yearParity: null,
+      anchorEvent: null, boundKind: "on", dayKind: null,
+    });
+  });
+
+  it("parses 'annually'", () => {
+    const r = parseTemporalExpression(span("annually"));
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "recurrence", frequency: "yearly", interval: 1,
+      byMonth: null, byMonthDay: null, yearParity: null,
+      anchorEvent: null, boundKind: "on", dayKind: null,
+    });
+  });
+
+  it("parses 'annual'", () => {
+    const r = parseTemporalExpression(span("annual"));
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "recurrence", frequency: "yearly", interval: 1,
+      byMonth: null, byMonthDay: null, yearParity: null,
+      anchorEvent: null, boundKind: "on", dayKind: null,
+    });
+  });
+});
+
+describe("recurrence — anchored annual", () => {
+  it("parses 'each December 15'", () => {
+    const r = parseTemporalExpression(span("each December 15"));
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "recurrence", frequency: "yearly", interval: 1,
+      byMonth: 12, byMonthDay: 15, yearParity: null,
+      anchorEvent: null, boundKind: "on", dayKind: null,
+    });
+  });
+
+  it("parses 'each October 1'", () => {
+    const r = parseTemporalExpression(span("each October 1"));
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "recurrence", frequency: "yearly", interval: 1,
+      byMonth: 10, byMonthDay: 1, yearParity: null,
+      anchorEvent: null, boundKind: "on", dayKind: null,
+    });
+  });
+});
+
+describe("recurrence — year parity", () => {
+  it("parses 'each December 15 in even-numbered years thereafter'", () => {
+    const r = parseTemporalExpression(span("each December 15 in even-numbered years thereafter"));
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "recurrence", frequency: "yearly", interval: 1,
+      byMonth: 12, byMonthDay: 15, yearParity: "even",
+      anchorEvent: null, boundKind: "on", dayKind: null,
+    });
+  });
+
+  it("parses 'each December 15 in odd-numbered years'", () => {
+    const r = parseTemporalExpression(span("each December 15 in odd-numbered years"));
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "recurrence", frequency: "yearly", interval: 1,
+      byMonth: 12, byMonthDay: 15, yearParity: "odd",
+      anchorEvent: null, boundKind: "on", dayKind: null,
+    });
+  });
+
+  it("parses 'no later than October 15 in any even-numbered year'", () => {
+    const r = parseTemporalExpression(span("no later than October 15 in any even-numbered year"));
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "recurrence", frequency: "yearly", interval: 1,
+      byMonth: 10, byMonthDay: 15, yearParity: "even",
+      anchorEvent: null, boundKind: "no_later_than", dayKind: null,
+    });
+  });
+});
+
+describe("recurrence — interval years", () => {
+  it("parses 'every four years thereafter'", () => {
+    const r = parseTemporalExpression(span("every four years thereafter"));
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "recurrence", frequency: "yearly", interval: 4,
+      byMonth: null, byMonthDay: null, yearParity: null,
+      anchorEvent: null, boundKind: "on", dayKind: null,
+    });
+  });
+
+  it("parses 'every 4 years'", () => {
+    const r = parseTemporalExpression(span("every 4 years"));
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "recurrence", frequency: "yearly", interval: 4,
+      byMonth: null, byMonthDay: null, yearParity: null,
+      anchorEvent: null, boundKind: "on", dayKind: null,
+    });
+  });
+});
+
+describe("recurrence — event-anchored", () => {
+  it("parses 'the first day of each regular session'", () => {
+    const r = parseTemporalExpression(span("the first day of each regular session"));
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "recurrence", frequency: "yearly", interval: 1,
+      byMonth: null, byMonthDay: null, yearParity: null,
+      anchorEvent: "regular_session", boundKind: "on", dayKind: null,
+    });
+  });
+
+  it("parses 'no later than the first day of each regular session'", () => {
+    const r = parseTemporalExpression(span("no later than the first day of each regular session"));
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "recurrence", frequency: "yearly", interval: 1,
+      byMonth: null, byMonthDay: null, yearParity: null,
+      anchorEvent: "regular_session", boundKind: "no_later_than", dayKind: null,
+    });
+  });
+});
+
+describe("recurrence — adversarial (must refuse)", () => {
+  it("rejects 'five-year staggered terms' (duration of office, not recurrence)", () => {
+    const r = parseTemporalExpression(span("five-year staggered terms"));
+    expect(r.result.parsed).toBe(false);
+  });
+
+  it("rejects 'two consecutive terms' (duration of office, not recurrence)", () => {
+    const r = parseTemporalExpression(span("two consecutive terms"));
+    expect(r.result.parsed).toBe(false);
+  });
+
+  it("rejects 'for the unexpired term' (duration of office, not recurrence)", () => {
+    const r = parseTemporalExpression(span("for the unexpired term"));
+    expect(r.result.parsed).toBe(false);
+  });
+
+  it("rejects 'over the next two years' (duration, not recurrence)", () => {
+    const r = parseTemporalExpression(span("over the next two years"));
+    expect(r.result.parsed).toBe(false);
   });
 });
 
@@ -224,6 +388,95 @@ describe("deadline expressions — by/no later than/on or before", () => {
   it("rejects 'by sometime' (modifier without valid date)", () => {
     const r = parseTemporalExpression(span("by sometime"));
     expect(r.result.parsed).toBe(false);
+  });
+});
+
+describe("at least N days — minimum-bound durations", () => {
+  it("parses 'at least 30 days'", () => {
+    const r = parseTemporalExpression(span("at least 30 days"));
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "relative_duration",
+      quantity: 30, unit: "days", dayKind: null,
+      preposition: null, referenceEvent: null, boundKind: "at_least",
+    });
+  });
+
+  it("parses 'at least five business days'", () => {
+    const r = parseTemporalExpression(span("at least five business days"));
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "relative_duration",
+      quantity: 5, unit: "days", dayKind: "business",
+      preposition: null, referenceEvent: null, boundKind: "at_least",
+    });
+  });
+
+  it("parses 'at least 60 calendar days after the effective date'", () => {
+    const r = parseTemporalExpression(span("at least 60 calendar days after the effective date"));
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "relative_duration",
+      quantity: 60, unit: "days", dayKind: "calendar",
+      preposition: "after", referenceEvent: "effective_date",
+      boundKind: "at_least",
+    });
+  });
+});
+
+describe("yearless deadline dates — no later than <month> <day>", () => {
+  it("parses 'no later than August 1' with year: null", () => {
+    const r = parseTemporalExpression(span("no later than August 1"));
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "fixed_date", month: 8, day: 1, year: null,
+    });
+  });
+
+  it("parses 'by October 15' with year: null", () => {
+    const r = parseTemporalExpression(span("by October 15"));
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "fixed_date", month: 10, day: 15, year: null,
+    });
+  });
+
+  it("parses 'on or before December 31' with year: null", () => {
+    const r = parseTemporalExpression(span("on or before December 31"));
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "fixed_date", month: 12, day: 31, year: null,
+    });
+  });
+
+  it("still parses 'no later than August 1, 2027' with year present", () => {
+    const r = parseTemporalExpression(span("no later than August 1, 2027"));
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "fixed_date", month: 8, day: 1, year: 2027,
+    });
+  });
+
+  it("standalone 'August 1' without deadline prefix still requires year", () => {
+    const r = parseTemporalExpression(span("August 1"));
+    expect(r.result.parsed).toBe(false);
+  });
+
+  it("rejects 'by February 30' (invalid day, no year)", () => {
+    const r = parseTemporalExpression(span("by February 30"));
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    // day 30 passes basic bounds (1-31) since we can't validate without year
+    expect(r.result.expression).toEqual({
+      kind: "fixed_date", month: 2, day: 30, year: null,
+    });
   });
 });
 

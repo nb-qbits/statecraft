@@ -5,6 +5,7 @@ import type {
   DayKind,
   TimeUnit,
   ReferenceEvent,
+  YearParity,
 } from "./types.js";
 
 const MONTH_MAP: Record<string, number> = {
@@ -29,6 +30,15 @@ class TemporalVisitor extends BaseCstVisitor {
   }
 
   temporalExpression(ctx: Record<string, CstNode[]>): TemporalExpression {
+    if (ctx["bareIntervalExpression"]) {
+      return this.visit(ctx["bareIntervalExpression"]!) as TemporalExpression;
+    }
+    if (ctx["anchoredRecurrence"]) {
+      return this.visit(ctx["anchoredRecurrence"]!) as TemporalExpression;
+    }
+    if (ctx["eventAnchoredRecurrence"]) {
+      return this.visit(ctx["eventAnchoredRecurrence"]!) as TemporalExpression;
+    }
     if (ctx["recurrenceExpression"]) {
       return this.visit(ctx["recurrenceExpression"]!) as TemporalExpression;
     }
@@ -44,6 +54,87 @@ class TemporalVisitor extends BaseCstVisitor {
     return this.visit(ctx["fixedDate"]!) as TemporalExpression;
   }
 
+  bareIntervalExpression(ctx: Record<string, IToken[]>): TemporalExpression {
+    if (ctx["Quarterly"]) {
+      return {
+        kind: "recurrence", frequency: "quarterly", interval: 1,
+        byMonth: null, byMonthDay: null, yearParity: null,
+        anchorEvent: null, boundKind: "on", dayKind: null,
+      };
+    }
+    return {
+      kind: "recurrence", frequency: "yearly", interval: 1,
+      byMonth: null, byMonthDay: null, yearParity: null,
+      anchorEvent: null, boundKind: "on", dayKind: null,
+    };
+  }
+
+  anchoredRecurrence(ctx: Record<string, CstNode[] | IToken[]>): TemporalExpression {
+    const monthStr = (ctx["Month"] as IToken[])[0]!.image.toLowerCase();
+    const day = parseInt((ctx["day"] as IToken[])[0]!.image, 10);
+    const parity = ctx["parityClause"]
+      ? (this.visit(ctx["parityClause"] as CstNode[]) as YearParity)
+      : null;
+
+    return {
+      kind: "recurrence", frequency: "yearly", interval: 1,
+      byMonth: MONTH_MAP[monthStr]!, byMonthDay: day,
+      yearParity: parity, anchorEvent: null, boundKind: "on", dayKind: null,
+    };
+  }
+
+  parityClause(ctx: Record<string, IToken[]>): YearParity {
+    return ctx["EvenNumbered"] ? "even" : "odd";
+  }
+
+  eventAnchoredRecurrence(_ctx: Record<string, CstNode[] | IToken[]>): TemporalExpression {
+    return {
+      kind: "recurrence", frequency: "yearly", interval: 1,
+      byMonth: null, byMonthDay: null, yearParity: null,
+      anchorEvent: "regular_session", boundKind: "on", dayKind: null,
+    };
+  }
+
+  recurrenceExpression(ctx: Record<string, CstNode[] | IToken[]>): TemporalExpression {
+    const quantity = this.visit(ctx["quantity"] as CstNode[]) as number;
+
+    if (ctx["Years"]) {
+      return {
+        kind: "recurrence", frequency: "yearly", interval: quantity,
+        byMonth: null, byMonthDay: null, yearParity: null,
+        anchorEvent: null, boundKind: "on", dayKind: null,
+      };
+    }
+
+    const dayKindVal = ctx["dayKind"]
+      ? (this.visit(ctx["dayKind"] as CstNode[]) as DayKind)
+      : null;
+    const unit = this.visit(ctx["timeUnit"] as CstNode[]) as TimeUnit;
+
+    let preposition: string | null = null;
+    let referenceEvent: ReferenceEvent | null = null;
+    if (ctx["referenceClause"]) {
+      const ref = this.visit(ctx["referenceClause"] as CstNode[]) as {
+        preposition: string;
+        referenceEvent: ReferenceEvent;
+      };
+      preposition = ref.preposition;
+      referenceEvent = ref.referenceEvent;
+    }
+
+    const boundKind = ctx["Within"] ? "within" : ctx["AtLeast"] ? "at_least" : "no_longer_than";
+
+    return {
+      kind: "relative_duration",
+      quantity,
+      unit,
+      dayKind: dayKindVal,
+      preposition,
+      referenceEvent,
+      boundKind,
+    };
+  }
+
   fixedDate(ctx: Record<string, IToken[]>): TemporalExpression {
     const monthStr = ctx["Month"]![0]!.image.toLowerCase();
     const day = parseInt(ctx["day"]![0]!.image, 10);
@@ -52,8 +143,42 @@ class TemporalVisitor extends BaseCstVisitor {
     return { kind: "fixed_date", month: MONTH_MAP[monthStr]!, day, year };
   }
 
-  deadlineExpression(ctx: Record<string, CstNode[]>): TemporalExpression {
-    return this.visit(ctx["fixedDate"]!) as TemporalExpression;
+  fixedDateOptionalYear(ctx: Record<string, IToken[]>): TemporalExpression {
+    const monthStr = ctx["Month"]![0]!.image.toLowerCase();
+    const day = parseInt(ctx["day"]![0]!.image, 10);
+    const year = ctx["year"] ? parseInt(ctx["year"]![0]!.image, 10) : null;
+
+    return { kind: "fixed_date", month: MONTH_MAP[monthStr]!, day, year };
+  }
+
+  deadlineExpression(ctx: Record<string, CstNode[] | IToken[]>): TemporalExpression {
+    if (ctx["deadlineEventAnchor"]) {
+      return {
+        kind: "recurrence", frequency: "yearly", interval: 1,
+        byMonth: null, byMonthDay: null, yearParity: null,
+        anchorEvent: "regular_session", boundKind: "no_later_than", dayKind: null,
+      };
+    }
+
+    const dateExpr = this.visit(ctx["fixedDateOptionalYear"] as CstNode[]) as TemporalExpression;
+
+    if (ctx["parityClause"]) {
+      const parity = this.visit(ctx["parityClause"] as CstNode[]) as YearParity;
+      if (dateExpr.kind === "fixed_date") {
+        return {
+          kind: "recurrence", frequency: "yearly", interval: 1,
+          byMonth: dateExpr.month, byMonthDay: dateExpr.day,
+          yearParity: parity, anchorEvent: null,
+          boundKind: "no_later_than", dayKind: null,
+        };
+      }
+    }
+
+    return dateExpr;
+  }
+
+  deadlineEventAnchor(): void {
+    // semantic value is produced by deadlineExpression
   }
 
   effectiveOnExpression(ctx: Record<string, CstNode[]>): TemporalExpression {
@@ -78,7 +203,7 @@ class TemporalVisitor extends BaseCstVisitor {
       referenceEvent = ref.referenceEvent;
     }
 
-    const boundKind = ctx["Within"] ? "within" : "no_longer_than";
+    const boundKind = ctx["Within"] ? "within" : ctx["AtLeast"] ? "at_least" : "no_longer_than";
 
     return {
       kind: "relative_duration",
@@ -88,22 +213,6 @@ class TemporalVisitor extends BaseCstVisitor {
       preposition,
       referenceEvent,
       boundKind,
-    };
-  }
-
-  recurrenceExpression(ctx: Record<string, CstNode[]>): TemporalExpression {
-    const quantity = this.visit(ctx["quantity"]!) as number;
-    const dayKindVal = ctx["dayKind"]
-      ? (this.visit(ctx["dayKind"]!) as DayKind)
-      : null;
-    const unit = this.visit(ctx["timeUnit"]!) as TimeUnit;
-
-    return {
-      kind: "recurrence",
-      frequency: "every",
-      quantity,
-      unit,
-      dayKind: dayKindVal,
     };
   }
 

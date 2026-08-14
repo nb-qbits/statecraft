@@ -125,7 +125,7 @@ export function checkDateParseMatch(
   const expr = input.grammarResult.result.expression;
   const res = input.resolutionResult.result;
 
-  if (expr.kind === "fixed_date" && res.resolved) {
+  if (expr.kind === "fixed_date" && res.resolved && "statutoryDate" in res) {
     const mm = String(expr.month).padStart(2, "0");
     const dd = String(expr.day).padStart(2, "0");
     const expectedStatutory = `${expr.year}-${mm}-${dd}`;

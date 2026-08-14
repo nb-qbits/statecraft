@@ -20,7 +20,8 @@ import { AppError } from "../shared/errors.js";
 import type { DocumentVersion } from "../ingestion/types.js";
 import type { ProposalAnchorResult } from "../anchoring/types.js";
 import type { SpanParseResult } from "../grammar/types.js";
-import type { AnchoredResolution } from "../resolver/types.js";
+import { isResolvedRecurrence } from "../resolver/types.js";
+import type { AnchoredResolution, Occurrence } from "../resolver/types.js";
 import type { LaneAssignment } from "../routing/types.js";
 import type {
   Analysis,
@@ -138,20 +139,27 @@ interface ComputedDateFields {
   readonly ruleIds: string[];
   readonly citations: string[];
   readonly packVersion: string;
+  readonly rrule: string | null;
+  readonly occurrences: readonly Occurrence[];
 }
 
-function buildComputedDateFields(proposal: ReviewProposal): ComputedDateFields {
-  if (!proposal.resolved || !proposal.statutoryDate) {
+function buildComputedDateFields(
+  proposal: ReviewProposal,
+  occurrences: readonly Occurrence[] = [],
+): ComputedDateFields {
+  if (!proposal.resolved) {
     throw new AppError({
       code: "COMPUTED_DATE_REQUIRES_RESOLUTION",
       category: "internal",
-      message: "dateProvenance 'computed' requires a resolved date from the resolver",
+      message: "dateProvenance 'computed' requires a resolved result from the resolver",
       retryable: false,
       context: { proposalId: proposal.proposalId, resolved: proposal.resolved },
     });
   }
+
   const ruleIds = proposal.ruleIds as string[];
   const citations = proposal.citations as string[];
+
   if (ruleIds.length === 0 || !proposal.packVersion) {
     throw new AppError({
       code: "COMPUTED_DATE_MISSING_PROVENANCE",
@@ -166,6 +174,55 @@ function buildComputedDateFields(proposal: ReviewProposal): ComputedDateFields {
       },
     });
   }
+
+  if (proposal.rrule) {
+    if (occurrences.length === 0) {
+      throw new AppError({
+        code: "RECURRENCE_NO_OCCURRENCES",
+        category: "internal",
+        message: "recurrence proposal resolved but produced no occurrences within the horizon",
+        retryable: false,
+        context: { proposalId: proposal.proposalId, rrule: proposal.rrule },
+      });
+    }
+
+    for (const occ of occurrences) {
+      if (occ.citations.length === 0) {
+        throw new AppError({
+          code: "COMPUTED_DATE_EMPTY_CITATIONS",
+          category: "internal",
+          message:
+            "dateProvenance 'computed' requires non-empty citations per occurrence — INV-6",
+          retryable: false,
+          context: { proposalId: proposal.proposalId, occurrenceDate: occ.occurrenceDate },
+        });
+      }
+    }
+
+    const firstOccurrence = occurrences[0]!;
+
+    return {
+      dateProvenance: "computed",
+      deadlineDate: firstOccurrence.occurrenceDate,
+      adjustedDate: firstOccurrence.adjustedDate,
+      ruleIds,
+      citations,
+      packVersion: proposal.packVersion,
+      rrule: proposal.rrule,
+      occurrences,
+    };
+  }
+
+  if (!proposal.statutoryDate) {
+    throw new AppError({
+      code: "COMPUTED_DATE_REQUIRES_RESOLUTION",
+      category: "internal",
+      message: "dateProvenance 'computed' requires a statutory date for single-date resolutions",
+      retryable: false,
+      context: { proposalId: proposal.proposalId, resolved: proposal.resolved },
+    });
+  }
+
   if (citations.length === 0) {
     throw new AppError({
       code: "COMPUTED_DATE_EMPTY_CITATIONS",
@@ -176,6 +233,7 @@ function buildComputedDateFields(proposal: ReviewProposal): ComputedDateFields {
       context: { proposalId: proposal.proposalId },
     });
   }
+
   return {
     dateProvenance: "computed",
     deadlineDate: proposal.statutoryDate,
@@ -183,6 +241,8 @@ function buildComputedDateFields(proposal: ReviewProposal): ComputedDateFields {
     ruleIds,
     citations,
     packVersion: proposal.packVersion,
+    rrule: null,
+    occurrences: [],
   };
 }
 
@@ -238,6 +298,29 @@ export function createReviewService(deps: ReviewServiceDeps) {
       });
     }
     return version;
+  }
+
+  async function fetchOccurrencesForProposal(
+    proposal: ReviewProposal,
+  ): Promise<readonly Occurrence[]> {
+    if (!proposal.rrule) return [];
+
+    const resolutions = await resolverRepository.getResultsByVersion(
+      proposal.documentVersionId,
+    );
+    const match = resolutions.find(
+      (r) => r.anchorId === proposal.anchorId && isResolvedRecurrence(r.result),
+    );
+    if (!match || !isResolvedRecurrence(match.result)) {
+      throw new AppError({
+        code: "RECURRENCE_RESOLUTION_NOT_FOUND",
+        category: "internal",
+        message: `recurrence proposal ${proposal.proposalId} has rrule but no matching ResolvedRecurrence in resolver results`,
+        retryable: false,
+        context: { proposalId: proposal.proposalId, anchorId: proposal.anchorId },
+      });
+    }
+    return match.result.occurrences;
   }
 
   return {
@@ -485,6 +568,7 @@ export function createReviewService(deps: ReviewServiceDeps) {
         ruleIds: input.ruleIds ?? [],
         citations: manualDateFields.citations,
         packVersion: input.packVersion ?? null,
+        rrule: null,
         deliverable: input.deliverable ?? null,
         actor: input.actor ?? null,
         conditions: input.conditions ?? null,
@@ -697,12 +781,16 @@ export function createReviewService(deps: ReviewServiceDeps) {
             : null,
         resolved: resolution?.result.resolved ?? false,
         statutoryDate:
-          resolution?.result.resolved
+          resolution?.result.resolved && "statutoryDate" in resolution.result
             ? resolution.result.statutoryDate
             : null,
         adjustedDate:
-          resolution?.result.resolved
+          resolution?.result.resolved && "adjustedDate" in resolution.result
             ? resolution.result.adjustedDate
+            : null,
+        rrule:
+          resolution?.result.resolved && "rrule" in resolution.result
+            ? resolution.result.rrule
             : null,
         ruleIds:
           resolution?.result.resolved
@@ -755,7 +843,8 @@ export function createReviewService(deps: ReviewServiceDeps) {
       });
     }
 
-    const computed = buildComputedDateFields(proposal);
+    const occurrences = await fetchOccurrencesForProposal(proposal);
+    const computed = buildComputedDateFields(proposal, occurrences);
 
     const before = proposalSnapshot(proposal);
     const after = { ...before };
@@ -784,12 +873,20 @@ export function createReviewService(deps: ReviewServiceDeps) {
       ruleIds: computed.ruleIds,
       citations: computed.citations,
       packVersion: computed.packVersion,
+      rrule: computed.rrule,
       deliverable: null,
       actor: null,
       conditions: null,
       dateProvenance: computed.dateProvenance,
       splitFromRecordId: null,
     });
+
+    if (computed.occurrences.length > 0) {
+      await reviewRepository.insertOccurrences(
+        record.recordVersionId,
+        computed.occurrences,
+      );
+    }
 
     await reviewRepository.updateProposalStatus(
       proposal.proposalId,
@@ -801,6 +898,7 @@ export function createReviewService(deps: ReviewServiceDeps) {
         proposalId: proposal.proposalId,
         recordId: record.recordId,
         reviewerId: input.reviewerId,
+        occurrenceCount: computed.occurrences.length,
       },
       "proposal accepted",
     );
@@ -846,6 +944,7 @@ export function createReviewService(deps: ReviewServiceDeps) {
       (edits.deadlineDate !== undefined &&
         edits.deadlineDate !== proposal.statutoryDate);
 
+    const occurrences = await fetchOccurrencesForProposal(proposal);
     let dateFields: ComputedDateFields | ReviewerAssertedDateFields;
     if (dateIsReviewerAsserted) {
       const reason = !proposal.resolved
@@ -859,7 +958,7 @@ export function createReviewService(deps: ReviewServiceDeps) {
         (edits.citations as string[]) ?? (proposal.citations as string[]),
       );
     } else {
-      dateFields = buildComputedDateFields(proposal);
+      dateFields = buildComputedDateFields(proposal, occurrences);
     }
 
     const before = proposalSnapshot(proposal);
@@ -887,6 +986,9 @@ export function createReviewService(deps: ReviewServiceDeps) {
       idempotencyKey: input.idempotencyKey,
     });
 
+    const computedRrule = "rrule" in dateFields ? dateFields.rrule : null;
+    const computedOccurrences = "occurrences" in dateFields ? dateFields.occurrences : [];
+
     const record = await reviewRepository.insertRegisterRecord({
       recordVersionId: randomUUID(),
       proposalId: proposal.proposalId,
@@ -902,12 +1004,20 @@ export function createReviewService(deps: ReviewServiceDeps) {
         (proposal.ruleIds as string[]),
       citations: dateFields.citations,
       packVersion: proposal.packVersion,
+      rrule: computedRrule,
       deliverable: (edits.deliverable as string) ?? null,
       actor: (edits.actor as string) ?? null,
       conditions: (edits.conditions as string) ?? null,
       dateProvenance: dateFields.dateProvenance,
       splitFromRecordId: null,
     });
+
+    if (computedOccurrences.length > 0) {
+      await reviewRepository.insertOccurrences(
+        record.recordVersionId,
+        computedOccurrences,
+      );
+    }
 
     await reviewRepository.updateProposalStatus(
       proposal.proposalId,
@@ -920,6 +1030,7 @@ export function createReviewService(deps: ReviewServiceDeps) {
         recordId: record.recordId,
         reviewerId: input.reviewerId,
         fieldsEdited: diff.map((d) => d.field),
+        occurrenceCount: computedOccurrences.length,
       },
       "proposal edited and accepted",
     );
@@ -1025,6 +1136,7 @@ export function createReviewService(deps: ReviewServiceDeps) {
         ruleIds: sr.ruleIds ?? (proposal.ruleIds as string[]),
         citations: splitDateFields.citations,
         packVersion: proposal.packVersion,
+        rrule: null,
         deliverable: sr.deliverable ?? null,
         actor: sr.actor ?? null,
         conditions: sr.conditions ?? null,

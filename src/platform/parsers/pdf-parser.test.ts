@@ -7,7 +7,7 @@ const NOT_PDF = Buffer.from("not a pdf");
 
 function makeSidecarResponse(overrides: Partial<SidecarResponse> = {}): SidecarResponse {
   return {
-    version: "1.0.0",
+    version: "1.1.0",
     pages: [
       {
         pageNumber: 1,
@@ -37,7 +37,7 @@ function makeSidecarClient(response?: SidecarResponse | Error): SidecarClient {
 describe("pdf-parser", () => {
   it("has correct parserVersion", () => {
     const parser = createPdfParser(makeSidecarClient());
-    expect(parser.parserVersion).toBe("1.0.0");
+    expect(parser.parserVersion).toBe("1.1.0");
   });
 
   it("rejects non-PDF input", async () => {
@@ -58,7 +58,7 @@ describe("pdf-parser", () => {
     expect(result.paragraphs.length).toBeGreaterThan(0);
     expect(result.fidelity).toBe("inferred");
     expect(result.parserAdapter).toBe("pdf");
-    expect(result.parserVersion).toBe("1.0.0");
+    expect(result.parserVersion).toBe("1.1.0");
   });
 
   it("applies structural segmentation to sidecar output", async () => {
@@ -173,7 +173,7 @@ describe("createSidecarClient", () => {
     const client = createSidecarClient("http://localhost:8000");
     const result = await client.parsePdf(Buffer.from("pdf bytes"));
 
-    expect(result.version).toBe("1.0.0");
+    expect(result.version).toBe("1.1.0");
     expect(result.pages).toHaveLength(1);
     expect(globalThis.fetch).toHaveBeenCalledOnce();
   });

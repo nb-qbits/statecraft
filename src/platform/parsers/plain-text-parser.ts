@@ -2,11 +2,12 @@ import type { DocumentParser, ParseResult, CharacterAccounting } from "../../mod
 import {
   splitByBlankLines,
   splitByStructure,
+  splitOnEmbeddedSections,
   isPageFooter,
 } from "./structural-segmentation.js";
 
 const ADAPTER_ID = "plain-text";
-const VERSION = "1.3.0";
+const VERSION = "1.4.0";
 
 const LINE_NUMBER_MARGIN = /^\s*\d{1,4}\s{2,}/;
 
@@ -51,11 +52,11 @@ export function createPlainTextParser(): DocumentParser {
       let consumedCount;
       if (hasBlankLines) {
         const result = splitByBlankLines(contentLines);
-        paragraphs = result.paragraphs;
+        paragraphs = splitOnEmbeddedSections(result.paragraphs);
         consumedCount = result.consumedCount;
       } else {
         const result = splitByStructure(contentLines);
-        paragraphs = result.paragraphs;
+        paragraphs = splitOnEmbeddedSections(result.paragraphs);
         consumedCount = result.consumedCount;
       }
 

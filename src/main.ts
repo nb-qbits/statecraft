@@ -42,6 +42,7 @@ import { createReviewService } from "./modules/review/service.js";
 import { registerReviewRoutes } from "./platform/server/routes/review.js";
 import { registerAnalyzeRoutes } from "./platform/server/routes/analyze.js";
 import { registerFindingsRoutes } from "./platform/server/routes/findings.js";
+import { registerExportRoutes } from "./platform/server/routes/export.js";
 import { createPlainTextParser } from "./platform/parsers/plain-text-parser.js";
 import { parseDocxAsync } from "./platform/parsers/docx-parser.js";
 import { createSidecarClient, createPdfParser } from "./platform/parsers/pdf-parser.js";
@@ -301,6 +302,11 @@ async function main(): Promise<void> {
     resolverRepository,
     evaluationRepository,
     routingRepository,
+    reviewRepository,
+    logger,
+  });
+
+  registerExportRoutes(app, {
     reviewRepository,
     logger,
   });

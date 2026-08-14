@@ -1,5 +1,6 @@
 import { eq, and } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
+import { createHash } from "node:crypto";
 import {
   projects,
   analyses,
@@ -8,7 +9,9 @@ import {
   registerRecords,
   idempotencyKeys,
 } from "./review-schema.js";
+import { deadlineOccurrences } from "./occurrence-schema.js";
 import { evaluationResults } from "./evaluation-schema.js";
+import type { Occurrence } from "../../modules/resolver/types.js";
 import type {
   DocumentVersionId,
   ProjectId,
@@ -76,6 +79,7 @@ function rowToProposal(row: typeof proposals.$inferSelect): ReviewProposal {
     resolved: row.resolved,
     statutoryDate: row.statutoryDate,
     adjustedDate: row.adjustedDate,
+    rrule: row.rrule ?? null,
     ruleIds: (row.ruleIds as string[]) ?? [],
     citations: (row.citations as string[]) ?? [],
     packVersion: row.packVersion,
@@ -124,6 +128,7 @@ function rowToRegisterRecord(
     deliverable: row.deliverable,
     actor: row.actor,
     conditions: row.conditions,
+    rrule: row.rrule ?? null,
     dateProvenance: row.dateProvenance as DateProvenance,
     status: row.status as RecordStatus,
     splitFromRecordId: row.splitFromRecordId as RegisterRecordId | null,
@@ -186,6 +191,15 @@ export interface ReviewRepository {
     eventId: ReviewEventId,
   ): Promise<RegisterRecord[]>;
 
+  // Occurrences
+  insertOccurrences(
+    recordVersionId: string,
+    occurrences: readonly Occurrence[],
+  ): Promise<void>;
+  getOccurrencesByRecord(
+    recordVersionId: string,
+  ): Promise<Occurrence[]>;
+
   // Provenance helpers
   getEvaluatorPromptHash(
     documentVersionId: DocumentVersionId,
@@ -221,6 +235,7 @@ export interface ProposalInsert {
   readonly adjustedDate: string | null;
   readonly ruleIds: readonly string[];
   readonly citations: readonly string[];
+  readonly rrule: string | null;
   readonly packVersion: string | null;
   readonly supportLevel: string;
   readonly lane: string;
@@ -251,6 +266,7 @@ export interface RegisterRecordInsert {
   readonly ruleIds: readonly string[];
   readonly citations: readonly string[];
   readonly packVersion: string | null;
+  readonly rrule: string | null;
   readonly deliverable: string | null;
   readonly actor: string | null;
   readonly conditions: string | null;
@@ -362,6 +378,7 @@ export function createReviewRepository(
           adjustedDate: p.adjustedDate,
           ruleIds: p.ruleIds as unknown as Record<string, unknown>,
           citations: p.citations as unknown as Record<string, unknown>,
+          rrule: p.rrule,
           packVersion: p.packVersion,
           supportLevel: p.supportLevel,
           lane: p.lane,
@@ -473,6 +490,7 @@ export function createReviewRepository(
           ruleIds: record.ruleIds as unknown as Record<string, unknown>,
           citations: record.citations as unknown as Record<string, unknown>,
           packVersion: record.packVersion,
+          rrule: record.rrule,
           deliverable: record.deliverable,
           actor: record.actor,
           conditions: record.conditions,
@@ -564,6 +582,43 @@ export function createReviewRepository(
         responseStatus: status,
         responseBody: body as Record<string, unknown>,
       });
+    },
+
+    async insertOccurrences(
+      recordVersionId: string,
+      occurrences: readonly Occurrence[],
+    ): Promise<void> {
+      if (occurrences.length === 0) return;
+      const rows = occurrences.map((occ) => ({
+        occurrenceId: createHash("sha256")
+          .update(`${recordVersionId}:${occ.sequenceNumber}`)
+          .digest("hex")
+          .slice(0, 64),
+        recordVersionId,
+        occurrenceDate: occ.occurrenceDate,
+        adjustedDate: occ.adjustedDate,
+        ruleIds: occ.ruleIds as unknown as Record<string, unknown>,
+        citations: occ.citations as unknown as Record<string, unknown>,
+        sequenceNumber: occ.sequenceNumber,
+      }));
+      await db.insert(deadlineOccurrences).values(rows);
+    },
+
+    async getOccurrencesByRecord(
+      recordVersionId: string,
+    ): Promise<Occurrence[]> {
+      const rows = await db
+        .select()
+        .from(deadlineOccurrences)
+        .where(eq(deadlineOccurrences.recordVersionId, recordVersionId))
+        .orderBy(deadlineOccurrences.sequenceNumber);
+      return rows.map((row) => ({
+        occurrenceDate: row.occurrenceDate,
+        adjustedDate: row.adjustedDate,
+        ruleIds: (row.ruleIds as string[]) ?? [],
+        citations: (row.citations as string[]) ?? [],
+        sequenceNumber: row.sequenceNumber,
+      }));
     },
   };
 }

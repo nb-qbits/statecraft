@@ -110,6 +110,7 @@ function makeProposal(overrides: Partial<ReviewProposal> = {}): ReviewProposal {
     resolved: true,
     statutoryDate: "2025-07-01",
     adjustedDate: "2025-07-01",
+    rrule: null,
     ruleIds: ["FIXED_DATE"],
     citations: ["va-code § 1-210: effective date derived from FIXED_DATE rule"],
     packVersion: "us-va/v1",
@@ -211,6 +212,7 @@ function createMockReviewRepository(): ReviewRepository {
         conditions: record.conditions,
         dateProvenance: record.dateProvenance as DateProvenance,
         status: "active",
+        rrule: record.rrule ?? null,
         splitFromRecordId: record.splitFromRecordId as RegisterRecordId | null,
         createdAt: new Date().toISOString(),
       };
@@ -228,6 +230,8 @@ function createMockReviewRepository(): ReviewRepository {
     getEvaluatorPromptHash: vi.fn(async () => "ph_eval_test"),
     getIdempotencyResponse: vi.fn(async () => null),
     setIdempotencyResponse: vi.fn(),
+    insertOccurrences: vi.fn(),
+    getOccurrencesByRecord: vi.fn(async () => []),
   };
 }
 
@@ -459,7 +463,7 @@ describe("review service", () => {
           reviewerId: "reviewer-alice",
           idempotencyKey: "idem-accept-unresolved",
         }),
-      ).rejects.toThrow("requires a resolved date");
+      ).rejects.toThrow("requires a resolved result");
     });
 
     it("edit_and_accept: creates event with diff, allows unresolved", async () => {
@@ -755,7 +759,7 @@ describe("review service", () => {
           reviewerId: "reviewer-struct",
           idempotencyKey: "idem-struct-1",
         }),
-      ).rejects.toThrow("requires a resolved date");
+      ).rejects.toThrow("requires a resolved result");
 
       // edit_and_accept yields reviewer_asserted, never computed
       const result = await service.submitReview(
@@ -872,6 +876,227 @@ describe("review service", () => {
       expect(typeof repo.insertReviewEvent).toBe("function");
       // No updateReviewEvent method exists
       expect((repo as unknown as Record<string, unknown>).updateReviewEvent).toBeUndefined();
+    });
+  });
+
+  describe("recurrence acceptance", () => {
+    const recurrenceOccurrences = [
+      {
+        occurrenceDate: "2026-12-15",
+        adjustedDate: "2026-12-15",
+        ruleIds: ["va-1-210-E-evaluated-no-adjustment"],
+        citations: ["Va. Code § 1-210(E) evaluated — date falls on a business day, no adjustment required"],
+        sequenceNumber: 1,
+      },
+      {
+        occurrenceDate: "2028-12-15",
+        adjustedDate: "2028-12-15",
+        ruleIds: ["va-1-210-E-evaluated-no-adjustment"],
+        citations: ["Va. Code § 1-210(E) evaluated — date falls on a business day, no adjustment required"],
+        sequenceNumber: 2,
+      },
+      {
+        occurrenceDate: "2030-12-15",
+        adjustedDate: "2030-12-16",
+        ruleIds: ["va-1-210-E-sunday", "va-1-210-E-next-business-day"],
+        citations: ["Va. Code § 1-210(E): December 15, 2030 falls on Sunday", "Va. Code § 1-210(E): adjusted to next business day 2030-12-16"],
+        sequenceNumber: 3,
+      },
+    ];
+
+    function makeRecurrenceProposal(): ReviewProposal {
+      return makeProposal({
+        quotedText: "each December 15 in even-numbered years thereafter",
+        kind: "recurrence",
+        resolved: true,
+        statutoryDate: null,
+        adjustedDate: null,
+        rrule: "FREQ=YEARLY;INTERVAL=2;BYMONTH=12;BYMONTHDAY=15",
+        ruleIds: ["recurrence-schedule", "year-parity-filter"],
+        citations: [
+          "recurrence rule: FREQ=YEARLY;INTERVAL=2;BYMONTH=12;BYMONTHDAY=15",
+          "year parity: even-numbered years only (RRULE INTERVAL=2 with DTSTART in even year 2026)",
+        ],
+        packVersion: "us-va/v1",
+      });
+    }
+
+    function createRecurrenceDeps() {
+      const deps = createDeps();
+      (deps.reviewRepository.getProposal as ReturnType<typeof vi.fn>)
+        .mockResolvedValue(makeRecurrenceProposal());
+      (deps.resolverRepository as unknown as { getResultsByVersion: ReturnType<typeof vi.fn> })
+        .getResultsByVersion = vi.fn(async () => [
+          {
+            anchorId: "anc_test1" as AnchorId,
+            segmentId: "seg_1" as SegmentId,
+            text: "each December 15 in even-numbered years thereafter",
+            expression: { kind: "recurrence" },
+            result: {
+              resolved: true,
+              recurrence: true,
+              rrule: "FREQ=YEARLY;INTERVAL=2;BYMONTH=12;BYMONTHDAY=15",
+              occurrences: recurrenceOccurrences,
+              horizon: "2031-12-31",
+              yearParityNote: "even-numbered years",
+              ruleIds: ["recurrence-schedule", "year-parity-filter"],
+              citations: [
+                "recurrence rule: FREQ=YEARLY;INTERVAL=2;BYMONTH=12;BYMONTHDAY=15",
+                "year parity: even-numbered years only",
+              ],
+              packVersion: "us-va/v1",
+              warnings: [],
+              inputs: [],
+            },
+          },
+        ]);
+      return deps;
+    }
+
+    it("accept: recurrence proposal produces register record with rrule and first occurrence as deadlineDate", async () => {
+      const deps = createRecurrenceDeps();
+      const service = createReviewService(deps);
+
+      const result = await service.submitReview("prop-001" as ProposalId, {
+        action: "accept",
+        reviewerId: "reviewer-alice",
+        idempotencyKey: "idem-recurrence-accept",
+      });
+
+      expect(result.records).toHaveLength(1);
+      const record = result.records[0]!;
+      expect(record.rrule).toBe("FREQ=YEARLY;INTERVAL=2;BYMONTH=12;BYMONTHDAY=15");
+      expect(record.deadlineDate).toBe("2026-12-15");
+      expect(record.adjustedDate).toBe("2026-12-15");
+      expect(record.dateProvenance).toBe("computed");
+      expect(record.ruleIds).toContain("recurrence-schedule");
+      expect(record.ruleIds).toContain("year-parity-filter");
+    });
+
+    it("accept: materializes occurrences with per-occurrence §1-210(E)", async () => {
+      const deps = createRecurrenceDeps();
+      const service = createReviewService(deps);
+
+      await service.submitReview("prop-001" as ProposalId, {
+        action: "accept",
+        reviewerId: "reviewer-alice",
+        idempotencyKey: "idem-recurrence-occ",
+      });
+
+      const insertOccurrencesMock = deps.reviewRepository.insertOccurrences as ReturnType<typeof vi.fn>;
+      expect(insertOccurrencesMock).toHaveBeenCalledTimes(1);
+
+      const [_recordVersionId, occurrences] = insertOccurrencesMock.mock.calls[0] as [string, typeof recurrenceOccurrences];
+      expect(occurrences).toHaveLength(3);
+
+      // 2030-12-15 falls on Sunday → adjusted to 2030-12-16
+      const dec2030 = occurrences.find((o) => o.occurrenceDate === "2030-12-15");
+      expect(dec2030).toBeDefined();
+      expect(dec2030!.adjustedDate).toBe("2030-12-16");
+      expect(dec2030!.ruleIds).toContain("va-1-210-E-sunday");
+      expect(dec2030!.citations.some((c: string) => c.includes("§ 1-210(E)"))).toBe(true);
+    });
+
+    it("accept: INV-6 — rejects occurrence with empty citations", async () => {
+      const deps = createRecurrenceDeps();
+      (deps.resolverRepository as unknown as { getResultsByVersion: ReturnType<typeof vi.fn> })
+        .getResultsByVersion = vi.fn(async () => [
+          {
+            anchorId: "anc_test1" as AnchorId,
+            segmentId: "seg_1" as SegmentId,
+            text: "each December 15",
+            expression: { kind: "recurrence" },
+            result: {
+              resolved: true,
+              recurrence: true,
+              rrule: "FREQ=YEARLY;BYMONTH=12;BYMONTHDAY=15",
+              occurrences: [
+                {
+                  occurrenceDate: "2026-12-15",
+                  adjustedDate: "2026-12-15",
+                  ruleIds: [],
+                  citations: [],
+                  sequenceNumber: 1,
+                },
+              ],
+              horizon: "2031-12-31",
+              yearParityNote: null,
+              ruleIds: ["recurrence-schedule"],
+              citations: ["recurrence rule: FREQ=YEARLY;BYMONTH=12;BYMONTHDAY=15"],
+              packVersion: "us-va/v1",
+              warnings: [],
+              inputs: [],
+            },
+          },
+        ]);
+
+      const service = createReviewService(deps);
+
+      await expect(
+        service.submitReview("prop-001" as ProposalId, {
+          action: "accept",
+          reviewerId: "reviewer-alice",
+          idempotencyKey: "idem-recurrence-inv6",
+        }),
+      ).rejects.toThrow("INV-6");
+    });
+
+    it("accept: rejects recurrence with no occurrences", async () => {
+      const deps = createRecurrenceDeps();
+      (deps.resolverRepository as unknown as { getResultsByVersion: ReturnType<typeof vi.fn> })
+        .getResultsByVersion = vi.fn(async () => [
+          {
+            anchorId: "anc_test1" as AnchorId,
+            segmentId: "seg_1" as SegmentId,
+            text: "each December 15",
+            expression: { kind: "recurrence" },
+            result: {
+              resolved: true,
+              recurrence: true,
+              rrule: "FREQ=YEARLY;BYMONTH=12;BYMONTHDAY=15",
+              occurrences: [],
+              horizon: "2031-12-31",
+              yearParityNote: null,
+              ruleIds: ["recurrence-schedule"],
+              citations: ["recurrence rule: FREQ=YEARLY;BYMONTH=12;BYMONTHDAY=15"],
+              packVersion: "us-va/v1",
+              warnings: [],
+              inputs: [],
+            },
+          },
+        ]);
+
+      const service = createReviewService(deps);
+
+      await expect(
+        service.submitReview("prop-001" as ProposalId, {
+          action: "accept",
+          reviewerId: "reviewer-alice",
+          idempotencyKey: "idem-recurrence-empty",
+        }),
+      ).rejects.toThrow("no occurrences");
+    });
+
+    it("non-recurrence accept still works (rrule=null, no occurrences)", async () => {
+      const deps = createDeps();
+      (deps.reviewRepository.getProposal as ReturnType<typeof vi.fn>)
+        .mockResolvedValue(makeProposal());
+
+      const service = createReviewService(deps);
+
+      const result = await service.submitReview("prop-001" as ProposalId, {
+        action: "accept",
+        reviewerId: "reviewer-alice",
+        idempotencyKey: "idem-non-recurrence",
+      });
+
+      expect(result.records).toHaveLength(1);
+      const record = result.records[0]!;
+      expect(record.rrule).toBeNull();
+      expect(record.deadlineDate).toBe("2025-07-01");
+
+      const insertOccurrencesMock = deps.reviewRepository.insertOccurrences as ReturnType<typeof vi.fn>;
+      expect(insertOccurrencesMock).not.toHaveBeenCalled();
     });
   });
 });

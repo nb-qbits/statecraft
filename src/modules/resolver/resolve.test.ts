@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { resolve, RESOLVER_VERSION } from "./resolve.js";
 import type { ParsedAnchoredExpression, ResolutionInput, DerivedEffectiveDate } from "./types.js";
+import { isResolvedDate, isResolvedRecurrence } from "./types.js";
 import type { AnchorId, SegmentId } from "../shared/types.js";
 import type { TemporalExpression } from "../grammar/types.js";
 import { loadPack, clearPackCache } from "../jurisdiction/pack-loader.js";
@@ -71,7 +72,7 @@ describe("resolver — fixed_date", () => {
     );
     const result = resolve(expr, [], testPack);
     expect(result.resolved).toBe(true);
-    if (!result.resolved) return;
+    if (!isResolvedDate(result)) return;
     expect(result.statutoryDate).toBe("2025-07-04");
     expect(result.adjustedDate).toBe("2025-07-07");
     expect(result.packVersion).toBe("us-va/v1");
@@ -84,7 +85,7 @@ describe("resolver — fixed_date", () => {
     );
     const result = resolve(expr, [], testPack);
     expect(result.resolved).toBe(true);
-    if (!result.resolved) return;
+    if (!isResolvedDate(result)) return;
     expect(result.statutoryDate).toBe("2026-07-01");
     expect(result.adjustedDate).toBe("2026-07-01");
     expect(result.ruleIds).toContain("verbatim-date");
@@ -99,7 +100,7 @@ describe("resolver — fixed_date", () => {
     );
     const result = resolve(expr, [], testPack);
     expect(result.resolved).toBe(true);
-    if (!result.resolved) return;
+    if (!isResolvedDate(result)) return;
     expect(result.inputs.length).toBe(1);
     expect(result.inputs[0]!.name).toBe("specifiedDate");
     expect(result.inputs[0]!.value).toBe("2026-12-01");
@@ -114,7 +115,7 @@ describe("resolver — fixed_date", () => {
     );
     const result = resolve(expr, [], testPack);
     expect(result.resolved).toBe(true);
-    if (!result.resolved) return;
+    if (!isResolvedDate(result)) return;
     expect(result.statutoryDate).toBe("2026-12-25");
     expect(result.adjustedDate).toBe("2026-12-28");
     expect(result.ruleIds).toContain("verbatim-date");
@@ -166,7 +167,7 @@ describe("resolver — relative_duration", () => {
     );
     const result = resolve(expr, [trigger], testPack);
     expect(result.resolved).toBe(true);
-    if (!result.resolved) return;
+    if (!isResolvedDate(result)) return;
     expect(result.statutoryDate).toBe("2026-04-01");
     expect(result.adjustedDate).toBe("2026-04-01");
     expect(result.ruleIds).toContain("va-1-210-A");
@@ -197,7 +198,7 @@ describe("resolver — relative_duration", () => {
     );
     const result = resolve(expr, [trigger], testPack);
     expect(result.resolved).toBe(true);
-    if (!result.resolved) return;
+    if (!isResolvedDate(result)) return;
     expect(result.statutoryDate).toBe("2026-06-06");
     expect(result.adjustedDate).toBe("2026-06-08");
     expect(result.ruleIds).toContain("va-1-210-A");
@@ -226,7 +227,7 @@ describe("resolver — relative_duration", () => {
     );
     const result = resolve(expr, [trigger], testPack);
     expect(result.resolved).toBe(true);
-    if (!result.resolved) return;
+    if (!isResolvedDate(result)) return;
     expect(result.statutoryDate).toBe("2026-01-20");
     expect(result.adjustedDate).toBe("2026-01-20");
   });
@@ -281,23 +282,173 @@ describe("resolver — relative_duration", () => {
 });
 
 describe("resolver — recurrence", () => {
-  it("recurrence → unresolved (repeating obligation, not single deadline)", () => {
+  it("bare recurrence without anchor → unresolved with missingInputs anchorDate", () => {
     const expr = makeExpr(
       {
         kind: "recurrence",
-        frequency: "every",
-        quantity: 2,
-        unit: "days",
-        dayKind: "business",
+        frequency: "quarterly",
+        interval: 1,
+        byMonth: null,
+        byMonthDay: null,
+        yearParity: null,
+        anchorEvent: null,
+        boundKind: "on",
+        dayKind: null,
       },
-      "every two business days",
+      "quarterly",
     );
     const result = resolve(expr, [], testPack);
     expect(result.resolved).toBe(false);
     if (result.resolved) return;
     expect(result.reason).toContain("recurrence");
-    expect(result.missingInputs).toContain("periodStart");
-    expect(result.missingInputs).toContain("periodEnd");
+    expect(result.missingInputs).toContain("anchorDate");
+  });
+
+  it("event-anchored recurrence → unresolved with missingInputs sessionDate", () => {
+    const expr = makeExpr(
+      {
+        kind: "recurrence",
+        frequency: "yearly",
+        interval: 1,
+        byMonth: null,
+        byMonthDay: null,
+        yearParity: null,
+        anchorEvent: "regular_session",
+        boundKind: "on",
+        dayKind: null,
+      },
+      "the first day of each regular session",
+    );
+    const result = resolve(expr, [], testPack);
+    expect(result.resolved).toBe(false);
+    if (result.resolved) return;
+    expect(result.reason).toContain("session");
+    expect(result.missingInputs).toContain("sessionDate");
+  });
+
+  it("anchored annual with even-year parity → resolved with occurrences", () => {
+    const expr = makeExpr(
+      {
+        kind: "recurrence",
+        frequency: "yearly",
+        interval: 1,
+        byMonth: 12,
+        byMonthDay: 15,
+        yearParity: "even",
+        anchorEvent: null,
+        boundKind: "on",
+        dayKind: null,
+      },
+      "each December 15 in even-numbered years thereafter",
+    );
+    const result = resolve(expr, [], testPack);
+    expect(isResolvedRecurrence(result)).toBe(true);
+    if (!isResolvedRecurrence(result)) return;
+    expect(result.rrule).toContain("FREQ=YEARLY");
+    expect(result.rrule).toContain("INTERVAL=2");
+    expect(result.rrule).toContain("BYMONTH=12");
+    expect(result.rrule).toContain("BYMONTHDAY=15");
+    expect(result.occurrences.length).toBeGreaterThanOrEqual(3);
+    const dates = result.occurrences.map((o) => o.occurrenceDate);
+    expect(dates).toContain("2026-12-15");
+    expect(dates).toContain("2028-12-15");
+    expect(dates).toContain("2030-12-15");
+    expect(result.yearParityNote).toContain("even");
+    expect(result.ruleIds).toContain("recurrence-schedule");
+    expect(result.ruleIds).toContain("year-parity-filter");
+  });
+
+  it("December 15, 2030 (Sunday) gets § 1-210(E) adjustment to Dec 16", () => {
+    const expr = makeExpr(
+      {
+        kind: "recurrence",
+        frequency: "yearly",
+        interval: 1,
+        byMonth: 12,
+        byMonthDay: 15,
+        yearParity: "even",
+        anchorEvent: null,
+        boundKind: "on",
+        dayKind: null,
+      },
+      "each December 15 in even-numbered years thereafter",
+    );
+    const result = resolve(expr, [], testPack);
+    if (!isResolvedRecurrence(result)) return;
+    const occ2030 = result.occurrences.find((o) => o.occurrenceDate === "2030-12-15");
+    expect(occ2030).toBeDefined();
+    expect(occ2030!.adjustedDate).toBe("2030-12-16");
+    expect(occ2030!.ruleIds).toContain("va-1-210-E");
+  });
+
+  it("every four years without anchor → unresolved with anchorDate missing", () => {
+    const expr = makeExpr(
+      {
+        kind: "recurrence",
+        frequency: "yearly",
+        interval: 4,
+        byMonth: null,
+        byMonthDay: null,
+        yearParity: null,
+        anchorEvent: null,
+        boundKind: "on",
+        dayKind: null,
+      },
+      "every four years thereafter",
+    );
+    const result = resolve(expr, [], testPack);
+    expect(result.resolved).toBe(false);
+    if (result.resolved) return;
+    expect(result.missingInputs).toContain("anchorDate");
+  });
+
+  it("occurrence IDs are deterministic across two runs", () => {
+    const expr = makeExpr(
+      {
+        kind: "recurrence",
+        frequency: "yearly",
+        interval: 1,
+        byMonth: 12,
+        byMonthDay: 15,
+        yearParity: "even",
+        anchorEvent: null,
+        boundKind: "on",
+        dayKind: null,
+      },
+      "each December 15 in even-numbered years thereafter",
+    );
+    const r1 = resolve(expr, [], testPack);
+    const r2 = resolve(expr, [], testPack);
+    expect(isResolvedRecurrence(r1)).toBe(true);
+    expect(isResolvedRecurrence(r2)).toBe(true);
+    if (!isResolvedRecurrence(r1) || !isResolvedRecurrence(r2)) return;
+    expect(r1.occurrences).toEqual(r2.occurrences);
+  });
+
+  it("each occurrence carries sequenceNumber; adjusted ones carry ruleIds", () => {
+    const expr = makeExpr(
+      {
+        kind: "recurrence",
+        frequency: "yearly",
+        interval: 1,
+        byMonth: 12,
+        byMonthDay: 15,
+        yearParity: "even",
+        anchorEvent: null,
+        boundKind: "on",
+        dayKind: null,
+      },
+      "each December 15 in even-numbered years thereafter",
+    );
+    const result = resolve(expr, [], testPack);
+    if (!isResolvedRecurrence(result)) return;
+    for (const occ of result.occurrences) {
+      expect(occ.sequenceNumber).toBeGreaterThan(0);
+      if (occ.adjustedDate !== occ.occurrenceDate) {
+        expect(occ.ruleIds).toContain("va-1-210-E");
+        expect(occ.citations).toContain("Va. Code § 1-210(E)");
+      }
+    }
   });
 });
 
@@ -316,7 +467,7 @@ describe("INV-6 — every resolved date carries citations", () => {
     );
     const result = resolve(expr, [], testPack);
     expect(result.resolved).toBe(true);
-    if (!result.resolved) return;
+    if (!isResolvedDate(result)) return;
     expect(result.citations.length).toBeGreaterThan(0);
     expect(result.ruleIds.length).toBeGreaterThan(0);
     expect(result.packVersion).toBeTruthy();
@@ -344,7 +495,7 @@ describe("INV-6 — every resolved date carries citations", () => {
     );
     const result = resolve(expr, [trigger], testPack);
     expect(result.resolved).toBe(true);
-    if (!result.resolved) return;
+    if (!isResolvedDate(result)) return;
     expect(result.ruleIds).toContain("va-1-210-A");
     expect(result.citations).toContain("Va. Code § 1-210(A)");
   });
@@ -356,7 +507,7 @@ describe("INV-6 — every resolved date carries citations", () => {
     );
     const result = resolve(expr, [], testPack);
     expect(result.resolved).toBe(true);
-    if (!result.resolved) return;
+    if (!isResolvedDate(result)) return;
     expect(result.inputs.length).toBeGreaterThan(0);
     const input = result.inputs[0]!;
     expect(input.name).toBeTruthy();
@@ -440,7 +591,7 @@ describe("reproducibility — same inputs produce same output", () => {
 
 describe("resolver version", () => {
   it("exports RESOLVER_VERSION", () => {
-    expect(RESOLVER_VERSION).toBe("1.1.0");
+    expect(RESOLVER_VERSION).toBe("1.2.0");
   });
 });
 
@@ -467,7 +618,7 @@ describe("derived effective date — auto-trigger for effective_date references"
     );
     const result = resolve(expr, [], testPack, derivedED);
     expect(result.resolved).toBe(true);
-    if (!result.resolved) return;
+    if (!isResolvedDate(result)) return;
     expect(result.statutoryDate).toBe("2026-09-29");
     expect(result.ruleIds).toContain("va-1-214-A-default");
     expect(result.ruleIds).toContain("va-1-210-A");
@@ -490,7 +641,7 @@ describe("derived effective date — auto-trigger for effective_date references"
     );
     const result = resolve(expr, [], testPack, derivedED);
     expect(result.resolved).toBe(true);
-    if (!result.resolved) return;
+    if (!isResolvedDate(result)) return;
     expect(result.statutoryDate).toBe("2026-08-30");
     expect(result.ruleIds).toContain("va-1-214-A-default");
     expect(result.ruleIds).toContain("va-1-210-A");
@@ -513,7 +664,7 @@ describe("derived effective date — auto-trigger for effective_date references"
     );
     const result = resolve(expr, [], testPack, derivedED);
     expect(result.resolved).toBe(true);
-    if (!result.resolved) return;
+    if (!isResolvedDate(result)) return;
     expect(result.inputs.length).toBe(1);
     const input = result.inputs[0]!;
     expect(input.name).toBe("effectiveDate");
@@ -545,7 +696,7 @@ describe("derived effective date — auto-trigger for effective_date references"
     );
     const result = resolve(expr, [trigger], testPack, derivedED);
     expect(result.resolved).toBe(true);
-    if (!result.resolved) return;
+    if (!isResolvedDate(result)) return;
     expect(result.statutoryDate).toBe("2026-01-31");
     expect(result.inputs).toEqual([trigger]);
     expect(result.ruleIds).not.toContain("va-1-214-A-default");
@@ -634,7 +785,7 @@ describe("real pack integration", () => {
     );
     const result = resolve(expr, [trigger], pack);
     expect(result.resolved).toBe(true);
-    if (!result.resolved) return;
+    if (!isResolvedDate(result)) return;
     expect(result.statutoryDate).toBe("2026-07-31");
     expect(result.ruleIds).toContain("va-1-210-A");
     expect(result.packVersion).toBe("us-va/v1");

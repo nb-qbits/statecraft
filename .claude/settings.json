@@ -57,7 +57,22 @@
       "Bash(npx tsx -e ' *)",
       "Bash(DATABASE_URL=postgres://postgres:postgres@localhost:5432/policyaction npm run db:migrate)",
       "Bash(DATABASE_URL=postgresql://policyaction:policyaction@localhost:5432/policyaction npm run db:migrate)",
-      "Bash(PGPASSWORD=policyaction psql -h localhost -U policyaction -d policyaction -c ' *)"
+      "Bash(PGPASSWORD=policyaction psql -h localhost -U policyaction -d policyaction -c ' *)",
+      "Bash(kill 43337)",
+      "Bash(open http://localhost:3001)",
+      "Bash(screencapture -x /tmp/screen1-upload.png)",
+      "Bash(screencapture /tmp/screen1-upload.png)",
+      "Bash(sqlite3 /Users/vgrover/Downloads/software/statecraft/.data/statecraft.db \"SELECT raw_text FROM source_segments WHERE document_version_id = 'e0f778ac-674d-4213-9423-215e788dbf05' ORDER BY structural_path\")",
+      "Bash(PGPASSWORD=statecraft psql -h localhost -U statecraft -d statecraft -c \"SELECT segment_id, structural_path, length\\(raw_text\\), substring\\(raw_text, 1, 100\\) FROM source_segments WHERE document_version_id = 'e0f778ac-674d-4213-9423-215e788dbf05' ORDER BY structural_path\")",
+      "Bash(npm ls *)",
+      "WebFetch(domain:legacylis.virginia.gov)",
+      "Bash(PGPASSWORD=postgres psql -h localhost -U postgres -d policyaction -c \"SELECT document_version_id, filename, mime_type, created_at FROM document_versions ORDER BY created_at DESC LIMIT 10;\")",
+      "WebFetch(domain:localhost)",
+      "Bash(docker cp *)",
+      "Read(//tmp/**)",
+      "Bash(open -a Calendar /tmp/deadlines.ics)",
+      "Bash(xxd /tmp/deadlines.ics)",
+      "Bash(open -a Calendar /tmp/deadlines-final.ics)"
     ],
     "deny": [
       "Read(./.env)",

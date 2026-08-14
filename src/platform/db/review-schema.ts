@@ -76,6 +76,7 @@ export const proposals = pgTable(
     ruleIds: jsonb("rule_ids").notNull(),
     citations: jsonb("citations").notNull(),
     packVersion: varchar("pack_version", { length: 64 }),
+    rrule: varchar("rrule", { length: 512 }),
     supportLevel: varchar("support_level", { length: 32 }).notNull(),
     lane: varchar("lane", { length: 32 }).notNull(),
     laneReasons: jsonb("lane_reasons").notNull(),
@@ -149,6 +150,7 @@ export const registerRecords = pgTable(
     deliverable: text("deliverable"),
     actor: text("actor"),
     conditions: text("conditions"),
+    rrule: varchar("rrule", { length: 512 }),
     dateProvenance: varchar("date_provenance", { length: 32 }).notNull(),
     status: varchar("record_status", { length: 32 })
       .notNull()

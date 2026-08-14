@@ -2,11 +2,12 @@ import type { ParseResult, CharacterAccounting } from "../../modules/parsing/typ
 import {
   splitByBlankLines,
   splitByStructure,
+  splitOnEmbeddedSections,
   isPageFooter,
 } from "./structural-segmentation.js";
 
 const ADAPTER_ID = "pdf";
-const VERSION = "1.0.0";
+const VERSION = "1.1.0";
 
 export interface SidecarPage {
   readonly pageNumber: number;
@@ -121,11 +122,11 @@ export function createPdfParser(sidecarClient: SidecarClient): ParsePdfFn {
     let consumedCount;
     if (hasBlankLines) {
       const result = splitByBlankLines(trimmedLines);
-      paragraphs = result.paragraphs;
+      paragraphs = splitOnEmbeddedSections(result.paragraphs);
       consumedCount = result.consumedCount;
     } else {
       const result = splitByStructure(trimmedLines);
-      paragraphs = result.paragraphs;
+      paragraphs = splitOnEmbeddedSections(result.paragraphs);
       consumedCount = result.consumedCount;
     }
 

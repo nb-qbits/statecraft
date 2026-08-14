@@ -7,8 +7,13 @@ import type {
   AnchorId,
   SegmentId,
 } from "../../modules/shared/types.js";
+import {
+  isResolvedDate,
+  isResolvedRecurrence,
+} from "../../modules/resolver/types.js";
 import type {
   AnchoredResolution,
+  Occurrence,
   ResolutionResult,
   ResolutionInput,
   ResolutionStatus,
@@ -23,7 +28,22 @@ function rowToAnchoredResolution(
   const inputs = (row.resolutionInputs as unknown as ResolutionInput[]) ?? [];
 
   let result: ResolutionResult;
-  if (row.resolved) {
+  if (row.resolved && row.rrule) {
+    const extra = row.recurrenceData as Record<string, unknown> | null;
+    result = {
+      resolved: true,
+      recurrence: true,
+      rrule: row.rrule,
+      occurrences: (extra?.occurrences ?? []) as Occurrence[],
+      horizon: (extra?.horizon as string) ?? "",
+      yearParityNote: (extra?.yearParityNote as string) ?? null,
+      ruleIds: (row.ruleIds as string[]) ?? [],
+      citations: (row.citations as string[]) ?? [],
+      packVersion: row.packVersion!,
+      warnings,
+      inputs,
+    };
+  } else if (row.resolved) {
     result = {
       resolved: true,
       statutoryDate: row.statutoryDate!,
@@ -92,8 +112,12 @@ export function createResolverRepository(
           expressionKind: r.expression.kind,
           expression: r.expression as unknown as Record<string, unknown>,
           resolved: r.result.resolved,
-          statutoryDate: r.result.resolved ? r.result.statutoryDate : null,
-          adjustedDate: r.result.resolved ? r.result.adjustedDate : null,
+          statutoryDate: isResolvedDate(r.result) ? r.result.statutoryDate : null,
+          adjustedDate: isResolvedDate(r.result) ? r.result.adjustedDate : null,
+          rrule: isResolvedRecurrence(r.result) ? r.result.rrule : null,
+          recurrenceData: isResolvedRecurrence(r.result)
+            ? ({ occurrences: r.result.occurrences, horizon: r.result.horizon, yearParityNote: r.result.yearParityNote } as unknown as Record<string, unknown>)
+            : null,
           ruleIds: r.result.resolved
             ? (r.result.ruleIds as unknown as Record<string, unknown>[])
             : null,

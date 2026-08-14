@@ -19,7 +19,7 @@ const parser = createPlainTextParser();
 describe("plain-text parser", () => {
   it("has correct adapter ID and version", () => {
     expect(parser.adapterId).toBe("plain-text");
-    expect(parser.version).toBe("1.3.0");
+    expect(parser.version).toBe("1.4.0");
   });
 
   it("parses simple single-paragraph text", () => {

@@ -95,6 +95,7 @@ export interface ReviewProposal {
   readonly resolved: boolean;
   readonly statutoryDate: string | null;
   readonly adjustedDate: string | null;
+  readonly rrule: string | null;
   readonly ruleIds: readonly string[];
   readonly citations: readonly string[];
   readonly packVersion: string | null;
@@ -141,6 +142,7 @@ export interface RegisterRecord {
   readonly deliverable: string | null;
   readonly actor: string | null;
   readonly conditions: string | null;
+  readonly rrule: string | null;
   readonly dateProvenance: DateProvenance;
   readonly status: RecordStatus;
   readonly splitFromRecordId: RegisterRecordId | null;

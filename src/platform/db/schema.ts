@@ -15,3 +15,4 @@ export {
   registerRecords,
   idempotencyKeys,
 } from "./review-schema.js";
+export { deadlineOccurrences } from "./occurrence-schema.js";
