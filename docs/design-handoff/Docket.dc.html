@@ -1,0 +1,1252 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { margin: 0; background: #F5F5F7; }
+    * { box-sizing: border-box; font-family: 'Public Sans', sans-serif; }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-thumb { background: #D9D0B8; border-radius: 4px; }
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes pulseDot { 0% { box-shadow: 0 0 0 0 rgba(184,69,47,0.45); } 70% { box-shadow: 0 0 0 7px rgba(184,69,47,0); } 100% { box-shadow: 0 0 0 0 rgba(184,69,47,0); } }
+    a { color: #3C5A82; }
+    a:hover { color: #16233F; }
+  </style>
+</helmet>
+
+<div style="min-height:100vh; background:#F5F5F7; color:#1D1D1F;">
+
+<sc-if value="{{ isLoginView }}" hint-placeholder-val="{{ false }}">
+  <div style="min-height:100vh; display:flex; align-items:center; justify-content:center; background:#16233F;">
+    <div style="background:#fff; border-radius:20px; padding:48px 44px; width:360px; text-align:center; box-shadow:0 24px 70px rgba(0,0,0,0.3);">
+      <div style="width:44px; height:44px; border-radius:10px; background:#C8983E; display:flex; align-items:center; justify-content:center; font-weight:700; color:#16233F; font-size:20px; margin:0 auto 18px auto;">D</div>
+      <div style="font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Public Sans',sans-serif; letter-spacing:-0.02em; font-size:22px; font-weight:700; color:#16233F; margin-bottom:6px;">Docket</div>
+      <div style="font-size:13px; color:#6E6E73; margin-bottom:32px;">Deadline intelligence for legislation.</div>
+      <div onClick="{{ continueWithGoogle }}" style="display:flex; align-items:center; justify-content:center; gap:10px; background:#16233F; color:#F5F2E8; padding:13px; border-radius:10px; cursor:pointer; font-size:14px; font-weight:600; transition:transform 0.15s ease;" style-active="transform:scale(0.97);">
+        <svg width="16" height="16" viewBox="0 0 24 24"><path fill="#fff" d="M21.35 11.1h-9.17v2.92h5.27c-.23 1.44-1.62 4.22-5.27 4.22-3.17 0-5.76-2.62-5.76-5.85s2.59-5.85 5.76-5.85c1.8 0 3.01.77 3.7 1.43l2.52-2.43C16.98 3.86 14.9 3 12.18 3 6.9 3 2.6 7.24 2.6 12.5s4.3 9.5 9.58 9.5c5.53 0 9.19-3.89 9.19-9.36 0-.63-.07-1.11-.02-1.54z"></path></svg>
+        Continue with Google
+      </div>
+      <div style="margin-top:18px; font-size:12.5px; color:#AEAEB2; cursor:default;">Sign in with email &amp; password</div>
+    </div>
+  </div>
+</sc-if>
+
+<sc-if value="{{ isAdminView }}" hint-placeholder-val="{{ false }}">
+  <div style="display:flex; min-height:100vh;">
+    <div style="width:230px; flex-shrink:0; background:#16233F; color:#E7E3D6; display:flex; flex-direction:column; padding:24px 20px;">
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:24px;">
+        <div style="width:30px; height:30px; border-radius:7px; background:#4C6D96; display:flex; align-items:center; justify-content:center; font-weight:700; color:#fff; font-size:14px;">D</div>
+        <div style="font-size:15px; font-weight:600; color:#F5F2E8;">Docket Admin</div>
+      </div>
+      <div style="font-size:11px; color:#9AA6BC; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:20px;">Internal console</div>
+      <div onClick="{{ exitAdmin }}" style="display:flex; align-items:center; gap:8px; padding:9px 10px; border-radius:8px; cursor:pointer; color:#B7BECF; font-size:13.5px; margin-top:auto;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"></path></svg> Exit admin
+      </div>
+    </div>
+    <div style="flex:1; padding:36px 40px; overflow-y:auto;">
+      <div style="font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Public Sans',sans-serif; letter-spacing:-0.03em; font-size:24px; font-weight:700; color:#16233F; margin-bottom:24px;">Admin overview</div>
+      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:32px;">
+        <div style="background:#fff; border:1px solid #E5E5EA; border-radius:12px; padding:18px 20px;">
+          <div style="font-size:11.5px; color:#6E6E73; margin-bottom:6px;">Total users</div>
+          <div style="font-size:26px; font-weight:700; color:#16233F;">{{ adminStats.totalUsers }}</div>
+        </div>
+        <div style="background:#fff; border:1px solid #E5E5EA; border-radius:12px; padding:18px 20px;">
+          <div style="font-size:11.5px; color:#6E6E73; margin-bottom:6px;">Documents processed</div>
+          <div style="font-size:26px; font-weight:700; color:#16233F;">{{ adminStats.totalDocs }}</div>
+        </div>
+        <div style="background:#fff; border:1px solid #E5E5EA; border-radius:12px; padding:18px 20px;">
+          <div style="font-size:11.5px; color:#6E6E73; margin-bottom:6px;">Documents this week</div>
+          <div style="font-size:26px; font-weight:700; color:#4C6D96;">{{ adminStats.docsThisWeek }}</div>
+        </div>
+      </div>
+
+      <div style="font-size:14px; font-weight:600; color:#16233F; margin-bottom:12px;">Users</div>
+      <div style="background:#fff; border:1px solid #E5E5EA; border-radius:12px; overflow:hidden; margin-bottom:32px;">
+        <div style="display:grid; grid-template-columns:1.4fr 1.6fr 0.8fr 0.8fr 1fr; padding:10px 18px; font-size:11px; color:#86868B; text-transform:uppercase; letter-spacing:0.03em; border-bottom:1px solid #E5E5EA;">
+          <div>Name</div><div>Email</div><div>Plan</div><div>Bills</div><div>Joined</div>
+        </div>
+        <sc-for list="{{ adminUsers }}" as="u" hint-placeholder-count="5">
+          <div style="display:grid; grid-template-columns:1.4fr 1.6fr 0.8fr 0.8fr 1fr; padding:12px 18px; font-size:13px; color:#1D1D1F; border-bottom:1px solid #EFEFF1;">
+            <div>{{ u.name }}</div><div style="color:#6E6E73;">{{ u.email }}</div><div>{{ u.plan }}</div><div>{{ u.bills }}</div><div style="color:#6E6E73;">{{ u.joined }}</div>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="font-size:14px; font-weight:600; color:#16233F; margin-bottom:12px;">Documents processed</div>
+      <div style="background:#fff; border:1px solid #E5E5EA; border-radius:12px; overflow:hidden;">
+        <div style="display:grid; grid-template-columns:1fr 1fr 1.4fr 1fr 1fr; padding:10px 18px; font-size:11px; color:#86868B; text-transform:uppercase; letter-spacing:0.03em; border-bottom:1px solid #E5E5EA;">
+          <div>Bill</div><div>Jurisdiction</div><div>Uploaded by</div><div>Date</div><div>Status</div>
+        </div>
+        <sc-for list="{{ adminDocs }}" as="d" hint-placeholder-count="5">
+          <div style="display:grid; grid-template-columns:1fr 1fr 1.4fr 1fr 1fr; padding:12px 18px; font-size:13px; color:#1D1D1F; border-bottom:1px solid #EFEFF1;">
+            <div>{{ d.bill }}</div><div style="color:#6E6E73;">{{ d.jurisdiction }}</div><div style="color:#6E6E73;">{{ d.uploadedBy }}</div><div style="color:#6E6E73;">{{ d.date }}</div>
+            <div style="color:{{ d.statusColor }}; font-weight:500;">{{ d.status }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+</sc-if>
+
+<sc-if value="{{ isAppView }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex; flex-direction:{{ shellDirection }}; min-height:100vh;">
+
+  <sc-if value="{{ isDesktopNav }}" hint-placeholder-val="{{ true }}">
+  <div style="width:250px; flex-shrink:0; background:#16233F; color:#E7E3D6; display:flex; flex-direction:column; padding:28px 20px; position:sticky; top:0; height:100vh;">
+    <div style="display:flex; align-items:center; gap:10px; padding:0 4px 28px 4px; border-bottom:1px solid rgba(231,227,214,0.14); margin-bottom:24px;">
+      <div style="width:32px; height:32px; border-radius:7px; background:#C8983E; display:flex; align-items:center; justify-content:center; font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Public Sans',sans-serif; letter-spacing:-0.02em; font-weight:600; color:#16233F; font-size:18px;">D</div>
+      <div>
+        <div style="font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Public Sans',sans-serif; letter-spacing:-0.02em; font-size:19px; font-weight:600; color:#F5F2E8;">Docket</div>
+        <div style="font-size:11px; color:#9AA6BC; letter-spacing:0.02em;">Legislative deadlines</div>
+      </div>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:4px;">
+      <div onClick="{{ goDashboard }}" style="display:flex; align-items:center; gap:11px; padding:10px 12px; border-radius:8px; cursor:pointer; background:{{ navDashboardBg }}; color:{{ navDashboardColor }};">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"></rect><rect x="14" y="3" width="7" height="5" rx="1.5"></rect><rect x="14" y="12" width="7" height="9" rx="1.5"></rect><rect x="3" y="16" width="7" height="5" rx="1.5"></rect></svg>
+        <span style="font-size:14px; font-weight:500;">Dashboard</span>
+      </div>
+      <div onClick="{{ goCalendar }}" style="display:flex; align-items:center; gap:11px; padding:10px 12px; border-radius:8px; cursor:pointer; background:{{ navCalendarBg }}; color:{{ navCalendarColor }};">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"></rect><line x1="3" y1="10" x2="21" y2="10"></line><line x1="8" y1="3" x2="8" y2="7"></line><line x1="16" y1="3" x2="16" y2="7"></line></svg>
+        <span style="font-size:14px; font-weight:500;">Calendar</span>
+      </div>
+      <div onClick="{{ goUpload }}" style="display:flex; align-items:center; gap:11px; padding:10px 12px; border-radius:8px; cursor:pointer; background:{{ navUploadBg }}; color:{{ navUploadColor }};">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+        <span style="font-size:14px; font-weight:500;">Add a bill</span>
+      </div>
+      <div onClick="{{ goAccount }}" style="display:flex; align-items:center; gap:11px; padding:10px 12px; border-radius:8px; cursor:pointer; background:{{ navAccountBg }}; color:{{ navAccountColor }};">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"></circle><path d="M4 20c0-4 4-6 8-6s8 2 8 6"></path></svg>
+        <span style="font-size:14px; font-weight:500;">Account</span>
+      </div>
+    </div>
+
+    <div style="margin-top:auto; padding-top:20px; border-top:1px solid rgba(231,227,214,0.14);">
+      <div style="font-size:11.5px; color:#9AA6BC; line-height:1.5; margin-bottom:14px;">
+        Every computed date cites the rule that produced it. Unresolved items are real obligations, not failures.
+      </div>
+      <div style="background:rgba(255,255,255,0.06); border-radius:8px; padding:12px 14px; margin-bottom:10px;">
+        <div style="display:flex; justify-content:space-between; font-size:12px; color:#C7CEDE; margin-bottom:6px;">
+          <span>{{ planLabel }}</span><span>{{ billsSummary }}</span>
+        </div>
+        <div style="height:5px; border-radius:3px; background:rgba(255,255,255,0.12); overflow:hidden;">
+          <div style="height:100%; width:{{ planPct }}%; background:#C8983E; border-radius:3px;"></div>
+        </div>
+      </div>
+      <div onClick="{{ goAdmin }}" style="font-size:11.5px; color:#7C86A0; cursor:pointer; margin-bottom:4px;">Admin console</div>
+      <div onClick="{{ signOut }}" style="font-size:11.5px; color:#7C86A0; cursor:pointer;">Sign out</div>
+    </div>
+  </div>
+  </sc-if>
+
+  <div style="flex:1; min-width:0; display:flex; flex-direction:column; padding-bottom:{{ contentBottomPad }}px;">
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:{{ topbarPad }}; border-bottom:1px solid #E5E5EA; background:#FFFFFF;">
+      <div style="font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Public Sans',sans-serif; letter-spacing:-0.03em; font-size:{{ titleSize }}px; font-weight:700; color:#16233F;">{{ pageTitle }}</div>
+      <div style="font-size:12.5px; color:#6E6E73;">{{ todayShort }}</div>
+    </div>
+
+    <div style="flex:1; padding:{{ contentPad }}; overflow-y:auto;">
+
+      <sc-if value="{{ isDashboard }}" hint-placeholder-val="{{ true }}">
+        <div>
+          <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:20px;">
+            <span style="font-size:12.5px; color:#8A836E;">Show:</span>
+            <sc-for list="{{ billFilterChips }}" as="bf" hint-placeholder-count="3">
+              <div onClick="{{ bf.onClick }}" style="padding:6px 13px; border-radius:20px; font-size:12.5px; font-weight:500; cursor:pointer; white-space:nowrap; flex-shrink:0; background:{{ bf.bg }}; color:{{ bf.color }}; border:1px solid {{ bf.border }};">{{ bf.label }}</div>
+            </sc-for>
+          </div>
+
+          <sc-if value="{{ hasDashboardBills }}" hint-placeholder-val="{{ true }}">
+          <div style="display:grid; grid-template-columns:{{ statGridCols }}; gap:14px; margin-bottom:32px;">
+            <div style="background:#fff; border:1px solid #E5E5EA; border-radius:10px; padding:16px 18px;">
+              <div style="font-size:11.5px; color:#6E6E73; margin-bottom:6px;">Bills tracked</div>
+              <div style="font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Public Sans',sans-serif; letter-spacing:-0.03em; font-size:23px; font-weight:700; font-variant-numeric:tabular-nums; color:#16233F;">{{ statBills }} <span style="font-size:12px; color:#AEAEB2; font-weight:400;">{{ billsLimitSuffix }}</span></div>
+            </div>
+            <div style="background:#fff; border:1px solid #E5E5EA; border-radius:10px; padding:16px 18px;">
+              <div style="font-size:11.5px; color:#6E6E73; margin-bottom:6px;">Agencies</div>
+              <div style="font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Public Sans',sans-serif; letter-spacing:-0.03em; font-size:23px; font-weight:700; font-variant-numeric:tabular-nums; color:#16233F;">{{ statAgencies }}</div>
+            </div>
+            <div style="background:#fff; border:1px solid #E5E5EA; border-radius:10px; padding:16px 18px;">
+              <div style="font-size:11.5px; color:#6E6E73; margin-bottom:6px;">Total tasks</div>
+              <div style="font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Public Sans',sans-serif; letter-spacing:-0.03em; font-size:23px; font-weight:700; font-variant-numeric:tabular-nums; color:#16233F;">{{ statTasks }}</div>
+            </div>
+            <div style="background:#fff; border:1px solid #E5E5EA; border-radius:10px; padding:16px 18px;">
+              <div style="font-size:11.5px; color:#6E6E73; margin-bottom:6px;">Overdue</div>
+              <div style="font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Public Sans',sans-serif; letter-spacing:-0.03em; font-size:23px; font-weight:700; font-variant-numeric:tabular-nums; color:#A8442C;">{{ statOverdue }}</div>
+            </div>
+            <div style="background:#fff; border:1px solid #E5E5EA; border-radius:10px; padding:16px 18px;">
+              <div style="font-size:11.5px; color:#6E6E73; margin-bottom:6px;">Needs input</div>
+              <div style="font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Public Sans',sans-serif; letter-spacing:-0.03em; font-size:23px; font-weight:700; font-variant-numeric:tabular-nums; color:#5B5B8C;">{{ statNeedsInput }}</div>
+            </div>
+            <div style="background:#fff; border:1px solid #E5E5EA; border-radius:10px; padding:16px 18px;">
+              <div style="font-size:11.5px; color:#6E6E73; margin-bottom:6px;">Due within 21d</div>
+              <div style="font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Public Sans',sans-serif; letter-spacing:-0.03em; font-size:23px; font-weight:700; font-variant-numeric:tabular-nums; color:#A67326;">{{ statDueSoon }}</div>
+            </div>
+            <div style="background:#fff; border:1px solid #E5E5EA; border-radius:10px; padding:16px 18px;">
+              <div style="font-size:11.5px; color:#6E6E73; margin-bottom:6px;">Completed</div>
+              <div style="font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Public Sans',sans-serif; letter-spacing:-0.03em; font-size:23px; font-weight:700; font-variant-numeric:tabular-nums; color:#3F6B54;">{{ statCompleted }}</div>
+            </div>
+          </div>
+
+          <div style="font-size:14px; font-weight:600; color:#16233F; margin-bottom:14px;">Who's accountable</div>
+          <div style="display:grid; grid-template-columns:{{ agencyGridCols }}; gap:14px; margin-bottom:32px;">
+            <sc-for list="{{ agencyCards }}" as="ag" hint-placeholder-count="4">
+              <div onClick="{{ ag.onClick }}" style="background:#fff; border:1px solid #E5E5EA; border-radius:12px; padding:16px; display:flex; align-items:center; gap:14px; cursor:pointer; transition:transform 0.2s cubic-bezier(.2,.8,.2,1), box-shadow 0.2s ease;" style-hover="transform:translateY(-3px); box-shadow:0 12px 28px rgba(0,0,0,0.08);">
+                <svg width="52" height="52" viewBox="0 0 60 60" style="flex-shrink:0;">
+                  <circle cx="30" cy="30" r="24" fill="none" stroke="#EDEDF0" stroke-width="5"></circle>
+                  <circle cx="30" cy="30" r="24" fill="none" stroke="{{ ag.ringColor }}" stroke-width="5" stroke-linecap="round" stroke-dasharray="{{ ag.circumference }}" stroke-dashoffset="{{ ag.dashoffset }}" transform="rotate(-90 30 30)" style="transition:stroke-dashoffset 0.9s cubic-bezier(.16,1,.3,1);"></circle>
+                  <text x="30" y="34" text-anchor="middle" font-size="12" font-weight="700" fill="#16233F" font-family="Public Sans, sans-serif">{{ ag.initials }}</text>
+                </svg>
+                <div style="min-width:0;">
+                  <div style="font-size:12.5px; font-weight:600; color:#1D1D1F; line-height:1.25; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ ag.agency }}</div>
+                  <div style="font-size:11px; color:#86868B; margin:3px 0;">{{ ag.total }} tasks &middot; {{ ag.billCount }} bill(s)</div>
+                  <div style="font-size:11px; font-weight:600; color:{{ ag.ringColor }};">{{ ag.countdownText }}</div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="font-size:14px; font-weight:600; color:#16233F; margin-bottom:14px;">Your bills</div>
+          <div style="display:grid; grid-template-columns:{{ billGridCols }}; gap:18px;">
+            <sc-for list="{{ dashBillCards }}" as="bill" hint-placeholder-count="2">
+              <div onClick="{{ bill.onClick }}" style="background:#fff; border:1px solid #E5E5EA; border-radius:12px; padding:22px 24px; cursor:pointer; transition:transform 0.2s cubic-bezier(.2,.8,.2,1), box-shadow 0.2s ease;" style-hover="transform:translateY(-3px); box-shadow:0 12px 28px rgba(0,0,0,0.08);">
+                <div style="font-size:11.5px; color:#6E6E73; letter-spacing:0.03em; margin-bottom:6px;">{{ bill.number }} &middot; {{ bill.congress }}</div>
+                <div style="font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Public Sans',sans-serif; letter-spacing:-0.02em; font-size:18px; font-weight:600; color:#16233F; line-height:1.3; margin-bottom:10px;">{{ bill.title }}</div>
+                <div style="display:flex; height:7px; border-radius:4px; overflow:hidden; background:#EDEDF0; margin-bottom:12px;">
+                  <div style="width:{{ bill.barOverduePct }}%; background:#B8452F;"></div>
+                  <div style="width:{{ bill.barNeedsInputPct }}%; background:#8377B0;"></div>
+                  <div style="width:{{ bill.barDueSoonPct }}%; background:#C79A44;"></div>
+                  <div style="width:{{ bill.barUpcomingPct }}%; background:#4C6D96;"></div>
+                  <div style="width:{{ bill.barCompletedPct }}%; background:#5C8B71;"></div>
+                </div>
+                <div style="display:flex; justify-content:space-between; font-size:12.5px; color:#6E6E73;">
+                  <span>{{ bill.total }} tracked tasks</span>
+                  <span>Next due {{ bill.nextDue }}</span>
+                </div>
+              </div>
+            </sc-for>
+
+            <sc-if value="{{ hasFreeSlot }}" hint-placeholder-val="{{ true }}">
+              <div onClick="{{ goUpload }}" style="border:1.5px dashed #C9BF9E; border-radius:12px; padding:22px 24px; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; color:#6E6E73; min-height:150px;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6E6E73" stroke-width="2" style="margin-bottom:8px;"><circle cx="12" cy="12" r="9"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+                <div style="font-size:13.5px; font-weight:500;">Add a bill</div>
+                <div style="font-size:12px; margin-top:3px;">{{ addBillHint }}</div>
+              </div>
+            </sc-if>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ hasNoDashboardBills }}" hint-placeholder-val="{{ false }}">
+            <div style="text-align:center; padding:60px 0; color:#AEAEB2; font-size:13.5px;">Select at least one bill above to see its dashboard.</div>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isBillDetail }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <div onClick="{{ goDashboard }}" style="display:inline-flex; align-items:center; gap:6px; font-size:13px; color:#6E6E73; cursor:pointer; margin-bottom:18px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"></path></svg> All bills
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:26px; flex-wrap:wrap; gap:12px;">
+            <div>
+              <div style="font-size:12px; color:#6E6E73; margin-bottom:6px;">{{ selectedBill.number }} &middot; {{ selectedBill.congress }} &middot; {{ selectedBill.publicLaw }} &middot; Enacted {{ selectedBill.enactedFormatted }}</div>
+              <div style="font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Public Sans',sans-serif; letter-spacing:-0.02em; font-size:23px; font-weight:700; color:#16233F;">{{ selectedBill.title }}</div>
+            </div>
+            <div onClick="{{ syncAction }}" style="display:flex; align-items:center; gap:8px; background:#16233F; color:#F5F2E8; padding:11px 18px; border-radius:10px; cursor:pointer; font-size:13.5px; font-weight:500; white-space:nowrap; transition:transform 0.15s ease, box-shadow 0.15s ease;" style-hover="box-shadow:0 6px 16px rgba(22,35,63,0.25);" style-active="transform:scale(0.96);">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+              {{ syncLabel }}
+            </div>
+          </div>
+
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; flex-wrap:wrap; gap:14px;">
+            <div>
+              <div style="font-size:11px; color:#86868B; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:8px;">View as</div>
+              <div style="display:inline-flex; gap:2px; background:#F0F0F2; padding:3px; border-radius:11px;">
+                <div onClick="{{ setListView }}" style="display:flex; align-items:center; gap:8px; padding:9px 18px; border-radius:9px; font-size:13.5px; font-weight:600; cursor:pointer; white-space:nowrap; background:{{ listBg }}; color:{{ listColor }}; box-shadow:{{ listShadow }}; transition:background 0.2s ease, box-shadow 0.2s ease;">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+                  List
+                </div>
+                <sc-if value="{{ isDesktopNav }}" hint-placeholder-val="{{ true }}">
+                  <div onClick="{{ setTimelineView }}" style="display:flex; align-items:center; gap:8px; padding:9px 18px; border-radius:9px; font-size:13.5px; font-weight:600; cursor:pointer; white-space:nowrap; background:{{ timelineBg }}; color:{{ timelineColor }}; box-shadow:{{ timelineShadow }}; transition:background 0.2s ease, box-shadow 0.2s ease;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="6" cy="16" r="2"></circle><circle cx="12" cy="9" r="2"></circle><circle cx="18" cy="13" r="2"></circle><line x1="6" y1="16" x2="12" y2="9"></line><line x1="12" y1="9" x2="18" y2="13"></line></svg>
+                    Timeline
+                  </div>
+                </sc-if>
+              </div>
+              <sc-if value="{{ isMobile }}" hint-placeholder-val="{{ false }}">
+                <div style="font-size:11px; color:#AEAEB2; margin-top:6px;">Timeline view available on larger screens.</div>
+              </sc-if>
+            </div>
+          </div>
+
+          <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:24px; align-items:center;">
+            <sc-for list="{{ statusFilters }}" as="f" hint-placeholder-count="6">
+              <div onClick="{{ f.onClick }}" style="padding:7px 14px; border-radius:20px; font-size:12.5px; font-weight:500; cursor:pointer; white-space:nowrap; background:{{ f.bg }}; color:{{ f.color }}; border:1px solid {{ f.border }};">{{ f.label }}</div>
+            </sc-for>
+            <select onChange="{{ onAgencyChange }}" style="padding:7px 12px; border-radius:8px; border:1px solid #E5E5EA; font-size:12.5px; color:#1D1D1F; background:#fff;">
+              <option value="all">All agencies</option>
+              <sc-for list="{{ agencies }}" as="a" hint-placeholder-count="4">
+                <option value="{{ a }}">{{ a }}</option>
+              </sc-for>
+            </select>
+          </div>
+
+          <sc-if value="{{ isListView }}" hint-placeholder-val="{{ true }}">
+            <sc-for list="{{ groupedTasks }}" as="grp" hint-placeholder-count="3">
+              <div style="margin-bottom:22px;">
+                <div style="font-size:12.5px; font-weight:600; color:#16233F; letter-spacing:0.02em; margin-bottom:10px; text-transform:uppercase;">{{ grp.agency }}</div>
+                <div style="background:#fff; border:1px solid #E5E5EA; border-radius:10px; overflow:hidden;">
+                  <sc-for list="{{ grp.tasks }}" as="t" hint-placeholder-count="2">
+                    <div style="padding:15px 20px; border-bottom:1px solid #EFEFF1;">
+                      <div style="display:flex; align-items:center; gap:16px;">
+                        <div style="width:8px; height:8px; border-radius:50%; background:{{ t.statusDot }}; flex-shrink:0; animation:{{ t.dotAnim }};"></div>
+                        <div style="flex:1; min-width:0;">
+                          <div style="font-size:14px; color:#1D1D1F; margin-bottom:3px;">{{ t.obligation }}</div>
+                          <div style="font-size:11.5px; color:#86868B;">{{ t.citation }}</div>
+                        </div>
+
+                        <sc-if value="{{ t.hasDate }}" hint-placeholder-val="{{ true }}">
+                          <div style="text-align:right; flex-shrink:0;">
+                            <sc-if value="{{ t.isReviewer }}" hint-placeholder-val="{{ false }}">
+                              <div style="display:flex; align-items:center; gap:4px; justify-content:flex-end; font-size:10.5px; color:#A67326; font-weight:600; margin-bottom:2px;">
+                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="8" r="4"></circle><path d="M4 20c0-4 4-6 8-6s8 2 8 6"></path></svg>
+                                Entered by {{ t.reviewerName }}
+                              </div>
+                            </sc-if>
+                            <div style="font-size:13px; font-weight:500; color:#1D1D1F;">{{ t.dueFormatted }}</div>
+                            <div style="font-size:11.5px; color:{{ t.statusColor }}; font-weight:500;">{{ t.daysLabel }}</div>
+                          </div>
+                          <div style="padding:4px 10px; border-radius:20px; font-size:11px; font-weight:600; background:{{ t.statusBg }}; color:{{ t.statusColor }}; flex-shrink:0;">{{ t.statusLabel }}</div>
+                        </sc-if>
+
+                        <sc-if value="{{ t.isUnresolved }}" hint-placeholder-val="{{ false }}">
+                          <div style="text-align:right; flex-shrink:0; max-width:230px;">
+                            <div style="font-size:12px; color:#5B5B8C; font-weight:500; line-height:1.4;">{{ t.unresolvedReason }}</div>
+                          </div>
+                          <div style="padding:4px 10px; border-radius:20px; font-size:11px; font-weight:600; background:#EFEDF7; color:#5B5B8C; flex-shrink:0; white-space:nowrap;">Needs input</div>
+                        </sc-if>
+                      </div>
+
+                      <sc-if value="{{ t.isUnresolved }}" hint-placeholder-val="{{ false }}">
+                        <sc-if value="{{ t.inputOpen }}" hint-placeholder-val="{{ false }}">
+                          <div style="display:flex; align-items:center; gap:10px; margin-top:12px; margin-left:24px; flex-wrap:wrap;">
+                            <span style="font-size:12px; color:#5B5B8C;">{{ t.inputAsk }}</span>
+                            <input type="date" value="{{ inputDraftValue }}" onChange="{{ onDraftDateChange }}" style="padding:6px 10px; border-radius:7px; border:1px solid #D6D2E6; font-size:12.5px;"></input>
+                            <div onClick="{{ t.onSave }}" style="padding:6px 14px; border-radius:7px; background:#5B5B8C; color:#fff; font-size:12px; font-weight:600; cursor:pointer;">Save</div>
+                            <div onClick="{{ cancelDateInput }}" style="padding:6px 10px; font-size:12px; color:#86868B; cursor:pointer;">Cancel</div>
+                          </div>
+                        </sc-if>
+                        <sc-if value="{{ t.inputClosed }}" hint-placeholder-val="{{ true }}">
+                          <div onClick="{{ t.onOpenInput }}" style="display:inline-flex; align-items:center; gap:6px; margin-top:10px; margin-left:24px; font-size:12px; color:#5B5B8C; font-weight:600; cursor:pointer;">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            Add date
+                          </div>
+                        </sc-if>
+                      </sc-if>
+
+                      <div onClick="{{ t.onToggleProvenance }}" style="margin-top:10px; margin-left:24px; font-size:11.5px; color:#86868B; cursor:pointer; display:flex; align-items:center; gap:5px;">
+                        <span style="transition:transform 0.15s ease; display:inline-block; transform:{{ t.chevronRotate }};">&#8250;</span> {{ t.provenanceSummary }}
+                      </div>
+                      <sc-if value="{{ t.provenanceOpen }}" hint-placeholder-val="{{ false }}">
+                        <div style="margin-top:8px; margin-left:24px; padding:12px 16px; background:#FAFAFB; border-radius:8px; border:1px solid #EFEFF1;">
+                          <sc-for list="{{ t.provenance }}" as="p" hint-placeholder-count="3">
+                            <div style="display:flex; gap:10px; padding:5px 0; font-size:12px;">
+                              <span style="color:#AEAEB2; font-weight:600; min-width:44px;">{{ p.actor }}</span>
+                              <span style="color:#6E6E73;">{{ p.label }} &mdash; <span style="color:#1D1D1F;">{{ p.result }}</span></span>
+                            </div>
+                          </sc-for>
+                        </div>
+                      </sc-if>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-for>
+          </sc-if>
+
+          <sc-if value="{{ isTimelineView }}" hint-placeholder-val="{{ false }}">
+            <div style="background:#fff; border:1px solid #E5E5EA; border-radius:12px; padding:20px 24px 16px 24px; margin-bottom:16px;">
+              <div style="display:flex;">
+                <div style="width:190px; flex-shrink:0;">
+                  <div style="height:26px;"></div>
+                  <sc-for list="{{ timelineRows }}" as="row" hint-placeholder-count="4">
+                    <div style="height:44px; display:flex; align-items:center; font-size:12px; font-weight:500; color:#1D1D1F; padding-right:14px;">{{ row.agency }}</div>
+                  </sc-for>
+                </div>
+                <div style="flex:1; position:relative; min-width:0;">
+                  <div style="height:26px; position:relative;">
+                    <sc-for list="{{ timelineTicks }}" as="tk" hint-placeholder-count="6">
+                      <div style="position:absolute; left:{{ tk.pct }}%; top:0; font-size:10.5px; color:#86868B; transform:translateX(-50%); white-space:nowrap;">{{ tk.label }}</div>
+                    </sc-for>
+                  </div>
+                  <sc-for list="{{ timelineRows }}" as="row" hint-placeholder-count="4">
+                    <div style="height:44px; position:relative; border-top:1px solid #EFEFF1;">
+                      <div style="position:absolute; top:50%; left:{{ row.lineLeft }}%; width:{{ row.lineWidth }}%; height:2px; background:#E5E5EA; transform:translateY(-50%);"></div>
+                      <sc-for list="{{ row.markers }}" as="m" hint-placeholder-count="3">
+                        <div title="{{ m.obligation }}" style="position:absolute; top:50%; left:{{ m.pct }}%; transform:translate(-50%,-50%); width:12px; height:12px; border-radius:50%; background:{{ m.statusColor }}; border:2px solid #FFFFFF; box-shadow:0 0 0 1px {{ m.statusColor }}; cursor:default;"></div>
+                      </sc-for>
+                    </div>
+                  </sc-for>
+                  <div style="position:absolute; top:0; bottom:0; left:{{ todayPct }}%; width:1px; background:#C8983E;"></div>
+                  <div style="position:absolute; top:0; left:{{ todayPct }}%; transform:translateX(-50%); font-size:10px; color:#A67326; font-weight:700; background:#fff; padding:0 5px; white-space:nowrap;">Today</div>
+                </div>
+              </div>
+              <div style="display:flex; gap:18px; margin-top:14px; padding-top:14px; border-top:1px solid #EFEFF1; font-size:11.5px; color:#6E6E73; flex-wrap:wrap;">
+                <div style="display:flex; align-items:center; gap:6px;"><div style="width:8px;height:8px;border-radius:50%;background:#B8452F;"></div>Overdue</div>
+                <div style="display:flex; align-items:center; gap:6px;"><div style="width:8px;height:8px;border-radius:50%;background:#C79A44;"></div>Due soon</div>
+                <div style="display:flex; align-items:center; gap:6px;"><div style="width:8px;height:8px;border-radius:50%;background:#4C6D96;"></div>Upcoming</div>
+                <div style="display:flex; align-items:center; gap:6px;"><div style="width:8px;height:8px;border-radius:50%;background:#5C8B71;"></div>Completed</div>
+              </div>
+            </div>
+            <sc-if value="{{ hasUnresolvedInBill }}" hint-placeholder-val="{{ false }}">
+              <div style="background:#FAFAFC; border:1px solid #E5E3EF; border-radius:12px; padding:16px 20px; margin-bottom:16px;">
+                <div style="font-size:12px; font-weight:600; color:#5B5B8C; margin-bottom:8px;">Needs input &mdash; not shown on timeline (no date to plot)</div>
+                <sc-for list="{{ unresolvedInBill }}" as="t" hint-placeholder-count="2">
+                  <div style="font-size:12.5px; color:#3A3A3C; padding:4px 0;">&bull; {{ t.agency }}: {{ t.obligation }} &mdash; <span style="color:#5B5B8C;">{{ t.unresolvedReason }}</span></div>
+                </sc-for>
+              </div>
+            </sc-if>
+          </sc-if>
+
+          <div style="font-size:12px; color:#AEAEB2; margin-top:8px;">Illustrative sample data, for demonstration only. Verify every deadline against the source bill text.</div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isUpload }}" hint-placeholder-val="{{ false }}">
+        <div style="max-width:640px;">
+          <div style="font-size:14.5px; color:#3A3A3C; line-height:1.6; margin-bottom:28px;">Every deadline is matched to the exact section it comes from and the agency or office responsible. The AI finds candidates; it never computes a date &mdash; that's done deterministically, with a citation.</div>
+
+          <div style="display:flex; gap:6px; background:#EDEDF0; padding:4px; border-radius:9px; width:fit-content; margin-bottom:20px;">
+            <sc-for list="{{ uploadTabs }}" as="ut" hint-placeholder-count="2">
+              <div onClick="{{ ut.onClick }}" style="padding:8px 18px; border-radius:7px; font-size:13px; font-weight:500; cursor:pointer; background:{{ ut.bg }}; color:{{ ut.color }};">{{ ut.label }}</div>
+            </sc-for>
+          </div>
+
+          <sc-if value="{{ isFileTab }}" hint-placeholder-val="{{ true }}">
+            <div onDragOver="{{ onDragOver }}" onDragLeave="{{ onDragLeave }}" onDrop="{{ onDrop }}" onClick="{{ onDropzoneClick }}" style="border:2px dashed {{ dropzoneBorder }}; background:{{ dropzoneBg }}; border-radius:12px; padding:52px 24px; text-align:center; cursor:pointer; margin-bottom:22px;">
+              <input ref="{{ fileInputRef }}" type="file" onChange="{{ onFileChange }}" style="display:none;"></input>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#6E6E73" stroke-width="1.6" style="margin-bottom:10px;"><path d="M12 16V4M12 4l-4 4M12 4l4 4"></path><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"></path></svg>
+              <div style="font-weight:500; color:#1D1D1F; font-size:14.5px;">{{ dropzoneTitle }}</div>
+              <div style="font-size:12.5px; color:#86868B; margin-top:4px;">PDF, DOCX, or plain text</div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ isUrlTab }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-bottom:22px;">
+              <input value="{{ urlValue }}" onChange="{{ onUrlChange }}" placeholder="https://www.congress.gov/bill/..." style="width:100%; padding:13px 16px; border-radius:9px; border:1px solid #E5E5EA; font-size:13.5px; background:#fff;"></input>
+            </div>
+          </sc-if>
+
+          <button onClick="{{ startAnalysis }}" style="background:#16233F; color:#F5F2E8; border:none; padding:13px 26px; border-radius:10px; font-size:14px; font-weight:600; cursor:pointer; transition:transform 0.15s ease, box-shadow 0.15s ease;" style-hover="box-shadow:0 6px 16px rgba(22,35,63,0.25);" style-active="transform:scale(0.96);">Analyze bill</button>
+
+          <div style="margin-top:36px; padding-top:24px; border-top:1px solid #E5E5EA;">
+            <div style="font-size:12.5px; color:#6E6E73; margin-bottom:6px;">{{ billsSummary }}</div>
+            <div style="height:5px; border-radius:3px; background:#EDEDF0; overflow:hidden; margin-bottom:20px; max-width:260px;">
+              <div style="height:100%; width:{{ planPct }}%; background:#C8983E;"></div>
+            </div>
+            <div style="font-size:12.5px; color:#6E6E73; margin-bottom:10px;">Or try a sample</div>
+            <div onClick="{{ startAnalysis }}" style="display:inline-flex; align-items:center; gap:10px; border:1px solid #E5E5EA; background:#fff; padding:10px 16px; border-radius:9px; cursor:pointer;">
+              <span style="font-size:13px; color:#1D1D1F; font-weight:500;">H.R. 3935 &mdash; FAA Reauthorization Act of 2024</span>
+              <span style="font-size:11px; color:#AEAEB2;">sample</span>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isProcessing }}" hint-placeholder-val="{{ false }}">
+        <div style="max-width:560px;">
+          <div style="font-size:14.5px; color:#3A3A3C; margin-bottom:26px;">Reading the document from the top &mdash; nothing is hidden behind a spinner. The AI only proposes candidates; every date shown next is computed deterministically.</div>
+          <div style="display:flex; flex-direction:column; gap:4px;">
+            <sc-for list="{{ stages }}" as="s" hint-placeholder-count="5">
+              <div style="display:flex; align-items:center; gap:14px; padding:13px 4px; opacity:{{ s.opacity }};">
+                <div style="width:22px; height:22px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:{{ s.iconBg }}; border:{{ s.iconBorder }};">
+                  <sc-if value="{{ s.done }}" hint-placeholder-val="{{ false }}">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M20 6L9 17l-5-5"></path></svg>
+                  </sc-if>
+                </div>
+                <div style="flex:1;">
+                  <div style="font-size:14px; font-weight:500; color:#1D1D1F;">{{ s.label }}</div>
+                </div>
+                <sc-if value="{{ s.done }}" hint-placeholder-val="{{ false }}">
+                  <div style="font-size:12.5px; color:#6E6E73;">{{ s.count }}</div>
+                </sc-if>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isCalendar }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex; flex-direction:{{ calendarDirection }}; gap:26px;">
+          <div style="flex:1; min-width:0;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; flex-wrap:wrap; gap:10px;">
+              <div style="display:flex; align-items:center; gap:14px;">
+                <div onClick="{{ prevMonth }}" style="cursor:pointer; padding:6px; color:#6E6E73;">&#8592;</div>
+                <div style="font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Public Sans',sans-serif; letter-spacing:-0.02em; font-size:18px; font-weight:600; color:#16233F; min-width:150px;">{{ monthLabel }}</div>
+                <div onClick="{{ nextMonth }}" style="cursor:pointer; padding:6px; color:#6E6E73;">&#8594;</div>
+              </div>
+              <div onClick="{{ syncAction }}" style="display:flex; align-items:center; gap:8px; background:#16233F; color:#F5F2E8; padding:10px 16px; border-radius:10px; cursor:pointer; font-size:13px; font-weight:500; transition:transform 0.15s ease, box-shadow 0.15s ease;" style-hover="box-shadow:0 6px 16px rgba(22,35,63,0.25);" style-active="transform:scale(0.96);">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                {{ syncLabel }}
+              </div>
+            </div>
+
+            <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px;">
+              <sc-for list="{{ calBillFilters }}" as="cf" hint-placeholder-count="3">
+                <div onClick="{{ cf.onClick }}" style="padding:6px 13px; border-radius:20px; font-size:12px; font-weight:500; cursor:pointer; background:{{ cf.bg }}; color:{{ cf.color }}; border:1px solid {{ cf.border }};">{{ cf.label }}</div>
+              </sc-for>
+            </div>
+
+            <div style="display:grid; grid-template-columns:repeat(7,1fr); gap:1px; background:#E5E5EA; border:1px solid #E5E5EA; border-radius:10px; overflow:hidden;">
+              <div style="background:#F5F5F7; padding:8px; font-size:11px; font-weight:600; color:#6E6E73; text-align:center;">Sun</div>
+              <div style="background:#F5F5F7; padding:8px; font-size:11px; font-weight:600; color:#6E6E73; text-align:center;">Mon</div>
+              <div style="background:#F5F5F7; padding:8px; font-size:11px; font-weight:600; color:#6E6E73; text-align:center;">Tue</div>
+              <div style="background:#F5F5F7; padding:8px; font-size:11px; font-weight:600; color:#6E6E73; text-align:center;">Wed</div>
+              <div style="background:#F5F5F7; padding:8px; font-size:11px; font-weight:600; color:#6E6E73; text-align:center;">Thu</div>
+              <div style="background:#F5F5F7; padding:8px; font-size:11px; font-weight:600; color:#6E6E73; text-align:center;">Fri</div>
+              <div style="background:#F5F5F7; padding:8px; font-size:11px; font-weight:600; color:#6E6E73; text-align:center;">Sat</div>
+              <sc-for list="{{ cells }}" as="c" hint-placeholder-count="35">
+                <sc-if value="{{ c.blank }}" hint-placeholder-val="{{ false }}">
+                  <div style="background:#FFFFFF; min-height:{{ dayCellHeight }}px;"></div>
+                </sc-if>
+                <sc-if value="{{ c.notBlank }}" hint-placeholder-val="{{ true }}">
+                  <div onClick="{{ c.onClick }}" style="background:{{ c.bg }}; min-height:{{ dayCellHeight }}px; padding:6px; cursor:pointer; transition:background 0.15s ease;" style-hover="background:#F5F5F7;">
+                    <div style="display:flex; align-items:center; justify-content:center; width:20px; height:20px; border-radius:50%; background:{{ c.todayBg }}; font-size:11.5px; font-weight:{{ c.dayWeight }}; color:{{ c.dayColor }}; margin-bottom:4px;">{{ c.day }}</div>
+                    <sc-if value="{{ isDesktopNav }}" hint-placeholder-val="{{ true }}">
+                      <div style="display:flex; flex-direction:column; gap:2px;">
+                        <sc-for list="{{ c.tasks }}" as="t" hint-placeholder-count="1">
+                          <div style="font-size:9.5px; padding:2px 5px; border-radius:4px; background:{{ t.statusBg }}; color:{{ t.statusColor }}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ t.agency }}</div>
+                        </sc-for>
+                        <sc-if value="{{ c.hasExtra }}" hint-placeholder-val="{{ false }}">
+                          <div style="font-size:9.5px; color:#86868B;">+{{ c.extra }} more</div>
+                        </sc-if>
+                      </div>
+                    </sc-if>
+                    <sc-if value="{{ isMobile }}" hint-placeholder-val="{{ false }}">
+                      <div style="display:flex; justify-content:center; gap:2px;">
+                        <sc-for list="{{ c.dots }}" as="dt" hint-placeholder-count="1">
+                          <div style="width:5px; height:5px; border-radius:50%; background:{{ dt.color }};"></div>
+                        </sc-for>
+                      </div>
+                    </sc-if>
+                  </div>
+                </sc-if>
+              </sc-for>
+            </div>
+
+            <div style="display:flex; gap:18px; margin-top:16px; font-size:12px; color:#6E6E73; flex-wrap:wrap;">
+              <div style="display:flex; align-items:center; gap:6px;"><div style="width:8px;height:8px;border-radius:50%;background:#B8452F;"></div>Overdue</div>
+              <div style="display:flex; align-items:center; gap:6px;"><div style="width:8px;height:8px;border-radius:50%;background:#C79A44;"></div>Due soon</div>
+              <div style="display:flex; align-items:center; gap:6px;"><div style="width:8px;height:8px;border-radius:50%;background:#4C6D96;"></div>Upcoming</div>
+              <div style="display:flex; align-items:center; gap:6px;"><div style="width:8px;height:8px;border-radius:50%;background:#5C8B71;"></div>Completed</div>
+            </div>
+
+            <sc-if value="{{ hasUnresolvedInMonth }}" hint-placeholder-val="{{ false }}">
+              <div style="background:#FAFAFC; border:1px solid #E5E3EF; border-radius:12px; padding:14px 18px; margin-top:16px;">
+                <div style="font-size:12px; font-weight:600; color:#5B5B8C; margin-bottom:6px;">Needs your input (no date to place on calendar)</div>
+                <sc-for list="{{ unresolvedThisMonth }}" as="t" hint-placeholder-count="2">
+                  <div style="font-size:12px; color:#3A3A3C; padding:3px 0;">&bull; {{ t.agency }}: {{ t.obligation }}</div>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
+
+          <div style="width:{{ dayPanelWidth }}; flex-shrink:0;">
+            <div style="background:#fff; border:1px solid #E5E5EA; border-radius:12px; padding:20px;">
+              <div style="font-size:13px; font-weight:600; color:#16233F; margin-bottom:14px;">{{ calSelectedDateFormatted }}</div>
+              <sc-if value="{{ hasSelectedDayTasks }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex; flex-direction:column; gap:12px;">
+                  <sc-for list="{{ selectedDayTasks }}" as="t" hint-placeholder-count="2">
+                    <div style="border-left:2px solid {{ t.statusColor }}; padding-left:10px;">
+                      <div style="font-size:12px; font-weight:500; color:#1D1D1F;">{{ t.agency }}</div>
+                      <div style="font-size:11.5px; color:#6E6E73; margin:2px 0;">{{ t.obligation }}</div>
+                      <div style="font-size:11px; color:#86868B;">{{ t.billTitle }}</div>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
+              <sc-if value="{{ noSelectedDayTasks }}" hint-placeholder-val="{{ true }}">
+                <div style="font-size:12.5px; color:#AEAEB2;">No deadlines on this day.</div>
+              </sc-if>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isAccount }}" hint-placeholder-val="{{ false }}">
+        <div style="max-width:640px;">
+          <div style="background:#16233F; border-radius:14px; padding:26px 28px; margin-bottom:28px; color:#F5F2E8;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+              <div>
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                  <div style="font-size:12px; color:#9AA6BC;">Current plan</div>
+                  <div style="font-size:10px; font-weight:700; color:#16233F; background:#C8983E; padding:2px 8px; border-radius:20px; text-transform:uppercase; letter-spacing:0.03em;">{{ userRole }}</div>
+                </div>
+                <div style="font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Public Sans',sans-serif; letter-spacing:-0.02em; font-size:20px; font-weight:600;">{{ planLabel }}</div>
+              </div>
+              <sc-if value="{{ isNotPro }}" hint-placeholder-val="{{ true }}">
+                <div onClick="{{ openBillsPaywall }}" style="background:#C8983E; color:#16233F; padding:9px 18px; border-radius:7px; font-size:13px; font-weight:600; cursor:pointer;">Upgrade</div>
+              </sc-if>
+            </div>
+            <div style="margin-top:16px;">
+              <div style="display:flex; justify-content:space-between; font-size:12px; color:#C7CEDE; margin-bottom:6px;"><span>Bills tracked</span><span>{{ billsSummary }}</span></div>
+              <div style="height:6px; border-radius:3px; background:rgba(255,255,255,0.14); overflow:hidden;"><div style="height:100%; width:{{ planPct }}%; background:#C8983E;"></div></div>
+            </div>
+            <div style="font-size:12.5px; color:#9AA6BC; margin-top:14px;">Unlimited bills and calendar sync (Google, Outlook, ICS) available on Pro.</div>
+          </div>
+
+          <div style="font-size:14px; font-weight:600; color:#16233F; margin-bottom:12px;">Your bill library</div>
+          <div style="background:#fff; border:1px solid #E5E5EA; border-radius:12px; overflow:hidden;">
+            <sc-for list="{{ bills }}" as="bill" hint-placeholder-count="2">
+              <div style="display:flex; align-items:center; gap:14px; padding:16px 20px; border-bottom:1px solid #EFEFF1;">
+                <div style="flex:1; min-width:0;">
+                  <div style="font-size:13.5px; font-weight:500; color:#1D1D1F;">{{ bill.title }}</div>
+                  <div style="font-size:11.5px; color:#86868B; margin-top:2px;">{{ bill.number }} &middot; {{ bill.total }} tasks &middot; Added {{ bill.enactedFormatted }}</div>
+                </div>
+                <div onClick="{{ bill.onRemove }}" style="cursor:pointer; color:#AEAEB2; font-size:12px; padding:6px 10px;">Remove</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+    </div>
+  </div>
+
+  <sc-if value="{{ isMobileNav }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed; bottom:0; left:0; right:0; height:60px; background:#16233F; display:flex; align-items:center; justify-content:space-around; z-index:40;">
+      <div onClick="{{ goDashboard }}" style="display:flex; flex-direction:column; align-items:center; gap:2px; color:{{ navDashboardColor }}; cursor:pointer;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"></rect><rect x="14" y="3" width="7" height="5" rx="1.5"></rect><rect x="14" y="12" width="7" height="9" rx="1.5"></rect><rect x="3" y="16" width="7" height="5" rx="1.5"></rect></svg>
+        <span style="font-size:9.5px;">Dashboard</span>
+      </div>
+      <div onClick="{{ goCalendar }}" style="display:flex; flex-direction:column; align-items:center; gap:2px; color:{{ navCalendarColor }}; cursor:pointer;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"></rect><line x1="3" y1="10" x2="21" y2="10"></line><line x1="8" y1="3" x2="8" y2="7"></line><line x1="16" y1="3" x2="16" y2="7"></line></svg>
+        <span style="font-size:9.5px;">Calendar</span>
+      </div>
+      <div onClick="{{ goUpload }}" style="display:flex; flex-direction:column; align-items:center; gap:2px; color:{{ navUploadColor }}; cursor:pointer;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+        <span style="font-size:9.5px;">Add</span>
+      </div>
+      <div onClick="{{ goAccount }}" style="display:flex; flex-direction:column; align-items:center; gap:2px; color:{{ navAccountColor }}; cursor:pointer;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"></circle><path d="M4 20c0-4 4-6 8-6s8 2 8 6"></path></svg>
+        <span style="font-size:9.5px;">Account</span>
+      </div>
+    </div>
+  </sc-if>
+
+</div>
+</sc-if>
+
+<sc-if value="{{ agencyModalOpen }}" hint-placeholder-val="{{ false }}">
+  <div style="position:fixed; inset:0; background:rgba(22,35,63,0.35); backdrop-filter:blur(16px) saturate(160%); -webkit-backdrop-filter:blur(16px) saturate(160%); display:flex; align-items:{{ modalAlign }}; justify-content:center; z-index:50;">
+    <div style="background:#FFFFFF; border-radius:{{ modalRadius }}; padding:30px 32px; max-width:{{ modalMaxWidth }}; width:{{ modalWidth }}; height:{{ modalHeight }}; max-height:{{ modalMaxHeight }}; overflow-y:auto; box-shadow:0 24px 70px rgba(0,0,0,0.22), inset 0 0 0 1px rgba(255,255,255,0.6);">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:4px;">
+        <div style="font-size:11.5px; color:#6E6E73; letter-spacing:0.03em; text-transform:uppercase;">Call prep</div>
+        <div onClick="{{ closeAgencyModal }}" style="cursor:pointer; color:#AEAEB2; font-size:13px;">Close</div>
+      </div>
+      <div style="font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Public Sans',sans-serif; letter-spacing:-0.02em; font-size:21px; font-weight:600; color:#16233F; margin-bottom:6px;">{{ agencyModalAgency }}</div>
+      <div style="font-size:12.5px; color:#6E6E73; margin-bottom:22px;">{{ agencyModalTotal }} open item(s) across {{ agencyModalBillCount }} bill(s) &middot; {{ agencyModalOverdue }} overdue &middot; {{ agencyModalNeedsInput }} need input</div>
+      <sc-for list="{{ agencyModalGroups }}" as="grp" hint-placeholder-count="2">
+        <div style="margin-bottom:18px;">
+          <div style="font-size:12.5px; font-weight:600; color:#16233F; margin-bottom:8px;">{{ grp.billTitle }}</div>
+          <div style="background:#fff; border:1px solid #E5E5EA; border-radius:10px; overflow:hidden;">
+            <sc-for list="{{ grp.tasks }}" as="t" hint-placeholder-count="2">
+              <div style="display:flex; align-items:center; gap:12px; padding:12px 16px; border-bottom:1px solid #EFEFF1;">
+                <div style="width:7px; height:7px; border-radius:50%; background:{{ t.statusDot }}; flex-shrink:0;"></div>
+                <div style="flex:1; min-width:0; font-size:13px; color:#1D1D1F;">{{ t.obligation }}
+                  <sc-if value="{{ t.isUnresolved }}" hint-placeholder-val="{{ false }}">
+                    <div style="font-size:11.5px; color:#5B5B8C; margin-top:2px;">Ask them: {{ t.inputAsk }}</div>
+                  </sc-if>
+                </div>
+                <div style="font-size:12px; color:{{ t.statusColor }}; font-weight:500; white-space:nowrap;">{{ t.callPrepLabel }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+</sc-if>
+
+<sc-if value="{{ showPaywall }}" hint-placeholder-val="{{ false }}">
+  <div style="position:fixed; inset:0; background:rgba(22,35,63,0.35); backdrop-filter:blur(16px) saturate(160%); -webkit-backdrop-filter:blur(16px) saturate(160%); display:flex; align-items:{{ modalAlign }}; justify-content:center; z-index:50;">
+    <div style="background:#FFFFFF; border-radius:{{ modalRadius }}; padding:36px 38px; max-width:{{ paywallMaxWidth }}; width:{{ modalWidth }}; box-shadow:0 24px 70px rgba(0,0,0,0.22), inset 0 0 0 1px rgba(255,255,255,0.6);">
+      <div style="width:38px; height:38px; border-radius:10px; background:#F5EBD3; display:flex; align-items:center; justify-content:center; margin-bottom:18px;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A67326" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>
+      </div>
+      <div style="font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Public Sans',sans-serif; letter-spacing:-0.02em; font-size:20px; font-weight:600; color:#16233F; margin-bottom:10px;">{{ paywallTitle }}</div>
+      <div style="font-size:13.5px; color:#3A3A3C; line-height:1.6; margin-bottom:22px;">{{ paywallBody }}</div>
+      <div style="display:flex; gap:10px;">
+        <div onClick="{{ closePaywall }}" style="flex:1; text-align:center; padding:11px; border-radius:9px; border:1px solid #E5E5EA; color:#6E6E73; font-size:13.5px; font-weight:500; cursor:pointer; transition:background 0.15s ease;" style-hover="background:#F5F5F7;">Maybe later</div>
+        <div onClick="{{ upgradeToPro }}" style="flex:1; text-align:center; padding:11px; border-radius:9px; background:#16233F; color:#F5F2E8; font-size:13.5px; font-weight:600; cursor:pointer; transition:transform 0.15s ease;" style-active="transform:scale(0.96);">Upgrade to Pro</div>
+      </div>
+    </div>
+  </div>
+</sc-if>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  today = new Date(2026, 7, 14);
+
+  faaBill = {
+    id: 'faa', title: 'FAA Reauthorization Act of 2024', number: 'H.R. 3935', congress: '118th Congress',
+    publicLaw: 'Pub. L. 118-63', enacted: '2024-05-16',
+    tasks: [
+      { key: 'faa-1', agency: 'Federal Aviation Administration', obligation: 'Publish updated pilot mental health disclosure rule', due: '2024-11-16', completed: true, citation: '§ 344', determination: 'computed', computedNote: 'Enactment date + 6 months · computed' },
+      { key: 'faa-2', agency: 'Federal Aviation Administration', obligation: 'Deploy runway safety technology at priority airports', due: '2025-05-16', completed: true, citation: '§ 744', determination: 'computed', computedNote: 'Enactment date + 12 months · computed' },
+      { key: 'faa-3', agency: 'Dept. of Transportation', obligation: 'Issue passenger refund rule enforcement guidance', due: '2025-08-16', completed: true, citation: '§ 505', determination: 'computed', computedNote: 'Explicit date stated in statute' },
+      { key: 'faa-4', agency: 'Federal Aviation Administration', obligation: 'Submit advanced air mobility integration report to Congress', due: '2026-05-16', completed: false, citation: '§ 951', determination: 'computed', computedNote: 'Enactment date + 24 months · computed' },
+      { key: 'faa-5', agency: 'Federal Aviation Administration', obligation: 'Update air traffic controller staffing plan', due: null, completed: false, citation: '§ 809', determination: 'unresolved', unresolvedReason: 'Recurring obligation — needs a start date', inputAsk: 'When was the current staffing plan adopted?' },
+      { key: 'faa-6', agency: 'Dept. of Transportation', obligation: 'Publish annual consumer aviation rights report', due: '2026-12-01', completed: false, citation: '§ 507', determination: 'reviewer', reviewerName: 'A. Chen' },
+    ],
+  };
+
+  state = {
+    view: 'login',
+    selectedBillId: null,
+    uploadTab: 'file',
+    dragging: false,
+    urlValue: '',
+    processingStep: -1,
+    showPaywall: false,
+    paywallReason: 'calendar',
+    statusFilter: 'all',
+    agencyFilter: 'all',
+    calMonthIndex: 7,
+    calYear: 2026,
+    calBillFilter: 'all',
+    calSelectedDate: '2026-08-14',
+    statT: 0,
+    dashboardSelectedBills: null,
+    agencyModalId: null,
+    billViewMode: 'list',
+    isPro: false,
+    calendarSynced: false,
+    viewportWidth: 1280,
+    provenanceOpen: {},
+    inputOpenKey: null,
+    inputDraftValue: '',
+    bills: [
+      {
+        id: 'iija', title: 'Infrastructure Investment and Jobs Act', number: 'H.R. 3684', congress: '117th Congress',
+        publicLaw: 'Pub. L. 117-58', enacted: '2021-11-15',
+        tasks: [
+          { key: 'iija-1', agency: 'Dept. of Transportation', obligation: 'Publish national strategy to reduce roadway fatalities', due: '2022-01-15', completed: true, citation: '§ 24112', determination: 'computed', computedNote: 'Explicit date stated in statute' },
+          { key: 'iija-2', agency: 'Federal Communications Commission', obligation: 'Adopt Broadband DATA Act mapping methodology', due: '2022-06-30', completed: true, citation: '§ 60102', determination: 'computed', computedNote: 'Explicit date stated in statute' },
+          { key: 'iija-3', agency: 'Environmental Protection Agency', obligation: 'Finalize PFAS national drinking water regulation', due: '2023-11-01', completed: true, citation: '§ 50108', determination: 'computed', computedNote: 'Enactment date + 24 months · computed' },
+          { key: 'iija-4', agency: 'Dept. of Energy', obligation: 'Report on regional hydrogen hub selections', due: '2024-03-31', completed: true, citation: '§ 40314', determination: 'computed', computedNote: 'Explicit date stated in statute' },
+          { key: 'iija-5', agency: 'U.S. Army Corps of Engineers', obligation: 'Submit western water infrastructure resilience report to Congress', due: '2026-06-30', completed: false, citation: '§ 40905', determination: 'computed', computedNote: 'Enactment date + 54 months · computed' },
+          { key: 'iija-6', agency: 'Federal Highway Administration', obligation: "Submit updated Carbon Reduction Strategy", due: null, completed: false, citation: '§ 11403', determination: 'unresolved', unresolvedReason: "Runs from an event this bill does not date: the state's prior strategy submission", inputAsk: "When was the state's prior Carbon Reduction Strategy submitted?" },
+          { key: 'iija-7', agency: 'Natl. Telecommunications & Info. Admin.', obligation: 'Submit final broadband deployment report', due: '2026-08-30', completed: false, citation: '§ 60102(h)', determination: 'reviewer', reviewerName: 'M. Alvarez' },
+          { key: 'iija-8', agency: 'Dept. of Energy', obligation: 'Grid Resilience formula grants — annual progress report', due: '2026-12-31', completed: false, citation: '§ 40101', determination: 'computed', computedNote: 'Award date + 12 months · computed' },
+          { key: 'iija-9', agency: 'Federal Highway Administration', obligation: 'Five-year review of Safe Streets and Roads for All program', due: null, completed: false, citation: '§ 24112(f)', determination: 'unresolved', unresolvedReason: 'Recurring obligation — needs a start date', inputAsk: 'When did the first program cycle begin?' },
+        ],
+      },
+      {
+        id: 'chips', title: 'CHIPS and Science Act', number: 'H.R. 4346', congress: '117th Congress',
+        publicLaw: 'Pub. L. 117-167', enacted: '2022-08-09',
+        tasks: [
+          { key: 'chips-1', agency: 'Dept. of Commerce', obligation: 'Issue semiconductor incentive program guidelines', due: '2022-11-09', completed: true, citation: '§ 102', determination: 'computed', computedNote: 'Enactment date + 90 days · computed' },
+          { key: 'chips-2', agency: 'National Institute of Standards and Technology', obligation: 'Establish National Semiconductor Technology Center', due: '2023-08-09', completed: true, citation: '§ 9906', determination: 'computed', computedNote: 'Explicit date stated in statute' },
+          { key: 'chips-3', agency: 'National Science Foundation', obligation: 'Report on regional technology hub designations', due: '2024-05-01', completed: true, citation: '§ 10231', determination: 'computed', computedNote: 'Explicit date stated in statute' },
+          { key: 'chips-4', agency: 'Dept. of Commerce', obligation: 'Update workforce development plan for incentive recipients', due: null, completed: false, citation: '§ 103(c)', determination: 'unresolved', unresolvedReason: 'Runs from an event this bill does not date: incentive award finalization', inputAsk: 'When was the incentive award finalized?' },
+          { key: 'chips-5', agency: 'National Science Foundation', obligation: 'Directorate for Technology, Innovation and Partnerships funding report', due: '2026-09-01', completed: false, citation: '§ 10387', determination: 'computed', computedNote: 'Appropriation date + 12 months · computed' },
+          { key: 'chips-6', agency: 'Dept. of Commerce', obligation: 'Complete guardrails compliance annual audit', due: '2026-11-01', completed: false, citation: '§ 103(a)(6)', determination: 'reviewer', reviewerName: 'J. Kim' },
+        ],
+      },
+    ],
+  };
+
+  statusOf(task) {
+    if (task.determination === 'unresolved') return 'needs_input';
+    if (task.completed) return 'completed';
+    const due = new Date(task.due + 'T00:00:00');
+    const diffDays = Math.round((due - this.today) / 86400000);
+    if (diffDays < 0) return 'overdue';
+    if (diffDays <= 21) return 'due_soon';
+    return 'upcoming';
+  }
+
+  statusMeta(status) {
+    const map = {
+      completed: { label: 'Completed', color: '#3F6B54', bg: '#E9F2EC' },
+      overdue: { label: 'Overdue', color: '#A8442C', bg: '#FBEAE5' },
+      due_soon: { label: 'Due soon', color: '#A67326', bg: '#FBF1DF' },
+      upcoming: { label: 'Upcoming', color: '#3C5A82', bg: '#EAF0F8' },
+      needs_input: { label: 'Needs input', color: '#5B5B8C', bg: '#EFEDF7' },
+    };
+    return map[status];
+  }
+
+  daysLabel(task, status) {
+    if (!task.due) return '';
+    const due = new Date(task.due + 'T00:00:00');
+    const diffDays = Math.round((due - this.today) / 86400000);
+    if (status === 'completed') return 'Done';
+    if (status === 'overdue') return `${Math.abs(diffDays)} day${Math.abs(diffDays) === 1 ? '' : 's'} overdue`;
+    if (diffDays === 0) return 'Due today';
+    return `Due in ${diffDays} day${diffDays === 1 ? '' : 's'}`;
+  }
+
+  formatDate(iso) {
+    if (!iso) return null;
+    const d = new Date(iso + 'T00:00:00');
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  provenanceFor(task) {
+    const found = { actor: 'AI', label: 'Identified candidate obligation', result: `Found matching phrase in ${task.citation}` };
+    const verified = { actor: 'System', label: 'Verified quote against source text', result: 'Exact match confirmed' };
+    if (task.determination === 'computed') {
+      return [found, verified, { actor: 'System', label: 'Computed date', result: task.computedNote }];
+    }
+    if (task.determination === 'reviewer') {
+      return [found, verified, { actor: 'System', label: 'Attempted computation', result: 'Blocked — required input not stated in text' }, { actor: 'Person', label: `Date entered by ${task.reviewerName}`, result: this.formatDate(task.due) }];
+    }
+    return [found, verified, { actor: 'System', label: 'Attempted computation', result: task.unresolvedReason }];
+  }
+
+  provenanceSummary(task) {
+    if (task.determination === 'computed') return 'AI found · verified · computed';
+    if (task.determination === 'reviewer') return `AI found · verified · entered by ${task.reviewerName}`;
+    return 'AI found · verified · needs input';
+  }
+
+  enrichBill(bill) {
+    const tasks = bill.tasks.map((t) => {
+      const status = this.statusOf(t);
+      const meta = this.statusMeta(status);
+      const isUnresolved = t.determination === 'unresolved';
+      const isReviewer = t.determination === 'reviewer';
+      const isOpen = this.state.inputOpenKey === t.key;
+      return {
+        ...t, status, statusLabel: meta.label, statusColor: meta.color, statusBg: meta.bg, statusDot: meta.color,
+        dueFormatted: this.formatDate(t.due), daysLabel: this.daysLabel(t, status),
+        dotAnim: status === 'overdue' ? 'pulseDot 1.8s infinite' : 'none',
+        hasDate: !isUnresolved, isUnresolved, isReviewer,
+        provenance: this.provenanceFor(t), provenanceSummary: this.provenanceSummary(t),
+        provenanceOpen: !!this.state.provenanceOpen[t.key],
+        chevronRotate: this.state.provenanceOpen[t.key] ? 'rotate(90deg)' : 'rotate(0deg)',
+        onToggleProvenance: () => this.toggleProvenance(t.key),
+        inputOpen: isOpen, inputClosed: !isOpen,
+        onOpenInput: () => this.openDateInput(t.key),
+        onSave: () => this.confirmDateInput(bill.id, t.key),
+      };
+    });
+    const counts = { completed: 0, overdue: 0, due_soon: 0, upcoming: 0, needs_input: 0 };
+    tasks.forEach((t) => counts[t.status]++);
+    const total = tasks.length || 1;
+    const pending = tasks.filter((t) => t.status !== 'completed' && t.status !== 'needs_input').sort((a, b) => a.due.localeCompare(b.due));
+    return {
+      ...bill, tasks, counts, total: tasks.length,
+      barCompletedPct: (counts.completed / total) * 100,
+      barOverduePct: (counts.overdue / total) * 100,
+      barDueSoonPct: (counts.due_soon / total) * 100,
+      barUpcomingPct: (counts.upcoming / total) * 100,
+      barNeedsInputPct: (counts.needs_input / total) * 100,
+      nextDue: pending[0] ? this.formatDate(pending[0].due) : '—',
+      enactedFormatted: this.formatDate(bill.enacted),
+      onClick: () => this.selectBill(bill.id),
+      onRemove: () => this.removeBill(bill.id),
+    };
+  }
+
+  initials(name) {
+    const skip = new Set(['of', 'the', 'and', 'for']);
+    const words = name.replace(/[.&]/g, '').split(' ').filter((w) => w && !skip.has(w.toLowerCase()));
+    return words.slice(0, 3).map((w) => w[0]).join('').toUpperCase();
+  }
+
+  startStatAnim() {
+    if (this.statInterval) clearInterval(this.statInterval);
+    const steps = 15;
+    let i = 0;
+    this.setState({ statT: 0 });
+    this.statInterval = setInterval(() => {
+      i++;
+      const p = Math.min(1, i / steps);
+      const eased = 1 - Math.pow(1 - p, 3);
+      this.setState({ statT: eased });
+      if (p >= 1) clearInterval(this.statInterval);
+    }, 60);
+  }
+
+  onResize = () => { this.setState({ viewportWidth: window.innerWidth }); };
+  componentDidMount() {
+    this.startStatAnim();
+    this.setState({ viewportWidth: window.innerWidth });
+    window.addEventListener('resize', this.onResize);
+  }
+  componentWillUnmount() {
+    if (this.timer) clearInterval(this.timer);
+    if (this.statInterval) clearInterval(this.statInterval);
+    window.removeEventListener('resize', this.onResize);
+  }
+
+  continueWithGoogle = () => this.setState({ view: 'dashboard' });
+  signOut = () => this.setState({ view: 'login' });
+  goAdmin = () => this.setState({ view: 'admin' });
+  exitAdmin = () => this.setState({ view: 'dashboard' });
+  selectBill = (id) => this.setState({ view: 'billDetail', selectedBillId: id, statusFilter: 'all', agencyFilter: 'all' });
+  goDashboard = () => { this.setState({ view: 'dashboard' }); this.startStatAnim(); };
+  goCalendar = () => this.setState({ view: 'calendar' });
+  goUpload = () => this.setState({ view: 'upload' });
+  goAccount = () => this.setState({ view: 'account' });
+  openCalendarPaywall = () => this.setState({ showPaywall: true, paywallReason: 'calendar' });
+  openBillsPaywall = () => this.setState({ showPaywall: true, paywallReason: 'bills' });
+  closePaywall = () => this.setState({ showPaywall: false });
+  removeBill = (id) => this.setState((s) => ({ bills: s.bills.filter((b) => b.id !== id) }));
+  onDragOver = (e) => { e.preventDefault(); this.setState({ dragging: true }); };
+  onDragLeave = () => this.setState({ dragging: false });
+  onDrop = (e) => { e.preventDefault(); this.setState({ dragging: false }); };
+  onDropzoneClick = () => { if (this.fileInputRef && this.fileInputRef.current) this.fileInputRef.current.click(); };
+  onFileChange = () => {};
+  onUrlChange = (e) => this.setState({ urlValue: e.target.value });
+  onAgencyChange = (e) => this.setState({ agencyFilter: e.target.value });
+  prevMonth = () => { let m = this.state.calMonthIndex - 1, y = this.state.calYear; if (m < 0) { m = 11; y--; } this.setState({ calMonthIndex: m, calYear: y }); };
+  nextMonth = () => { let m = this.state.calMonthIndex + 1, y = this.state.calYear; if (m > 11) { m = 0; y++; } this.setState({ calMonthIndex: m, calYear: y }); };
+  selectCalDay = (dateStr) => this.setState({ calSelectedDate: dateStr });
+  setCalBillFilter = (id) => this.setState({ calBillFilter: id });
+  setBillViewMode = (m) => this.setState({ billViewMode: m });
+  upgradeToPro = () => this.setState({ isPro: true, showPaywall: false });
+  syncAction = () => { if (this.state.isPro) this.setState({ calendarSynced: true }); else this.openCalendarPaywall(); };
+  toggleProvenance = (key) => this.setState((s) => ({ provenanceOpen: { ...s.provenanceOpen, [key]: !s.provenanceOpen[key] } }));
+  openDateInput = (key) => this.setState({ inputOpenKey: key, inputDraftValue: '' });
+  cancelDateInput = () => this.setState({ inputOpenKey: null, inputDraftValue: '' });
+  onDraftDateChange = (e) => this.setState({ inputDraftValue: e.target.value });
+  confirmDateInput = (billId, key) => {
+    const val = this.state.inputDraftValue;
+    if (!val) return;
+    this.setState((s) => ({
+      inputOpenKey: null, inputDraftValue: '',
+      bills: s.bills.map((b) => b.id !== billId ? b : { ...b, tasks: b.tasks.map((t) => t.key !== key ? t : { ...t, determination: 'reviewer', due: val, reviewerName: 'You' }) }),
+    }));
+  };
+
+  toggleDashboardBill = (id) => {
+    this.setState((s) => {
+      const allIds = s.bills.map((b) => b.id);
+      if (id === 'all') return { dashboardSelectedBills: null };
+      let current = s.dashboardSelectedBills === null ? allIds.slice() : s.dashboardSelectedBills.slice();
+      if (current.includes(id)) current = current.filter((x) => x !== id);
+      else current.push(id);
+      if (current.length === allIds.length) return { dashboardSelectedBills: null };
+      return { dashboardSelectedBills: current };
+    });
+  };
+  openAgencyModal = (agency) => this.setState({ agencyModalId: agency });
+  closeAgencyModal = () => this.setState({ agencyModalId: null });
+
+  startAnalysis = () => {
+    if (!this.state.isPro && this.state.bills.length >= 3) { this.openBillsPaywall(); return; }
+    this.setState({ view: 'processing', processingStep: 0 });
+    if (this.timer) clearInterval(this.timer);
+    this.timer = setInterval(() => {
+      this.setState((s) => {
+        const next = s.processingStep + 1;
+        if (next >= 5) {
+          clearInterval(this.timer);
+          setTimeout(() => {
+            this.setState((s2) => (s2.bills.some((b) => b.id === 'faa') ? { view: 'billDetail', selectedBillId: 'faa' } : { view: 'billDetail', selectedBillId: 'faa', bills: [...s2.bills, this.faaBill] }));
+          }, 500);
+          return { processingStep: 5 };
+        }
+        return { processingStep: next };
+      });
+    }, 900);
+  };
+
+  renderVals() {
+    const isMobile = this.state.viewportWidth < 760;
+    const view = this.state.view;
+    const isLoginView = view === 'login';
+    const isAdminView = view === 'admin';
+    const isAppView = !isLoginView && !isAdminView;
+
+    const bills = this.state.bills.map((b) => this.enrichBill(b));
+    const allTasks = bills.flatMap((b) => b.tasks.map((t) => ({ ...t, billTitle: b.title, billId: b.id })));
+    const overdueCount = allTasks.filter((t) => t.status === 'overdue').length;
+    const dueSoonCount = allTasks.filter((t) => t.status === 'due_soon').length;
+    const completedCount = allTasks.filter((t) => t.status === 'completed').length;
+    const needsInputCount = allTasks.filter((t) => t.status === 'needs_input').length;
+
+    const titles = { dashboard: 'Dashboard', billDetail: 'Bill detail', upload: 'Add a bill', processing: 'Analyzing', calendar: 'Calendar', account: 'Account' };
+    const navBg = (key) => (view === key || (key === 'dashboard' && view === 'billDetail')) ? 'rgba(200,152,62,0.16)' : 'transparent';
+    const navColor = (key) => (view === key || (key === 'dashboard' && view === 'billDetail')) ? '#F5F2E8' : '#B7BECF';
+
+    const selectedBill = bills.find((b) => b.id === this.state.selectedBillId) || null;
+    let agencies = [], groupedTasks = [];
+    if (selectedBill) {
+      agencies = [...new Set(selectedBill.tasks.map((t) => t.agency))];
+      const filtered = selectedBill.tasks.filter((t) =>
+        (this.state.statusFilter === 'all' || t.status === this.state.statusFilter) &&
+        (this.state.agencyFilter === 'all' || t.agency === this.state.agencyFilter)
+      ).sort((a, b) => (a.due || '9999').localeCompare(b.due || '9999'));
+      const byAgency = {};
+      filtered.forEach((t) => { (byAgency[t.agency] = byAgency[t.agency] || []).push(t); });
+      groupedTasks = Object.keys(byAgency).sort().map((agency) => ({ agency, tasks: byAgency[agency] }));
+    }
+    const unresolvedInBill = selectedBill ? selectedBill.tasks.filter((t) => t.isUnresolved) : [];
+
+    const filterDefs = [
+      ['all', 'All'], ['overdue', 'Overdue'], ['needs_input', 'Needs input'], ['due_soon', 'Due soon'], ['upcoming', 'Upcoming'], ['completed', 'Completed'],
+    ];
+    const statusFilters = filterDefs.map(([key, label]) => {
+      const active = this.state.statusFilter === key;
+      return { key, label, onClick: () => this.setState({ statusFilter: key }), bg: active ? '#16233F' : '#fff', color: active ? '#F5F2E8' : '#3A3A3C', border: active ? '#16233F' : '#E5E5EA' };
+    });
+
+    const uploadTabs = [['file', 'Upload file'], ['url', 'Paste URL']].map(([key, label]) => {
+      const active = this.state.uploadTab === key;
+      return { key, label, onClick: () => this.setState({ uploadTab: key }), bg: active ? '#fff' : 'transparent', color: active ? '#16233F' : '#6E6E73' };
+    });
+
+    const calFilterDefs = [{ id: 'all', label: 'All bills' }, ...bills.map((b) => ({ id: b.id, label: b.number }))];
+    const calBillFilters = calFilterDefs.map((f) => {
+      const active = this.state.calBillFilter === f.id;
+      return { ...f, onClick: () => this.setCalBillFilter(f.id), bg: active ? '#16233F' : '#fff', color: active ? '#F5F2E8' : '#3A3A3C', border: active ? '#16233F' : '#E5E5EA' };
+    });
+
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const y = this.state.calYear, m = this.state.calMonthIndex;
+    const startWeekday = new Date(y, m, 1).getDay();
+    const daysInMonth = new Date(y, m + 1, 0).getDate();
+    const calTasks = (this.state.calBillFilter === 'all' ? allTasks : allTasks.filter((t) => t.billId === this.state.calBillFilter)).filter((t) => t.due);
+    const tasksByDate = {};
+    calTasks.forEach((t) => { (tasksByDate[t.due] = tasksByDate[t.due] || []).push(t); });
+    const unresolvedThisMonth = (this.state.calBillFilter === 'all' ? allTasks : allTasks.filter((t) => t.billId === this.state.calBillFilter)).filter((t) => t.isUnresolved);
+    const cells = [];
+    for (let i = 0; i < startWeekday; i++) cells.push({ blank: true, notBlank: false, key: 'b' + i });
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      const dayTasks = tasksByDate[dateStr] || [];
+      const isToday = dateStr === '2026-08-14';
+      const isSelected = dateStr === this.state.calSelectedDate;
+      cells.push({
+        blank: false, notBlank: true, key: dateStr, day: d, dayWeight: isToday ? 700 : 500,
+        dayColor: isToday ? '#FFFFFF' : '#1D1D1F', todayBg: isToday ? '#C8983E' : 'transparent',
+        bg: isSelected ? '#F5EBD3' : '#FFFFFF',
+        onClick: () => this.selectCalDay(dateStr),
+        tasks: dayTasks.slice(0, 2), hasExtra: dayTasks.length > 2, extra: Math.max(0, dayTasks.length - 2),
+        dots: dayTasks.slice(0, 4).map((t) => ({ color: t.statusColor })),
+      });
+    }
+    const selectedDayTasks = tasksByDate[this.state.calSelectedDate] || [];
+
+    const stageDefs = [
+      { label: 'Parsing the document', count: '48 sections identified' },
+      { label: 'Scanning for deadline language', count: '27 candidate expressions found' },
+      { label: 'AI identifying candidate obligations', count: '21 obligations identified' },
+      { label: 'Verifying each quote against the source text', count: '19 verified · 2 rejected' },
+      { label: 'Computing dates under applicable rules', count: '14 computed · 3 entered by reviewer · 4 need input' },
+    ];
+    const stages = stageDefs.map((s, i) => ({ ...s, done: i <= this.state.processingStep, opacity: i <= this.state.processingStep ? 1 : 0.35, iconBg: i <= this.state.processingStep ? '#5C8B71' : '#EDEDF0', iconBorder: i <= this.state.processingStep ? 'none' : '1px solid #D9D0B8' }));
+
+    const paywallReason = this.state.paywallReason;
+    const paywallTitle = paywallReason === 'calendar' ? 'Sync deadlines to your calendar' : "You've reached your free limit";
+    const paywallBody = paywallReason === 'calendar'
+      ? 'Free plan includes unlimited viewing here. Upgrade to push every deadline to Google Calendar, Outlook, or any ICS-compatible calendar, with automatic updates if a date changes.'
+      : 'Free plan includes 3 tracked bills. Upgrade for unlimited bills, plus calendar sync.';
+
+    const isPro = this.state.isPro, billsUsed = bills.length, billsLimit = 3;
+    const billsSummary = isPro ? `${billsUsed} (unlimited)` : `${billsUsed}/${billsLimit} bills`;
+    const planLabel = isPro ? 'Pro' : 'Free plan';
+    const addBillHint = isPro ? 'Add another bill' : `${Math.max(0, billsLimit - billsUsed)} free slot remaining`;
+    const syncLabel = isPro && this.state.calendarSynced ? 'Synced to calendar' : 'Sync to calendar';
+    const billsLimitSuffix = isPro ? '' : `/ ${billsLimit}`;
+
+    const billViewModes = [['list', 'List'], ['timeline', 'Timeline']];
+    const isListMode = isMobile ? true : this.state.billViewMode === 'list';
+
+    const allBillIds = bills.map((b) => b.id);
+    const selRaw = this.state.dashboardSelectedBills;
+    const isAllSelected = selRaw === null;
+    const selectedIds = isAllSelected ? allBillIds : selRaw;
+    const dashBills = bills.filter((b) => selectedIds.includes(b.id));
+    const dashTasks = dashBills.flatMap((b) => b.tasks.map((t) => ({ ...t, billTitle: b.title, billId: b.id })));
+    const billFilterChips = [{ id: 'all', label: 'All bills' }, ...bills.map((b) => ({ id: b.id, label: b.number }))].map((f) => {
+      const active = f.id === 'all' ? isAllSelected : (!isAllSelected && selectedIds.includes(f.id));
+      return { ...f, onClick: () => this.toggleDashboardBill(f.id), bg: active ? '#16233F' : '#fff', color: active ? '#F5F2E8' : '#3A3A3C', border: active ? '#16233F' : '#E5E5EA' };
+    });
+
+    const agencyMap = {};
+    dashTasks.forEach((t) => {
+      if (!agencyMap[t.agency]) agencyMap[t.agency] = { agency: t.agency, tasks: [], billIds: new Set() };
+      agencyMap[t.agency].tasks.push(t);
+      agencyMap[t.agency].billIds.add(t.billId);
+    });
+    const statT = this.state.statT ?? 0;
+    const circumference = 2 * Math.PI * 24;
+    const agencyCards = Object.values(agencyMap).map((a) => {
+      const total = a.tasks.length;
+      const hasOverdue = a.tasks.some((t) => t.status === 'overdue');
+      const hasNeedsInput = a.tasks.some((t) => t.status === 'needs_input');
+      const hasDueSoon = a.tasks.some((t) => t.status === 'due_soon');
+      const pending = a.tasks.filter((t) => t.status !== 'completed' && t.status !== 'needs_input').sort((x, y2) => x.due.localeCompare(y2.due));
+      const ringColor = hasOverdue ? '#B8452F' : hasNeedsInput ? '#5B5B8C' : hasDueSoon ? '#C79A44' : pending.length > 0 ? '#4C6D96' : '#5C8B71';
+      let countdownText, sortDate, pct;
+      if (hasOverdue) { sortDate = '0000-00-00'; }
+      if (!pending[0]) {
+        countdownText = hasNeedsInput ? `${a.tasks.filter((t) => t.status === 'needs_input').length} need input` : 'All caught up';
+        sortDate = sortDate || '9999-99-99'; pct = 1;
+      } else {
+        const days = Math.round((new Date(pending[0].due + 'T00:00:00') - this.today) / 86400000);
+        countdownText = days < 0 ? `${Math.abs(days)}d overdue` : days === 0 ? 'Due today' : `${days}d to next deadline`;
+        sortDate = sortDate || pending[0].due;
+        pct = days < 0 ? 1 : Math.max(0.15, 1 - Math.min(days, 90) / 90);
+      }
+      return {
+        agency: a.agency, initials: this.initials(a.agency), total, billCount: a.billIds.size,
+        circumference, dashoffset: circumference * (1 - pct * statT), ringColor, countdownText, sortDate,
+        onClick: () => this.openAgencyModal(a.agency),
+      };
+    }).sort((p, q) => p.sortDate.localeCompare(q.sortDate));
+
+    const statVal = (target) => Math.round(target * statT);
+    const dashOverdue = dashTasks.filter((t) => t.status === 'overdue').length;
+    const dashDueSoon = dashTasks.filter((t) => t.status === 'due_soon').length;
+    const dashCompleted = dashTasks.filter((t) => t.status === 'completed').length;
+    const dashNeedsInput = dashTasks.filter((t) => t.status === 'needs_input').length;
+
+    const agencyModalId = this.state.agencyModalId;
+    let agencyModalGroups = [], agencyModalTotal = 0, agencyModalOverdue = 0, agencyModalBillCount = 0, agencyModalNeedsInput = 0;
+    if (agencyModalId) {
+      const tasksForAgency = allTasks.filter((t) => t.agency === agencyModalId).sort((a, b) => (a.due || '9999').localeCompare(b.due || '9999'));
+      agencyModalTotal = tasksForAgency.length;
+      agencyModalOverdue = tasksForAgency.filter((t) => t.status === 'overdue').length;
+      agencyModalNeedsInput = tasksForAgency.filter((t) => t.status === 'needs_input').length;
+      const withLabel = tasksForAgency.map((t) => ({ ...t, callPrepLabel: t.isUnresolved ? 'Needs input' : (t.dueFormatted + ' · ' + t.statusLabel) }));
+      const byBill = {};
+      withLabel.forEach((t) => { (byBill[t.billTitle] = byBill[t.billTitle] || { billTitle: t.billTitle, tasks: [] }).tasks.push(t); });
+      agencyModalGroups = Object.values(byBill);
+      agencyModalBillCount = agencyModalGroups.length;
+    }
+
+    const billViewModesOut = billViewModes.map(([key, label]) => {
+      const active = this.state.billViewMode === key;
+      return { key, label, onClick: () => this.setBillViewMode(key), bg: active ? '#fff' : 'transparent', color: active ? '#16233F' : '#6E6E73', shadow: active ? '0 1px 4px rgba(0,0,0,0.12)' : 'none' };
+    });
+
+    let timelineRows = [], timelineTicks = [], todayPct = 50;
+    if (selectedBill) {
+      const dated = selectedBill.tasks.filter((t) => t.due);
+      const allDates = dated.map((t) => new Date(t.due + 'T00:00:00'));
+      const enactedDate = new Date(selectedBill.enacted + 'T00:00:00');
+      const rangeStart = new Date(Math.min(enactedDate.getTime(), ...allDates.map((d) => d.getTime())));
+      const maxDue = new Date(Math.max(...allDates.map((d) => d.getTime())));
+      const rangeEnd = new Date(maxDue.getTime() + 60 * 86400000);
+      const spanMs = rangeEnd.getTime() - rangeStart.getTime();
+      const pctFor = (d) => Math.max(0, Math.min(100, ((d.getTime() - rangeStart.getTime()) / spanMs) * 100));
+      todayPct = pctFor(this.today);
+      const groupedDated = {};
+      dated.forEach((t) => { (groupedDated[t.agency] = groupedDated[t.agency] || []).push(t); });
+      timelineRows = Object.keys(groupedDated).sort().map((agency) => {
+        const markers = groupedDated[agency].slice().sort((a, b) => a.due.localeCompare(b.due)).map((t) => ({ pct: pctFor(new Date(t.due + 'T00:00:00')), statusColor: t.statusColor, obligation: t.obligation }));
+        const lineLeft = markers.length ? markers[0].pct : 0;
+        const lineWidth = markers.length ? markers[markers.length - 1].pct - markers[0].pct : 0;
+        return { agency, markers, lineLeft, lineWidth };
+      });
+      const spanYears = spanMs / (365.25 * 86400000);
+      const stepMonths = spanYears > 4 ? 12 : spanYears > 1.5 ? 6 : 1;
+      const tickFmt = stepMonths === 12 ? { year: 'numeric' } : { month: 'short', year: 'numeric' };
+      let cursor = new Date(rangeStart.getFullYear(), Math.floor(rangeStart.getMonth() / stepMonths) * stepMonths, 1);
+      while (cursor <= rangeEnd) {
+        timelineTicks.push({ label: cursor.toLocaleDateString('en-US', tickFmt), pct: pctFor(cursor) });
+        cursor = new Date(cursor.getFullYear(), cursor.getMonth() + stepMonths, 1);
+      }
+    }
+
+    const adminUsers = [
+      { name: 'M. Alvarez', email: 'm.alvarez@house.gov', plan: 'Pro', bills: 8, joined: 'Feb 3, 2026' },
+      { name: 'J. Kim', email: 'j.kim@senate.gov', plan: 'Free', bills: 2, joined: 'Mar 21, 2026' },
+      { name: 'A. Chen', email: 'a.chen@policyfirm.org', plan: 'Pro', bills: 14, joined: 'Jan 9, 2026' },
+      { name: 'R. Patel', email: 'r.patel@house.gov', plan: 'Free', bills: 1, joined: 'Jul 30, 2026' },
+      { name: 'S. Okafor', email: 's.okafor@senate.gov', plan: 'Pro', bills: 5, joined: 'May 14, 2026' },
+    ];
+    const adminDocs = [
+      { bill: 'H.R. 3684', jurisdiction: 'Federal', uploadedBy: 'M. Alvarez', date: 'Aug 14, 2026', status: 'Processed', statusColor: '#3F6B54' },
+      { bill: 'H.R. 4346', jurisdiction: 'Federal', uploadedBy: 'M. Alvarez', date: 'Aug 12, 2026', status: 'Processed', statusColor: '#3F6B54' },
+      { bill: 'HB 1456', jurisdiction: 'Virginia', uploadedBy: 'J. Kim', date: 'Aug 11, 2026', status: 'Processed', statusColor: '#3F6B54' },
+      { bill: 'H.R. 3935', jurisdiction: 'Federal', uploadedBy: 'A. Chen', date: 'Aug 9, 2026', status: 'Needs review', statusColor: '#A67326' },
+      { bill: 'SB 21', jurisdiction: 'Virginia', uploadedBy: 'R. Patel', date: 'Aug 5, 2026', status: 'Failed — unreadable scan', statusColor: '#A8442C' },
+    ];
+    const adminStats = { totalUsers: 128, totalDocs: 341, docsThisWeek: 17 };
+
+    if (!this.fileInputRef) this.fileInputRef = { current: null };
+
+    return {
+      isLoginView, isAdminView, isAppView, continueWithGoogle: this.continueWithGoogle, exitAdmin: this.exitAdmin, goAdmin: this.goAdmin, signOut: this.signOut,
+      adminUsers, adminDocs, adminStats,
+      isMobile, isDesktopNav: !isMobile, isMobileNav: isMobile,
+      shellDirection: 'row', calendarDirection: isMobile ? 'column' : 'row',
+      contentBottomPad: isMobile ? 70 : 0,
+      topbarPad: isMobile ? '16px 20px' : '22px 44px', contentPad: isMobile ? '20px' : '40px 44px 60px 44px',
+      titleSize: isMobile ? 20 : 25,
+      statGridCols: isMobile ? 'repeat(2,1fr)' : 'repeat(7,1fr)',
+      agencyGridCols: isMobile ? '1fr' : 'repeat(auto-fill,minmax(210px,1fr))',
+      billGridCols: isMobile ? '1fr' : 'repeat(auto-fill,minmax(320px,1fr))',
+      dayCellHeight: isMobile ? 60 : 82,
+      dayPanelWidth: isMobile ? '100%' : '280px',
+      modalAlign: isMobile ? 'flex-end' : 'center',
+      modalRadius: isMobile ? '20px 20px 0 0' : '20px',
+      modalWidth: isMobile ? '100%' : '90%',
+      modalMaxWidth: isMobile ? '100%' : '520px',
+      paywallMaxWidth: isMobile ? '100%' : '420px',
+      modalHeight: isMobile ? '85vh' : 'auto',
+      modalMaxHeight: isMobile ? '85vh' : '80vh',
+      view, pageTitle: titles[view] || 'Docket', isDashboard: view === 'dashboard', isBillDetail: view === 'billDetail',
+      isUpload: view === 'upload', isProcessing: view === 'processing', isCalendar: view === 'calendar', isAccount: view === 'account',
+      goDashboard: this.goDashboard, goCalendar: this.goCalendar, goUpload: this.goUpload, goAccount: this.goAccount,
+      navDashboardBg: navBg('dashboard'), navDashboardColor: navColor('dashboard'),
+      navCalendarBg: navBg('calendar'), navCalendarColor: navColor('calendar'),
+      navUploadBg: navBg('upload'), navUploadColor: navColor('upload'),
+      navAccountBg: navBg('account'), navAccountColor: navColor('account'),
+      bills, dashBillCards: bills.filter((b) => selectedIds.includes(b.id)), billsUsed, billsLimit, billsRemaining: Math.max(0, billsLimit - billsUsed), planPct: isPro ? 100 : (billsUsed / billsLimit) * 100,
+      hasFreeSlot: isPro || billsUsed < billsLimit, isPro, isNotPro: !isPro, billsSummary, planLabel, addBillHint,
+      syncLabel, syncAction: this.syncAction, upgradeToPro: this.upgradeToPro, billsLimitSuffix,
+      userRole: 'Reviewer',
+      overdueCount, dueSoonCount, completedCount, needsInputCount, agencyCards,
+      billFilterChips, hasDashboardBills: dashBills.length > 0, hasNoDashboardBills: dashBills.length === 0,
+      statBills: statVal(billsUsed), statAgencies: statVal(agencyCards.length), statTasks: statVal(dashTasks.length),
+      statOverdue: statVal(dashOverdue), statDueSoon: statVal(dashDueSoon), statCompleted: statVal(dashCompleted), statNeedsInput: statVal(dashNeedsInput),
+      agencyModalOpen: !!agencyModalId, agencyModalAgency: agencyModalId, agencyModalGroups, agencyModalTotal, agencyModalOverdue, agencyModalBillCount, agencyModalNeedsInput,
+      closeAgencyModal: this.closeAgencyModal,
+      selectBill: this.selectBill, selectedBill, groupedTasks, agencies, statusFilters, onAgencyChange: this.onAgencyChange,
+      unresolvedInBill, hasUnresolvedInBill: unresolvedInBill.length > 0,
+      billViewModes: billViewModesOut, isListView: isListMode, isTimelineView: !isListMode,
+      setListView: () => this.setBillViewMode('list'), setTimelineView: () => this.setBillViewMode('timeline'),
+      listBg: isListMode ? '#fff' : 'transparent', listColor: isListMode ? '#16233F' : '#6E6E73', listShadow: isListMode ? '0 1px 4px rgba(0,0,0,0.12)' : 'none',
+      timelineBg: !isListMode ? '#fff' : 'transparent', timelineColor: !isListMode ? '#16233F' : '#6E6E73', timelineShadow: !isListMode ? '0 1px 4px rgba(0,0,0,0.12)' : 'none',
+      timelineRows, timelineTicks, todayPct,
+      uploadTab: this.state.uploadTab, uploadTabs, isFileTab: this.state.uploadTab === 'file', isUrlTab: this.state.uploadTab === 'url',
+      dragging: this.state.dragging, dropzoneBorder: this.state.dragging ? '#C8983E' : '#C9BF9E', dropzoneBg: this.state.dragging ? '#FBF3E3' : 'transparent',
+      dropzoneTitle: 'Drop a bill here, or click to browse',
+      onDragOver: this.onDragOver, onDragLeave: this.onDragLeave, onDrop: this.onDrop, onDropzoneClick: this.onDropzoneClick,
+      onFileChange: this.onFileChange, fileInputRef: this.fileInputRef,
+      urlValue: this.state.urlValue, onUrlChange: this.onUrlChange,
+      startAnalysis: this.startAnalysis, stages,
+      showPaywall: this.state.showPaywall, paywallTitle, paywallBody, closePaywall: this.closePaywall,
+      openCalendarPaywall: this.openCalendarPaywall, openBillsPaywall: this.openBillsPaywall,
+      monthLabel: `${monthNames[m]} ${y}`, cells, prevMonth: this.prevMonth, nextMonth: this.nextMonth,
+      calBillFilters, calSelectedDate: this.state.calSelectedDate, calSelectedDateFormatted: this.formatDate(this.state.calSelectedDate) || 'Select a day',
+      selectedDayTasks, hasSelectedDayTasks: selectedDayTasks.length > 0, noSelectedDayTasks: selectedDayTasks.length === 0,
+      unresolvedThisMonth, hasUnresolvedInMonth: unresolvedThisMonth.length > 0,
+      todayShort: 'Aug 14, 2026', todayFormatted: 'August 14, 2026',
+      inputDraftValue: this.state.inputDraftValue, onDraftDateChange: this.onDraftDateChange, cancelDateInput: this.cancelDateInput,
+    };
+  }
+}
+
+</script>
+</body>
+</html>
