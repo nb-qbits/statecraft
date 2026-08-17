@@ -5,7 +5,7 @@ import type { Logger } from "../../platform/logger/logger.js";
 import type { DocumentVersionId } from "../shared/types.js";
 import { AppError } from "../shared/errors.js";
 import { resolve, RESOLVER_VERSION } from "./resolve.js";
-import { loadPack } from "../jurisdiction/pack-loader.js";
+import { tryLoadPack } from "../jurisdiction/pack-loader.js";
 import type {
   AnchoredResolution,
   DerivedEffectiveDate,
@@ -81,7 +81,14 @@ export function createResolverService(deps: ResolverServiceDeps) {
       const parsedOnly = grammarResults.filter((r) => r.result.parsed);
 
       const jurisdiction = version.legalIdentity.jurisdiction;
-      const pack = await loadPack(jurisdiction, "1");
+      const pack = tryLoadPack(jurisdiction, "1");
+
+      if (pack.packVersion.startsWith("default/")) {
+        logger.info(
+          { documentVersionId, jurisdiction },
+          "using default pack — dates will be estimated, not jurisdiction-verified",
+        );
+      }
 
       let derivedEffectiveDate: DerivedEffectiveDate | undefined;
       const sessionRecord = pack.getSessionMetadata(version.legalIdentity.session);

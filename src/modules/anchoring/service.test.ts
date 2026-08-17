@@ -80,7 +80,7 @@ function makeSegment(rawText: string): SourceSegment {
     contentHash: "hash" as ContentHash,
     offsetMap,
     parserAdapter: "plain-text",
-    parserVersion: "1.3.0",
+    parserVersion: "1.4.0",
     fidelity: "none",
   };
 }
@@ -226,7 +226,7 @@ describe("anchoring service", () => {
   it("idempotent: returns existing when already anchored with same version", async () => {
     stubs.versions.set(
       dvId,
-      makeVersion({ anchoringStatus: "anchored", anchorerVersion: "1.2.0" }),
+      makeVersion({ anchoringStatus: "anchored", anchorerVersion: "1.5.0", extractorVersion: "1.4.0" }),
     );
     stubs.anchors.set(dvId, [
       {
@@ -242,6 +242,12 @@ describe("anchoring service", () => {
           originalEnd: 14,
           method: "exact",
         },
+        actor: null,
+        actorQuotedText: null,
+        actorAnchored: null,
+        dependsOnQuotedText: null,
+        dependsOnDescription: null,
+        dependsOnAnchored: null,
       },
     ]);
 
@@ -304,7 +310,7 @@ describe("anchoring service", () => {
     expect(stubs.anchoringRepository.updateAnchoringStatus).toHaveBeenCalledWith(
       dvId,
       "anchored",
-      "1.2.0",
+      "1.5.0",
     );
   });
 
@@ -338,6 +344,12 @@ function makeAnchoredResult(
       originalEnd,
       method: "exact" as const,
     },
+    actor: null,
+    actorQuotedText: null,
+    actorAnchored: null,
+    dependsOnQuotedText: null,
+    dependsOnDescription: null,
+    dependsOnAnchored: null,
   };
 }
 
@@ -433,6 +445,12 @@ describe("over-extraction suppression", () => {
         quotedText: "fabricated text",
         kind: "duration",
         result: { anchored: false, reason: "no_match" },
+        actor: null,
+        actorQuotedText: null,
+        actorAnchored: null,
+        dependsOnQuotedText: null,
+        dependsOnDescription: null,
+        dependsOnAnchored: null,
       },
     ];
 
@@ -547,10 +565,22 @@ describe("duplicate span deduplication", () => {
     expect(duplicates).toHaveLength(2);
   });
 
-  it("does NOT collapse spans at different positions", () => {
+  it("collapses spans with same anchor ID even at different positions", () => {
     const results: ProposalAnchorResult[] = [
       makeAnchoredResult(segId, "within 30 days", "duration", 10, 24),
       makeAnchoredResult(segId, "within 30 days", "duration", 50, 64),
+    ];
+
+    const { unique, duplicates } = deduplicateSpans(results);
+
+    expect(unique).toHaveLength(1);
+    expect(duplicates).toHaveLength(1);
+  });
+
+  it("does NOT collapse spans with different text at different positions", () => {
+    const results: ProposalAnchorResult[] = [
+      makeAnchoredResult(segId, "within 30 days", "duration", 10, 24),
+      makeAnchoredResult(segId, "within 60 days", "duration", 50, 64),
     ];
 
     const { unique, duplicates } = deduplicateSpans(results);
@@ -571,15 +601,56 @@ describe("duplicate span deduplication", () => {
     expect(duplicates).toHaveLength(0);
   });
 
-  it("passes through unanchored results without deduplication", () => {
+  it("collapses unanchored results with same anchor ID", () => {
     const unanchored: ProposalAnchorResult = {
       anchorId: computeAnchorId(segId, "fabricated text", "duration"),
       segmentId: segId,
       quotedText: "fabricated text",
       kind: "duration",
       result: { anchored: false, reason: "no_match" },
+      actor: null,
+      actorQuotedText: null,
+      actorAnchored: null,
+      dependsOnQuotedText: null,
+      dependsOnDescription: null,
+      dependsOnAnchored: null,
     };
     const results: ProposalAnchorResult[] = [unanchored, unanchored];
+
+    const { unique, duplicates } = deduplicateSpans(results);
+
+    expect(unique).toHaveLength(1);
+    expect(duplicates).toHaveLength(1);
+  });
+
+  it("passes through unanchored results with different anchor IDs", () => {
+    const unanchored1: ProposalAnchorResult = {
+      anchorId: computeAnchorId(segId, "fabricated text", "duration"),
+      segmentId: segId,
+      quotedText: "fabricated text",
+      kind: "duration",
+      result: { anchored: false, reason: "no_match" },
+      actor: null,
+      actorQuotedText: null,
+      actorAnchored: null,
+      dependsOnQuotedText: null,
+      dependsOnDescription: null,
+      dependsOnAnchored: null,
+    };
+    const unanchored2: ProposalAnchorResult = {
+      anchorId: computeAnchorId(segId, "other text", "duration"),
+      segmentId: segId,
+      quotedText: "other text",
+      kind: "duration",
+      result: { anchored: false, reason: "no_match" },
+      actor: null,
+      actorQuotedText: null,
+      actorAnchored: null,
+      dependsOnQuotedText: null,
+      dependsOnDescription: null,
+      dependsOnAnchored: null,
+    };
+    const results: ProposalAnchorResult[] = [unanchored1, unanchored2];
 
     const { unique, duplicates } = deduplicateSpans(results);
 

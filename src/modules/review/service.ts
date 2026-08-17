@@ -1,4 +1,4 @@
-import { createHash, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import type { Logger } from "../../platform/logger/logger.js";
 import type { ReviewRepository } from "../../platform/db/review-repository.js";
 import type { IngestionRepository } from "../ingestion/service.js";
@@ -34,15 +34,8 @@ import type {
   ReviewDiff,
   Project,
 } from "./types.js";
-import { REVIEW_VERSION } from "./types.js";
 
-import { SCANNER_VERSION } from "../scanning/scanner.js";
-import { EXTRACTOR_VERSION } from "../extraction/service.js";
-import { ANCHORER_VERSION } from "../anchoring/service.js";
-import { GRAMMAR_VERSION } from "../grammar/service.js";
-import { RESOLVER_VERSION } from "../resolver/service.js";
-import { EVALUATOR_VERSION } from "../evaluation/types.js";
-import { ROUTER_VERSION } from "../routing/types.js";
+import { computeConfigHash, currentStageVersions } from "../shared/engine-versions.js";
 import type { ProposalInsert } from "../../platform/db/review-repository.js";
 
 export interface PipelineServices {
@@ -70,20 +63,6 @@ export interface ReviewServiceDeps {
   logger: Logger;
 }
 
-function computeConfigHash(): string {
-  const versions = [
-    SCANNER_VERSION,
-    EXTRACTOR_VERSION,
-    ANCHORER_VERSION,
-    GRAMMAR_VERSION,
-    RESOLVER_VERSION,
-    EVALUATOR_VERSION,
-    ROUTER_VERSION,
-    REVIEW_VERSION,
-  ];
-  return createHash("sha256").update(versions.join(":")).digest("hex");
-}
-
 function proposalSnapshot(p: ReviewProposal): Record<string, unknown> {
   return {
     proposalId: p.proposalId,
@@ -100,7 +79,7 @@ function proposalSnapshot(p: ReviewProposal): Record<string, unknown> {
     supportLevel: p.supportLevel,
     lane: p.lane,
     deliverable: null,
-    actor: null,
+    actor: p.actor ?? null,
     conditions: null,
   };
 }
@@ -133,7 +112,7 @@ function buildResolverFailureReason(proposal: ReviewProposal): string {
 }
 
 interface ComputedDateFields {
-  readonly dateProvenance: "computed";
+  readonly dateProvenance: "computed" | "generic_default";
   readonly deadlineDate: string;
   readonly adjustedDate: string;
   readonly ruleIds: string[];
@@ -159,6 +138,8 @@ function buildComputedDateFields(
 
   const ruleIds = proposal.ruleIds as string[];
   const citations = proposal.citations as string[];
+  const isGenericDefault = proposal.packVersion?.startsWith("default/") ?? false;
+  const provenance: "computed" | "generic_default" = isGenericDefault ? "generic_default" : "computed";
 
   if (ruleIds.length === 0 || !proposal.packVersion) {
     throw new AppError({
@@ -186,23 +167,25 @@ function buildComputedDateFields(
       });
     }
 
-    for (const occ of occurrences) {
-      if (occ.citations.length === 0) {
-        throw new AppError({
-          code: "COMPUTED_DATE_EMPTY_CITATIONS",
-          category: "internal",
-          message:
-            "dateProvenance 'computed' requires non-empty citations per occurrence — INV-6",
-          retryable: false,
-          context: { proposalId: proposal.proposalId, occurrenceDate: occ.occurrenceDate },
-        });
+    if (!isGenericDefault) {
+      for (const occ of occurrences) {
+        if (occ.citations.length === 0) {
+          throw new AppError({
+            code: "COMPUTED_DATE_EMPTY_CITATIONS",
+            category: "internal",
+            message:
+              "dateProvenance 'computed' requires non-empty citations per occurrence — INV-6",
+            retryable: false,
+            context: { proposalId: proposal.proposalId, occurrenceDate: occ.occurrenceDate },
+          });
+        }
       }
     }
 
     const firstOccurrence = occurrences[0]!;
 
     return {
-      dateProvenance: "computed",
+      dateProvenance: provenance,
       deadlineDate: firstOccurrence.occurrenceDate,
       adjustedDate: firstOccurrence.adjustedDate,
       ruleIds,
@@ -223,7 +206,7 @@ function buildComputedDateFields(
     });
   }
 
-  if (citations.length === 0) {
+  if (!isGenericDefault && citations.length === 0) {
     throw new AppError({
       code: "COMPUTED_DATE_EMPTY_CITATIONS",
       category: "internal",
@@ -235,7 +218,7 @@ function buildComputedDateFields(
   }
 
   return {
-    dateProvenance: "computed",
+    dateProvenance: provenance,
     deadlineDate: proposal.statutoryDate,
     adjustedDate: proposal.adjustedDate ?? proposal.statutoryDate,
     ruleIds,
@@ -339,7 +322,8 @@ export function createReviewService(deps: ReviewServiceDeps) {
       documentVersionId: DocumentVersionId,
     ): Promise<Analysis> {
       await requireVersion(documentVersionId);
-      const configHash = computeConfigHash();
+      const versions = currentStageVersions();
+      const configHash = computeConfigHash(versions);
 
       const existing = await reviewRepository.getAnalysisByConfig(
         documentVersionId,
@@ -371,6 +355,7 @@ export function createReviewService(deps: ReviewServiceDeps) {
         analysis = await reviewRepository.insertAnalysis(
           documentVersionId,
           configHash,
+          { ...versions },
         );
       }
 
@@ -416,10 +401,9 @@ export function createReviewService(deps: ReviewServiceDeps) {
     async getAnalysisStatus(
       documentVersionId: DocumentVersionId,
     ): Promise<Analysis | null> {
-      const configHash = computeConfigHash();
       return reviewRepository.getAnalysisByConfig(
         documentVersionId,
-        configHash,
+        computeConfigHash(),
       );
     },
 
@@ -804,6 +788,9 @@ export function createReviewService(deps: ReviewServiceDeps) {
           resolution?.result.resolved
             ? resolution.result.packVersion
             : null,
+        actor: anchor.actorQuotedText ?? null,
+        actorQuotedText: anchor.actorQuotedText ?? null,
+        dependsOnDescription: anchor.dependsOnAnchored ? anchor.dependsOnDescription : null,
         supportLevel: evaluation.supportLevel,
         lane: assignment?.lane ?? "blocked",
         laneReasons: assignment?.reasons ?? [],
@@ -875,7 +862,7 @@ export function createReviewService(deps: ReviewServiceDeps) {
       packVersion: computed.packVersion,
       rrule: computed.rrule,
       deliverable: null,
-      actor: null,
+      actor: proposal.actor ?? null,
       conditions: null,
       dateProvenance: computed.dateProvenance,
       splitFromRecordId: null,
@@ -1019,9 +1006,15 @@ export function createReviewService(deps: ReviewServiceDeps) {
       );
     }
 
-    await reviewRepository.updateProposalStatus(
+    await reviewRepository.updateProposalResolution(
       proposal.proposalId,
-      "accepted",
+      {
+        status: "accepted",
+        resolved: true,
+        statutoryDate: dateFields.deadlineDate,
+        adjustedDate: dateFields.adjustedDate,
+        citations: dateFields.citations,
+      },
     );
 
     logger.info(

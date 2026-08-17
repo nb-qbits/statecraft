@@ -20,6 +20,12 @@ function rowToProposalResult(
     segmentId: row.segmentId as SegmentId,
     quotedText: row.quotedText,
     kind: row.kind as SpanProposalKind,
+    actor: row.actor ?? null,
+    actorQuotedText: row.actorQuotedText ?? null,
+    actorAnchored: row.actorAnchored ?? null,
+    dependsOnQuotedText: row.dependsOnQuotedText ?? null,
+    dependsOnDescription: row.dependsOnDescription ?? null,
+    dependsOnAnchored: row.dependsOnAnchored ?? null,
   };
 
   if (row.anchored) {
@@ -89,6 +95,12 @@ export function createAnchoringRepository(
           originalStart: r.result.anchored ? r.result.originalStart : null,
           originalEnd: r.result.anchored ? r.result.originalEnd : null,
           reason: r.result.anchored ? null : r.result.reason,
+          actor: r.actor,
+          actorQuotedText: r.actorQuotedText,
+          actorAnchored: r.actorAnchored,
+          dependsOnQuotedText: r.dependsOnQuotedText,
+          dependsOnDescription: r.dependsOnDescription,
+          dependsOnAnchored: r.dependsOnAnchored,
           anchorerVersion,
         })),
       );

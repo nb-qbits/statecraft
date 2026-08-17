@@ -1,5 +1,4 @@
 import type { FastifyInstance } from "fastify";
-import { createHash } from "node:crypto";
 import type { Logger } from "../../logger/logger.js";
 import type {
   DocumentVersionId,
@@ -21,14 +20,8 @@ import type { SpanParseResult } from "../../../modules/grammar/types.js";
 import type { AnchoredResolution } from "../../../modules/resolver/types.js";
 import type { LaneAssignment } from "../../../modules/routing/types.js";
 
-import { SCANNER_VERSION } from "../../../modules/scanning/scanner.js";
-import { EXTRACTOR_VERSION } from "../../../modules/extraction/service.js";
-import { ANCHORER_VERSION } from "../../../modules/anchoring/service.js";
-import { GRAMMAR_VERSION } from "../../../modules/grammar/service.js";
-import { RESOLVER_VERSION } from "../../../modules/resolver/service.js";
-import { EVALUATOR_VERSION } from "../../../modules/evaluation/types.js";
-import { ROUTER_VERSION } from "../../../modules/routing/types.js";
-import { REVIEW_VERSION } from "../../../modules/review/types.js";
+import { normalizeActors } from "../../../modules/extraction/actor-normalizer.js";
+import { computeConfigHash, currentStageVersions } from "../../../modules/shared/engine-versions.js";
 
 export interface AnalyzeDeps {
   ingestionRepository: IngestionRepository;
@@ -49,14 +42,6 @@ interface StageEvent {
   status: "completed" | "failed";
   counts: Record<string, number>;
   error?: string;
-}
-
-function computeConfigHash(): string {
-  const versions = [
-    SCANNER_VERSION, EXTRACTOR_VERSION, ANCHORER_VERSION, GRAMMAR_VERSION,
-    RESOLVER_VERSION, EVALUATOR_VERSION, ROUTER_VERSION, REVIEW_VERSION,
-  ];
-  return createHash("sha256").update(versions.join(":")).digest("hex");
 }
 
 function sseEvent(event: StageEvent): string {
@@ -86,7 +71,8 @@ export function registerAnalyzeRoutes(
         });
       }
 
-      const configHash = computeConfigHash();
+      const versions = currentStageVersions();
+      const configHash = computeConfigHash(versions);
       const existing = await reviewRepository.getAnalysisByConfig(dvId, configHash);
 
       reply.raw.writeHead(200, {
@@ -110,7 +96,7 @@ export function registerAnalyzeRoutes(
       } else if (existing) {
         analysisId = existing.analysisId;
       } else {
-        const analysis = await reviewRepository.insertAnalysis(dvId, configHash);
+        const analysis = await reviewRepository.insertAnalysis(dvId, configHash, { ...versions });
         analysisId = analysis.analysisId;
       }
 
@@ -189,10 +175,11 @@ export function registerAnalyzeRoutes(
         reply.raw.write(sseEvent({ stage: "complete", status: "completed", counts: {} }));
         logger.info({ dvId, analysisId }, "analysis completed");
       } catch (err) {
-        const message = err instanceof Error ? err.message : "unknown error";
+        const rawMessage = err instanceof Error ? err.message : "unknown error";
         logger.error({ err, dvId }, "analysis pipeline failed");
-        await reviewRepository.updateAnalysisStatus(analysisId, "failed", message);
-        reply.raw.write(sseEvent({ stage: "error", status: "failed", counts: {}, error: message }));
+        await reviewRepository.updateAnalysisStatus(analysisId, "failed", rawMessage).catch(() => {});
+        const clientMessage = "Something went wrong while analyzing this document. Please try again.";
+        reply.raw.write(sseEvent({ stage: "error", status: "failed", counts: {}, error: clientMessage }));
       }
 
       reply.raw.end();
@@ -260,8 +247,10 @@ export function registerAnalyzeRoutes(
     analysisId: AnalysisId,
     dvId: DocumentVersionId,
   ): Promise<void> {
-    const existingProposals = await reviewRepository.getProposalsByVersion(dvId);
-    if (existingProposals.length > 0) return;
+    const deletedCount = await reviewRepository.deletePendingProposalsByVersion(dvId);
+    if (deletedCount > 0) {
+      logger.info({ dvId, deletedCount }, "cleared stale pending proposals before re-deriving");
+    }
 
     const [anchorResults, evaluations, grammarResults, resolutionResults, assignments] =
       await Promise.all([
@@ -310,6 +299,9 @@ export function registerAnalyzeRoutes(
         ruleIds: resolution?.result.resolved ? (resolution.result.ruleIds as string[]) : [],
         citations: resolution?.result.resolved ? (resolution.result.citations as string[]) : [],
         packVersion: resolution?.result.resolved ? resolution.result.packVersion : null,
+        actor: anchor.actorQuotedText ?? null,
+        actorQuotedText: anchor.actorQuotedText ?? null,
+        dependsOnDescription: anchor.dependsOnAnchored ? anchor.dependsOnDescription : null,
         supportLevel: evaluation.supportLevel,
         lane: assignment?.lane ?? "blocked",
         laneReasons: assignment?.reasons ?? [],
@@ -317,6 +309,15 @@ export function registerAnalyzeRoutes(
     }
 
     if (proposalRows.length > 0) {
+      const actorMap = normalizeActors(proposalRows.map((p) => p.actor));
+      if (actorMap.size > 0) {
+        for (let i = 0; i < proposalRows.length; i++) {
+          const raw = proposalRows[i]!.actor;
+          if (raw && actorMap.has(raw)) {
+            proposalRows[i] = { ...proposalRows[i]!, actor: actorMap.get(raw)! };
+          }
+        }
+      }
       await reviewRepository.insertProposals(proposalRows);
     }
 

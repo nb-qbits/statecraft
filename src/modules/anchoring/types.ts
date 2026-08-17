@@ -38,6 +38,12 @@ export interface ProposalAnchorResult {
   readonly quotedText: string;
   readonly kind: SpanProposalKind;
   readonly result: AnchorResult;
+  readonly actor: string | null;
+  readonly actorQuotedText: string | null;
+  readonly actorAnchored: boolean | null;
+  readonly dependsOnQuotedText: string | null;
+  readonly dependsOnDescription: string | null;
+  readonly dependsOnAnchored: boolean | null;
 }
 
 export interface DocumentAnchoringResult {

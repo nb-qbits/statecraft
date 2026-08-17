@@ -31,6 +31,7 @@ export const analyses = pgTable(
       .notNull()
       .references(() => documentVersions.documentVersionId),
     configHash: varchar("config_hash", { length: 128 }).notNull(),
+    stageVersions: jsonb("stage_versions"),
     status: varchar("status", { length: 32 }).notNull().default("pending"),
     error: text("error"),
     startedAt: timestamp("started_at", { withTimezone: true })
@@ -77,6 +78,9 @@ export const proposals = pgTable(
     citations: jsonb("citations").notNull(),
     packVersion: varchar("pack_version", { length: 64 }),
     rrule: varchar("rrule", { length: 512 }),
+    actor: text("actor"),
+    actorQuotedText: text("actor_quoted_text"),
+    dependsOnDescription: text("depends_on_description"),
     supportLevel: varchar("support_level", { length: 32 }).notNull(),
     lane: varchar("lane", { length: 32 }).notNull(),
     laneReasons: jsonb("lane_reasons").notNull(),
@@ -170,7 +174,7 @@ export const registerRecords = pgTable(
     ),
     check(
       "chk_date_provenance",
-      sql`${table.dateProvenance} IN ('computed','reviewer_asserted','verbatim_from_instrument')`,
+      sql`${table.dateProvenance} IN ('computed','generic_default','reviewer_asserted','verbatim_from_instrument')`,
     ),
   ],
 );

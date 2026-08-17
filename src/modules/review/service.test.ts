@@ -86,6 +86,7 @@ const mockAnalysis: Analysis = {
   analysisId: "analysis-001" as AnalysisId,
   documentVersionId: dvId,
   configHash: "abc123",
+  stageVersions: null,
   status: "completed",
   error: null,
   startedAt: "2025-01-01T00:00:00.000Z",
@@ -114,6 +115,9 @@ function makeProposal(overrides: Partial<ReviewProposal> = {}): ReviewProposal {
     ruleIds: ["FIXED_DATE"],
     citations: ["va-code § 1-210: effective date derived from FIXED_DATE rule"],
     packVersion: "us-va/v1",
+    actor: null,
+    actorQuotedText: null,
+    dependsOnDescription: null,
     supportLevel: "ambiguous",
     lane: "exception_review",
     laneReasons: [{ rule: "ER_AMBIGUOUS", detail: "ambiguous support" }],
@@ -144,10 +148,11 @@ function createMockReviewRepository(): ReviewRepository {
       createdAt: new Date().toISOString(),
     })),
     getProject: vi.fn(async () => null),
-    insertAnalysis: vi.fn(async (dvId, configHash) => ({
+    insertAnalysis: vi.fn(async (dvId, configHash, stageVersions) => ({
       analysisId: "analysis-001" as AnalysisId,
       documentVersionId: dvId,
       configHash,
+      stageVersions: stageVersions ?? null,
       status: "running" as const,
       error: null,
       startedAt: new Date().toISOString(),
@@ -167,10 +172,12 @@ function createMockReviewRepository(): ReviewRepository {
       }));
     }),
     getProposalsByVersion: vi.fn(async () => storedProposals),
+    deletePendingProposalsByVersion: vi.fn(async () => 0),
     getProposal: vi.fn(async (id: ProposalId) =>
       storedProposals.find((p) => p.proposalId === id) ?? makeProposal({ proposalId: id }),
     ),
     updateProposalStatus: vi.fn(),
+    updateProposalResolution: vi.fn(),
     insertReviewEvent: vi.fn(async (event) => {
       const created: ReviewEvent = {
         eventId: `evt-${storedEvents.length}` as ReviewEventId,
@@ -232,6 +239,8 @@ function createMockReviewRepository(): ReviewRepository {
     setIdempotencyResponse: vi.fn(),
     insertOccurrences: vi.fn(),
     getOccurrencesByRecord: vi.fn(async () => []),
+    getLatestCompletedAnalysis: vi.fn(async () => null),
+    getLatestProposalByAnchor: vi.fn(async () => null),
   };
 }
 
@@ -279,6 +288,12 @@ function createDeps() {
             originalEnd: 22,
             method: "exact",
           },
+          actor: null,
+          actorQuotedText: null,
+          actorAnchored: null,
+          dependsOnQuotedText: null,
+          dependsOnDescription: null,
+          dependsOnAnchored: null,
         },
       ]),
     } as unknown as AnchoringRepository,

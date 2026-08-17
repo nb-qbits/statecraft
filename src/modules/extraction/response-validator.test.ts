@@ -258,7 +258,7 @@ describe("response-validator", () => {
       expect(result.truncatedCount).toBe(1);
 
       for (const p of result.proposals) {
-        expect(Object.keys(p)).toEqual(["segmentId", "quotedText", "kind"]);
+        expect(Object.keys(p)).toEqual(["segmentId", "quotedText", "kind", "actor", "actorQuotedText", "dependsOnQuotedText", "dependsOnDescription"]);
       }
     });
 
@@ -288,7 +288,7 @@ describe("response-validator", () => {
           properties: Record<string, unknown>;
         }
       ).properties;
-      const allowedFields = new Set(["segmentId", "quotedText", "kind"]);
+      const allowedFields = new Set(["segmentId", "quotedText", "kind", "actor", "actorQuotedText", "dependsOnQuotedText", "dependsOnDescription"]);
       for (const key of Object.keys(itemProps)) {
         expect(allowedFields.has(key)).toBe(true);
       }

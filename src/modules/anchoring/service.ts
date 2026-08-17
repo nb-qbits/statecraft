@@ -8,6 +8,7 @@ import type { DocumentVersionId, AnchorId, SegmentId } from "../shared/types.js"
 import { AppError } from "../shared/errors.js";
 import { anchorQuote, ANCHORER_VERSION } from "./anchor.js";
 import { validateAndRepairResponse } from "../extraction/response-validator.js";
+import { EXTRACTOR_VERSION } from "../extraction/service.js";
 import type { SpanProposal } from "../extraction/types.js";
 import type { DocumentAnchoringResult, ProposalAnchorResult } from "./types.js";
 
@@ -65,20 +66,27 @@ interface DeduplicationResult {
 export function deduplicateSpans(
   results: ProposalAnchorResult[],
 ): DeduplicationResult {
-  const seen = new Set<string>();
+  const seenPositions = new Set<string>();
+  const seenAnchorIds = new Set<string>();
   const unique: ProposalAnchorResult[] = [];
   const duplicates: ProposalAnchorResult[] = [];
 
   for (const r of results) {
     if (!r.result.anchored) {
+      if (seenAnchorIds.has(r.anchorId)) {
+        duplicates.push(r);
+        continue;
+      }
+      seenAnchorIds.add(r.anchorId);
       unique.push(r);
       continue;
     }
-    const key = `${r.segmentId}:${r.result.originalStart}:${r.result.originalEnd}`;
-    if (seen.has(key)) {
+    const posKey = `${r.segmentId}:${r.result.originalStart}:${r.result.originalEnd}`;
+    if (seenPositions.has(posKey) || seenAnchorIds.has(r.anchorId)) {
       duplicates.push(r);
     } else {
-      seen.add(key);
+      seenPositions.add(posKey);
+      seenAnchorIds.add(r.anchorId);
       unique.push(r);
     }
   }
@@ -142,7 +150,8 @@ export function createAnchoringService(deps: AnchoringServiceDeps) {
 
       if (
         version.anchoringStatus === "anchored" &&
-        version.anchorerVersion === ANCHORER_VERSION
+        version.anchorerVersion === ANCHORER_VERSION &&
+        version.extractorVersion === EXTRACTOR_VERSION
       ) {
         const existing =
           await anchoringRepository.getResultsByVersion(documentVersionId);
@@ -153,19 +162,20 @@ export function createAnchoringService(deps: AnchoringServiceDeps) {
         return buildResult(documentVersionId, existing);
       }
 
-      if (
-        version.anchoringStatus === "anchored" &&
-        version.anchorerVersion !== ANCHORER_VERSION
-      ) {
+      // Always clear stale results before re-anchoring — covers both version
+      // changes and partial failures from a previous analysis attempt.
+      await anchoringRepository.deleteResultsByVersion(documentVersionId);
+      if (version.anchoringStatus === "anchored") {
         logger.info(
           {
             documentVersionId,
-            storedVersion: version.anchorerVersion,
-            currentVersion: ANCHORER_VERSION,
+            storedAnchorerVersion: version.anchorerVersion,
+            currentAnchorerVersion: ANCHORER_VERSION,
+            storedExtractorVersion: version.extractorVersion,
+            currentExtractorVersion: EXTRACTOR_VERSION,
           },
-          "anchorer version changed, re-anchoring",
+          "anchorer or extractor version changed, re-anchoring",
         );
-        await anchoringRepository.deleteResultsByVersion(documentVersionId);
       }
 
       const segments =
@@ -215,6 +225,12 @@ export function createAnchoringService(deps: AnchoringServiceDeps) {
               anchored: false,
               reason: "segment_not_found",
             },
+            actor: proposal.actor,
+            actorQuotedText: proposal.actorQuotedText,
+            actorAnchored: null,
+            dependsOnQuotedText: proposal.dependsOnQuotedText,
+            dependsOnDescription: proposal.dependsOnDescription,
+            dependsOnAnchored: null,
           });
           continue;
         }
@@ -224,6 +240,26 @@ export function createAnchoringService(deps: AnchoringServiceDeps) {
           proposal.quotedText,
           segment.offsetMap,
         );
+
+        let actorAnchored: boolean | null = null;
+        if (proposal.actorQuotedText) {
+          const actorAnchor = anchorQuote(
+            segment.normalizedText,
+            proposal.actorQuotedText,
+            segment.offsetMap,
+          );
+          actorAnchored = actorAnchor.anchored;
+        }
+
+        let dependsOnAnchored: boolean | null = null;
+        if (proposal.dependsOnQuotedText) {
+          const depAnchor = anchorQuote(
+            segment.normalizedText,
+            proposal.dependsOnQuotedText,
+            segment.offsetMap,
+          );
+          dependsOnAnchored = depAnchor.anchored;
+        }
 
         anchoredResults.push({
           anchorId: computeAnchorId(
@@ -235,6 +271,12 @@ export function createAnchoringService(deps: AnchoringServiceDeps) {
           quotedText: proposal.quotedText,
           kind: proposal.kind,
           result: anchorResult,
+          actor: proposal.actor,
+          actorQuotedText: proposal.actorQuotedText,
+          actorAnchored,
+          dependsOnQuotedText: proposal.dependsOnQuotedText,
+          dependsOnDescription: proposal.dependsOnDescription,
+          dependsOnAnchored,
         });
       }
 

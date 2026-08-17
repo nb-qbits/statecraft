@@ -1,1 +1,79 @@
 @import "tailwindcss";
+
+@theme {
+  --color-navy: #16233F;
+  --color-gold: #C8983E;
+  --color-bg: #F5F5F7;
+  --color-card: #FFFFFF;
+  --color-card-border: #E5E5EA;
+  --color-card-border-light: #EFEFF1;
+
+  --color-text-primary: #1D1D1F;
+  --color-text-secondary: #6E6E73;
+  --color-text-tertiary: #86868B;
+  --color-text-placeholder: #AEAEB2;
+
+  --color-overdue: #B8452F;
+  --color-overdue-bg: #FBEAE5;
+  --color-due-soon: #A67326;
+  --color-due-soon-bg: #FBF1DF;
+  --color-upcoming: #3C5A82;
+  --color-upcoming-bg: #EAF0F8;
+  --color-completed: #3F6B54;
+  --color-completed-bg: #E9F2EC;
+  --color-needs-input: #5B5B8C;
+  --color-needs-input-bg: #EFEDF7;
+  --color-needs-input-bar: #8377B0;
+
+  --color-admin-accent: #4C6D96;
+
+  --color-sidebar: #16233F;
+  --color-sidebar-text: #E7E3D6;
+  --color-sidebar-muted: #9AA6BC;
+  --color-sidebar-dim: #7C86A0;
+  --color-sidebar-inactive: #B7BECF;
+
+  --radius-control: 8px;
+  --radius-card: 12px;
+  --radius-modal: 20px;
+  --radius-pill: 9999px;
+
+  --breakpoint-md: 760px;
+}
+
+:root {
+  --font-heading: -apple-system, BlinkMacSystemFont, 'SF Pro Display', var(--font-public-sans), 'Public Sans', sans-serif;
+  --font-body: var(--font-public-sans), 'Public Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+html, body {
+  margin: 0;
+  background: var(--color-bg);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+select {
+  -webkit-appearance: menulist;
+  appearance: auto;
+  background-color: #fff;
+  color: #1D1D1F;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulseDot {
+  0% { box-shadow: 0 0 0 0 rgba(184, 69, 47, 0.45); }
+  70% { box-shadow: 0 0 0 7px rgba(184, 69, 47, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(184, 69, 47, 0); }
+}
+
+@keyframes shimmer {
+  0% { width: 0%; }
+  50% { width: 100%; }
+  100% { width: 0%; }
+}

@@ -57,6 +57,12 @@ function makeAnchorResult(
       originalEnd: 14,
       method: "exact",
     },
+    actor: null,
+    actorQuotedText: null,
+    actorAnchored: null,
+    dependsOnQuotedText: null,
+    dependsOnDescription: null,
+    dependsOnAnchored: null,
     ...overrides,
   };
 }
@@ -77,6 +83,7 @@ function makeGrammarResult(
         dayKind: "calendar",
         preposition: "within",
         referenceEvent: null,
+        referenceEventText: null,
         boundKind: "within",
       },
     },
@@ -98,6 +105,7 @@ function makeResolution(
       dayKind: "calendar",
       preposition: "within",
       referenceEvent: null,
+      referenceEventText: null,
       boundKind: "within",
     },
     result: {

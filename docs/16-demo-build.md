@@ -41,6 +41,18 @@ Currently both show *"does not match a recognized date or duration pattern."* Th
 
 **Gate 1:** re-run HB 35 and CHAPTER 1126 live. Paste before/after counts. HB 35 is currently 22 findings / 1 resolved.
 
+**Gate 1 result (grammar 1.5.0):**
+
+| Document | Before | After |
+|---|---|---|
+| HB 35 | 23 findings / 5 parsed / 0 resolved | 23 findings / 10 parsed / 0 resolved |
+| CHAPTER 1126 | 18 findings / 8 parsed / 4 resolved | 19 findings / 8 parsed / 4 resolved |
+
+HB 35 resolves 0 and always will — every deadline runs from an event the bill
+does not date. Its role is Part 6: identified obligations with named trigger
+events awaiting input. CHAPTER 1126 is the timeline document (4 resolved,
+2 recurring) — plan views are built and verified against it.
+
 **STOP.**
 
 ---
@@ -55,6 +67,19 @@ Currently both show *"does not match a recognized date or duration pattern."* Th
 - Actor must carry its own evidence. It is a material field: it needs an anchored span, same as the deadline.
 
 **Gate 2:** on CHAPTER 1126, show the distinct actors found, how many obligations each owns, and the anchored evidence for each actor assignment.
+
+**Gate 2 result (extractor 1.1.0, anchorer 1.3.0):**
+
+| Actor | Obligations | Evidence (sample) |
+|---|---|---|
+| Bank Advisory Board | 16 | "nonlegislative citizen members of the Bank Advisory Board", "Each ex officio member of the Bank Advisory Board", "The Bank Advisory Board", "the Bank", "The Bank" |
+| Owner not specified in document | 2 | (no actor stated: "for the unexpired term", "more than two consecutive terms") |
+| Auditor of Public Accounts | 1 | "Auditor of Public Accounts" |
+
+Normalization: model extracted "Bank", "The Bank", "Bank Advisory Board" —
+`normalizeActors` strips noise prefixes ("the") and groups by substring
+containment, selecting the longest form ("Bank Advisory Board") as canonical.
+All 18 non-null actor evidence spans anchored (`actor_anchored = true`).
 
 **STOP.**
 

@@ -1,11 +1,11 @@
 import { CstParser } from "chevrotain";
 import {
-  Within, AtLeast, NoLongerThan, NoLaterThan, OnOrBefore, BecomesEffective,
-  Every, Each, After, Of, From, The, This, In, Any, On, By, First,
+  Within, AtLeast, NoLongerThan, NoLaterThan, NotLaterThan, OnOrBefore, BecomesEffective,
+  Every, Each, After, Of, From, The, This, In, Any, On, By, Before, First,
   EffectiveDate, Enactment, Passage,
-  Calendar, Business, Working,
+  Calendar, Business, Working, Workday,
   Quarterly, Annual, Thereafter,
-  Days, Hours, Years, Month,
+  Days, Hours, Years, Month, HavePassed,
   EvenNumbered, OddNumbered, RegularSession,
   Act, Chapter, Section,
   NumberWord, NumberLiteral, Comma,
@@ -24,6 +24,7 @@ export class TemporalParser extends CstParser {
       { ALT: () => this.SUBRULE(this.anchoredRecurrence) },
       { ALT: () => this.SUBRULE(this.eventAnchoredRecurrence) },
       { ALT: () => this.SUBRULE(this.recurrenceExpression) },
+      { ALT: () => this.SUBRULE(this.invertedDuration) },
       { ALT: () => this.SUBRULE(this.relativeDuration) },
       { ALT: () => this.SUBRULE(this.deadlineExpression) },
       { ALT: () => this.SUBRULE(this.effectiveOnExpression) },
@@ -87,6 +88,15 @@ export class TemporalParser extends CstParser {
     ]);
   });
 
+  // "before seven days have passed"
+  invertedDuration = this.RULE("invertedDuration", () => {
+    this.CONSUME(Before);
+    this.SUBRULE(this.quantity);
+    this.OPTION(() => this.SUBRULE(this.dayKind));
+    this.SUBRULE(this.timeUnit);
+    this.CONSUME(HavePassed);
+  });
+
   fixedDate = this.RULE("fixedDate", () => {
     this.CONSUME(Month);
     this.CONSUME(NumberLiteral, { LABEL: "day" });
@@ -103,11 +113,12 @@ export class TemporalParser extends CstParser {
     });
   });
 
-  // "by|no later than|on or before" + (date [parity] | event anchor)
+  // "by|no later than|not later than|on or before" + (date [parity] | event anchor | relative duration)
   deadlineExpression = this.RULE("deadlineExpression", () => {
     this.OR1([
       { ALT: () => this.CONSUME(By) },
       { ALT: () => this.CONSUME(NoLaterThan) },
+      { ALT: () => this.CONSUME(NotLaterThan) },
       { ALT: () => this.CONSUME(OnOrBefore) },
     ]);
     this.OR2([
@@ -117,6 +128,12 @@ export class TemporalParser extends CstParser {
       }},
       { ALT: () => {
         this.SUBRULE(this.deadlineEventAnchor);
+      }},
+      { ALT: () => {
+        this.SUBRULE(this.quantity);
+        this.OPTION2(() => this.SUBRULE(this.dayKind));
+        this.SUBRULE(this.timeUnit);
+        this.OPTION3(() => this.SUBRULE(this.referenceClause));
       }},
     ]);
   });
@@ -144,8 +161,13 @@ export class TemporalParser extends CstParser {
       { ALT: () => this.CONSUME(AtLeast) },
     ]);
     this.SUBRULE(this.quantity);
-    this.OPTION(() => this.SUBRULE(this.dayKind));
-    this.SUBRULE(this.timeUnit);
+    this.OR2([
+      { ALT: () => {
+        this.OPTION(() => this.SUBRULE(this.dayKind));
+        this.SUBRULE(this.timeUnit);
+      }},
+      { ALT: () => this.CONSUME(Workday) },
+    ]);
     this.OPTION2(() => this.SUBRULE(this.referenceClause));
   });
 

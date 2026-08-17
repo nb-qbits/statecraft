@@ -13,6 +13,10 @@ export interface SpanProposal {
   readonly segmentId: SegmentId;
   readonly quotedText: string;
   readonly kind: SpanProposalKind;
+  readonly actor: string | null;
+  readonly actorQuotedText: string | null;
+  readonly dependsOnQuotedText: string | null;
+  readonly dependsOnDescription: string | null;
 }
 
 export interface ModelCallRecord {

@@ -11,6 +11,9 @@ import type { EvaluationRepository } from "../../db/evaluation-repository.js";
 import type { RoutingRepository } from "../../db/routing-repository.js";
 import type { ReviewRepository } from "../../db/review-repository.js";
 import { deriveProvisionLabel } from "../../../modules/shared/provision-label.js";
+import { isResolvedRecurrence } from "../../../modules/resolver/types.js";
+import { computeConfigHash, currentStageVersions, staleStages } from "../../../modules/shared/engine-versions.js";
+import type { StageVersions } from "../../../modules/shared/engine-versions.js";
 
 export interface FindingsDeps {
   ingestionRepository: IngestionRepository;
@@ -47,7 +50,7 @@ export function registerFindingsRoutes(
       }
 
       try {
-        const [proposals, segments, anchorResults, grammarResults, resolutions, evaluations, routingResult] =
+        const [allProposals, segments, anchorResults, grammarResults, resolutions, evaluations, routingResult] =
           await Promise.all([
             reviewRepository.getProposalsByVersion(dvId),
             parsingRepository.getSegmentsByVersion(dvId),
@@ -57,6 +60,22 @@ export function registerFindingsRoutes(
             evaluationRepository.getResultsByVersion(dvId),
             routingRepository.getResultsByVersion(dvId),
           ]);
+
+        const latestAnalysis = await reviewRepository.getLatestCompletedAnalysis(dvId);
+        const latestAnalysisId = latestAnalysis?.analysisId ?? null;
+        const proposals = latestAnalysisId
+          ? allProposals.filter((p) => p.analysisId === latestAnalysisId)
+          : allProposals;
+
+        const current = currentStageVersions();
+        const currentHash = computeConfigHash(current);
+        let stale: string[] = [];
+        if (latestAnalysis && latestAnalysis.configHash !== currentHash) {
+          const analysisVersions = latestAnalysis.stageVersions as StageVersions | null;
+          stale = analysisVersions
+            ? staleStages(analysisVersions, current)
+            : ["unknown"];
+        }
 
         const segmentMap = new Map(segments.map((s) => [s.segmentId, s]));
         const grammarMap = new Map(grammarResults.map((g) => [g.anchorId, g]));
@@ -89,30 +108,75 @@ export function registerFindingsRoutes(
           const evalResult = evaluationMap.get(p.anchorId);
           const deterministicChecks = evalResult?.deterministicResult ?? null;
 
+          const rrule = p.resolved ? (p.rrule ?? null) : null;
+          let occurrences: Array<{
+            occurrenceDate: string;
+            adjustedDate: string;
+            ruleIds: string[];
+            citations: string[];
+            sequenceNumber: number;
+          }> = [];
+          let horizon: string | null = null;
+
+          if (p.resolved && rrule && resolution && isResolvedRecurrence(resolution.result)) {
+            occurrences = resolution.result.occurrences.map((o) => ({
+              occurrenceDate: o.occurrenceDate,
+              adjustedDate: o.adjustedDate,
+              ruleIds: [...o.ruleIds],
+              citations: [...o.citations],
+              sequenceNumber: o.sequenceNumber,
+            }));
+            horizon = resolution.result.horizon;
+          }
+
+          const parsedExpr = grammar?.result.parsed
+            ? grammar.result.expression
+            : null;
+
+          let referenceEventText: string | null = null;
+          if (parsedExpr && "referenceEventText" in parsedExpr && parsedExpr.referenceEventText) {
+            referenceEventText = parsedExpr.referenceEventText as string;
+          }
+
           return {
             anchorId: p.anchorId,
+            proposalId: p.proposalId,
             segmentId: p.segmentId,
             structuralPath,
             provisionLabel,
             quotedText: p.quotedText,
             kind: p.kind,
+            actor: p.actor ?? null,
+            actorQuotedText: p.actorQuotedText ?? null,
+            dependsOnDescription: p.dependsOnDescription ?? null,
             anchored: true,
             anchorMethod: p.anchoringMethod,
             anchorFailureReason: null,
+            originalStart: p.originalStart,
+            originalEnd: p.originalEnd,
             grammarParsed,
             grammarFailureReason,
+            parsedExpression: parsedExpr,
+            referenceEventText,
             resolved: p.resolved,
             statutoryDate: p.statutoryDate,
             adjustedDate: p.adjustedDate,
+            rrule,
+            occurrences,
+            horizon,
             ruleIds: p.ruleIds,
             citations: p.citations,
             packVersion: p.packVersion,
+            dateProvenance: p.resolved
+              ? (p.packVersion?.startsWith("default/") ? "generic_default" : "computed")
+              : null,
             unresolvedReason,
             missingInputs,
             lane: p.lane,
             laneReasons: p.laneReasons,
             supportLevel: p.supportLevel,
             deterministicChecks,
+            status: p.status,
           };
         });
 
@@ -169,6 +233,7 @@ export function registerFindingsRoutes(
         };
 
         return reply.status(200).send({
+          legalIdentity: version.legalIdentity,
           findings,
           coverage: {
             totalSegments: coverage.totalSegments,
@@ -179,6 +244,10 @@ export function registerFindingsRoutes(
           laneSummary,
           rejectedSpans,
           suppressedSpans,
+          engineVersions: {
+            current,
+            staleStages: stale,
+          },
         });
       } catch (err) {
         if (err instanceof AppError) {

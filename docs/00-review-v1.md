@@ -174,6 +174,8 @@ Design now: segment IDs derived from content (hash of normalized text + structur
 
 `deadline_records` is described as "stable identity," but nothing specifies how a re-run's new proposals map onto existing approved records. Without a stable **duty key** (something like `documentIdentity + citation path + normalized deliverable + actor`), you cannot: re-run after a model upgrade without orphaning approvals, support monitoring, support supersession, or drive idempotent calendar sync. §14 promises all four. Define the duty key in Phase 0 even if nothing consumes it yet.
 
+**Partial mitigation (demo build):** `anchorId` (SHA-256 of segmentId + quotedText + kind) is deterministic and survives re-analysis when the span is unchanged. The supply endpoint now accepts `POST /api/v1/documents/:dvId/anchors/:anchorId/review`, resolving to the current proposal server-side. The proposalId-based route remains but is fragile across re-analyses. A full duty key is still needed for production.
+
 ### H-9 (High) — No occurrence model for recurring deadlines
 
 §4.1 requires deterministic occurrence generation and §14 requires an "occurrence API." Neither the type nor the persistence model has occurrences, occurrence IDs, per-occurrence status, or a materialization policy (generate lazily to a horizon? persist?). Calendar sync later needs *stable, idempotent occurrence identifiers* — decide the scheme now (`recordVersionId + occurrenceDate` is the usual safe choice) even if occurrences are computed lazily.
@@ -576,6 +578,50 @@ Design choice: yearless dates are accepted only after deadline prefixes (`by`, `
 ### U2-F9 — "Approved <date>" structural suppression
 
 "Approved May 14, 2026" is a chaptered-act signature date — the governor's signing date. Same metadata class as Offered/Prefiled dates. Added `Approved` to the existing `suppress.metadata_header` pattern in `src/modules/scanning/rules.ts`.
+
+### Part2-F1 — C-2 materiality boundary surfaces on real data
+
+The extraction precision fix (Part 2, extractor 1.3.0) eliminated false positives — terms of office, backward references, sub-clauses — reducing CHAPTER 1126 findings from 19 to 11. Of the 11 remaining, three are genuine temporal obligations with an accountable party that are debatable as "deadlines":
+
+- **"quarterly public meetings"** (§ 45.2-120) — a meeting cadence, not a compliance deadline
+- **"every four years thereafter"** (§ 45.2-119) — a recurring obligation, but a policy professional may not want it on a calendar
+- **"at least 30 days"** (§ 45.2-118) — a notice period, not a filing date
+
+These are the first concrete instances of the C-2 materiality boundary: "material deadline" was never defined, and this is the case that needs it. A meeting cadence and a notice period are both temporal obligations, but a compliance officer may want one on a calendar and not the other.
+
+**Decision:** Do not resolve now. This is an annotation-guide question. The manual baseline (H-16, Gate 0) is meant to settle which temporal obligations count as "material deadlines." These three cases define the boundary the guide must address.
+
+**Observed on:** 2026-08-14, CHAPTER 1126 (S 225), Virginia Clean Energy Innovation Bank, post-extraction-precision-fix.
+
+### Part3-F1 — H-7 dependency deferral confirmed by measurement
+
+The Part 3 dependency count measured genuine inter-obligation sequencing across all five demo documents (CHAPTER 1126, HB 35, HB 1456, HB 434, SB 21). Result: **2 dependency edges across ~30 obligations (~7% sequenced)**.
+
+| Document | Obligations | Sequenced | Concurrent | Signal |
+|---|---|---|---|---|
+| CHAPTER 1126 | ~11 | 2 (1 chain) | ~9 | "with feedback incorporated therein" — draft plan (Aug 1) → final plan (Dec 15) |
+| HB 35 | ~10 | 0 | ~10 | procedural due-process steps, not inter-obligation dependencies |
+| HB 1456 | ~6 | 0 | ~6 | none; "concurrently" signals parallel |
+| HB 434 | 2 | 0 | 2 | "regarding such petitions" is subject-matter reference, not timing constraint — both dates are fixed |
+| SB 21 | 1 | 0 | 1 | none |
+
+This converts H-7's design recommendation ("Recommendation: keep the table, remove the string array, and restrict v1 edges to `derived_from_split` and `blocks`") from an opinion into a measurement. Legislative obligations are overwhelmingly parallel duties with independent deadlines, not chains. The `dependency_edges` graph is deferred; dependencies render as a "depends on: {obligation}" line on the timeline row.
+
+**HB 434 exclusion rationale:** "Regarding such petitions" establishes what the Commission's order is about, not when it must be issued. The Commission's July 1, 2027 deadline does not shift based on when utilities file. A timeline dependency must constrain timing. Subject-matter reference does not.
+
+**Observed on:** 2026-08-14, five-document corpus analysis.
+
+### Part4-F1 — Plan views read proposals, not register records
+
+The Part 4 spec says "All read `register_records` and `deadline_occurrences`." The plan views read from the `/findings` endpoint (proposals), not register records, because the Part 5 accept flow has not been built. This is the expected state at this gate — the data flows through the same pipeline, with the same shape, and will switch to register records once Part 5 establishes the accept-to-register path.
+
+The Summary tab currently shows `Document a61a78ee...` instead of "CHAPTER 1126 — Virginia Clean Energy Innovation Bank / 2026 Regular Session · Enacted · Effective July 1, 2026" because the findings endpoint does not include document legal identity. This requires either enhancing the findings response or adding a `GET /api/v1/documents/:dvId` metadata endpoint. Deferred to Part 5.
+
+### Part4-F2 — CHAPTER 1126 dependency fields are null
+
+CHAPTER 1126 was analyzed before the Part 3 dependency extraction changes (extractor 1.4.0, anchorer 1.5.0). Its proposals have `dependsOnDescription: null` for all 11 findings. The draft-plan→final-plan dependency ("with any feedback from the Bank Advisory Board incorporated therein") would only appear after re-analysis with the current extractor version.
+
+This does not block the Part 4 gate — the "depends on" display path is wired and functional; it simply has no data to show for this document. Re-analysis of CHAPTER 1126 is a Part 5 concern (when the accept flow triggers fresh analysis).
 
 ### U2-F10 — Unmodelled recurrence patterns (maps to H-9)
 

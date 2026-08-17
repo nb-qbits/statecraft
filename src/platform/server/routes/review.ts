@@ -5,6 +5,7 @@ import type {
   DocumentVersionId,
   ProposalId,
   RegisterRecordId,
+  AnchorId,
 } from "../../../modules/shared/types.js";
 import type { ReviewService } from "../../../modules/review/service.js";
 import type { ReviewRepository } from "../../db/review-repository.js";
@@ -27,7 +28,9 @@ function handleError(
           err.code === "PROPOSAL_NOT_FOUND" ||
           err.code === "RECORD_NOT_FOUND"
             ? 404
-            : 400;
+            : err.code === "SUPERSEDED_PROPOSAL"
+              ? 409
+              : 400;
         break;
       case "provider_failure":
         status = 502;
@@ -262,6 +265,88 @@ export function registerReviewRoutes(
       return handleError(err, reply, logger);
     }
   });
+
+  // ── POST /api/v1/documents/:dvId/anchors/:anchorId/review ─
+
+  app.post<{
+    Params: { documentVersionId: string; anchorId: string };
+    Body: {
+      action: ReviewAction;
+      reviewerId: string;
+      edits?: Record<string, unknown>;
+      splitRecords?: SplitRecordInput[];
+    };
+  }>(
+    "/api/v1/documents/:documentVersionId/anchors/:anchorId/review",
+    async (req, reply) => {
+      const dvId = req.params.documentVersionId as DocumentVersionId;
+      const anchorId = req.params.anchorId as AnchorId;
+      const idempotencyKey = req.headers["idempotency-key"] as string | undefined;
+
+      if (!idempotencyKey) {
+        return reply.status(400).send({
+          error: {
+            code: "IDEMPOTENCY_KEY_REQUIRED",
+            message: "Idempotency-Key header is required for review submissions",
+          },
+        });
+      }
+
+      const cached = await reviewRepository.getIdempotencyResponse(idempotencyKey);
+      if (cached) {
+        return reply.status(cached.status).send(cached.body);
+      }
+
+      try {
+        const proposal = await reviewRepository.getLatestProposalByAnchor(dvId, anchorId);
+        if (!proposal) {
+          return reply.status(404).send({
+            error: {
+              code: "PROPOSAL_NOT_FOUND",
+              message: `No proposal found for anchor ${anchorId} in document ${dvId}`,
+            },
+          });
+        }
+
+        const { action, reviewerId, edits, splitRecords } = req.body ?? {};
+        if (!action || !reviewerId) {
+          return reply.status(400).send({
+            error: { code: "INVALID_INPUT", message: "action and reviewerId are required" },
+          });
+        }
+
+        const input: Parameters<typeof reviewService.submitReview>[1] = {
+          action,
+          reviewerId,
+          idempotencyKey,
+        };
+        if (edits !== undefined) {
+          (input as unknown as Record<string, unknown>).edits = edits;
+        }
+        if (splitRecords !== undefined) {
+          (input as unknown as Record<string, unknown>).splitRecords = splitRecords;
+        }
+
+        const result = await reviewService.submitReview(
+          proposal.proposalId as ProposalId,
+          input,
+        );
+
+        const body = { event: result.event, records: result.records };
+
+        await reviewRepository.setIdempotencyResponse(
+          idempotencyKey,
+          `POST /api/v1/documents/${dvId}/anchors/${anchorId}/review`,
+          200,
+          body,
+        );
+
+        return reply.status(200).send(body);
+      } catch (err) {
+        return handleError(err, reply, logger);
+      }
+    },
+  );
 
   // ── POST /api/v1/documents/:dvId/records ─────────────────
 

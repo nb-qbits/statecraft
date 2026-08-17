@@ -24,6 +24,12 @@ export const anchorResults = pgTable(
     originalStart: integer("original_start"),
     originalEnd: integer("original_end"),
     reason: text("reason"),
+    actor: text("actor"),
+    actorQuotedText: text("actor_quoted_text"),
+    actorAnchored: boolean("actor_anchored"),
+    dependsOnQuotedText: text("depends_on_quoted_text"),
+    dependsOnDescription: text("depends_on_description"),
+    dependsOnAnchored: boolean("depends_on_anchored"),
     anchorerVersion: varchar("anchorer_version", { length: 64 }).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()

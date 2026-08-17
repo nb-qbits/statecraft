@@ -70,6 +70,7 @@ function makeGrammarRelative(): SpanParseResult {
         dayKind: "calendar",
         preposition: "within",
         referenceEvent: "effective_date",
+        referenceEventText: null,
         boundKind: "within",
       },
     },
@@ -122,7 +123,7 @@ function makeResolutionUnresolved(): AnchoredResolution {
     anchorId,
     segmentId,
     text: "within 30 days",
-    expression: { kind: "relative_duration", quantity: 30, unit: "days", dayKind: "calendar", preposition: "within", referenceEvent: "effective_date", boundKind: "within" as const },
+    expression: { kind: "relative_duration", quantity: 30, unit: "days", dayKind: "calendar", preposition: "within", referenceEvent: "effective_date", referenceEventText: null, boundKind: "within" as const },
     result: {
       resolved: false,
       reason: "missing effective_date input",
@@ -218,7 +219,7 @@ describe("lane-router", () => {
         result: {
           parsed: true,
           expression: {
-            ...(grammarNoRef.result as { parsed: true; expression: { kind: "relative_duration"; quantity: number; unit: "days"; dayKind: "calendar"; preposition: string; referenceEvent: "effective_date"; boundKind: "within" } }).expression,
+            ...(grammarNoRef.result as { parsed: true; expression: { kind: "relative_duration"; quantity: number; unit: "days"; dayKind: "calendar"; preposition: string; referenceEvent: "effective_date"; referenceEventText: null; boundKind: "within" } }).expression,
             referenceEvent: null,
           },
         },

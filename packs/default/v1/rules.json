@@ -1,0 +1,12 @@
+{
+  "jurisdiction": "default",
+  "packVersion": "1.0.0",
+  "effectiveDateRules": [],
+  "timeComputationRules": [
+    {
+      "ruleId": "generic-day-after-trigger",
+      "citation": "Generic convention — not verified for any specific jurisdiction",
+      "description": "Day of triggering event not counted (common convention across U.S. jurisdictions)"
+    }
+  ]
+}

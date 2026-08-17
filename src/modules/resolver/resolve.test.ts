@@ -134,6 +134,7 @@ describe("resolver — relative_duration", () => {
         dayKind: null,
         preposition: null,
         referenceEvent: null,
+        referenceEventText: null,
         boundKind: "within",
       },
       "within 30 days",
@@ -161,6 +162,7 @@ describe("resolver — relative_duration", () => {
         dayKind: null,
         preposition: null,
         referenceEvent: null,
+        referenceEventText: null,
         boundKind: "within",
       },
       "within 30 days",
@@ -192,6 +194,7 @@ describe("resolver — relative_duration", () => {
         dayKind: null,
         preposition: null,
         referenceEvent: null,
+        referenceEventText: null,
         boundKind: "within",
       },
       "within 5 days",
@@ -221,6 +224,7 @@ describe("resolver — relative_duration", () => {
         dayKind: "working",
         preposition: null,
         referenceEvent: null,
+        referenceEventText: null,
         boundKind: "within",
       },
       "within one working day",
@@ -248,6 +252,7 @@ describe("resolver — relative_duration", () => {
         dayKind: null,
         preposition: null,
         referenceEvent: null,
+        referenceEventText: null,
         boundKind: "within",
       },
       "within 24 hours",
@@ -268,6 +273,7 @@ describe("resolver — relative_duration", () => {
         dayKind: null,
         preposition: "after",
         referenceEvent: "effective_date",
+        referenceEventText: null,
         boundKind: "within",
       },
       "within 30 days after the effective date",
@@ -381,6 +387,33 @@ describe("resolver — recurrence", () => {
     expect(occ2030!.ruleIds).toContain("va-1-210-E");
   });
 
+  it("combined fixed+recurrence: anchorYear pins dtstart", () => {
+    const expr = makeExpr(
+      {
+        kind: "recurrence",
+        frequency: "yearly",
+        interval: 1,
+        byMonth: 12,
+        byMonthDay: 15,
+        yearParity: "even",
+        anchorEvent: null,
+        boundKind: "on",
+        dayKind: null,
+        anchorYear: 2026,
+      },
+      "By December 15, 2026, and each December 15 in even-numbered years thereafter",
+    );
+    const result = resolve(expr, [], testPack);
+    expect(isResolvedRecurrence(result)).toBe(true);
+    if (!isResolvedRecurrence(result)) return;
+    expect(result.rrule).toContain("FREQ=YEARLY");
+    expect(result.rrule).toContain("INTERVAL=2");
+    const dates = result.occurrences.map((o) => o.occurrenceDate);
+    expect(dates).toContain("2026-12-15");
+    expect(dates).toContain("2028-12-15");
+    expect(dates).toContain("2030-12-15");
+  });
+
   it("every four years without anchor → unresolved with anchorDate missing", () => {
     const expr = makeExpr(
       {
@@ -489,6 +522,7 @@ describe("INV-6 — every resolved date carries citations", () => {
         dayKind: null,
         preposition: null,
         referenceEvent: null,
+        referenceEventText: null,
         boundKind: "within",
       },
       "within 30 days",
@@ -533,15 +567,15 @@ describe("INV-6 — every resolved date carries citations", () => {
     const durationExprs: ParsedAnchoredExpression[] = [
       makeExpr({
         kind: "relative_duration", quantity: 30, unit: "days",
-        dayKind: null, preposition: null, referenceEvent: null, boundKind: "within",
+        dayKind: null, preposition: null, referenceEvent: null, referenceEventText: null, boundKind: "within",
       }, "within 30 days"),
       makeExpr({
         kind: "relative_duration", quantity: 7, unit: "days",
-        dayKind: null, preposition: null, referenceEvent: null, boundKind: "no_longer_than",
+        dayKind: null, preposition: null, referenceEvent: null, referenceEventText: null, boundKind: "no_longer_than",
       }, "no longer than seven days"),
       makeExpr({
         kind: "relative_duration", quantity: 1, unit: "days",
-        dayKind: "working", preposition: null, referenceEvent: null, boundKind: "within",
+        dayKind: "working", preposition: null, referenceEvent: null, referenceEventText: null, boundKind: "within",
       }, "within one working day"),
     ];
 
@@ -579,6 +613,7 @@ describe("reproducibility — same inputs produce same output", () => {
         dayKind: null,
         preposition: null,
         referenceEvent: null,
+        referenceEventText: null,
         boundKind: "within",
       },
       "within 30 days",
@@ -612,6 +647,7 @@ describe("derived effective date — auto-trigger for effective_date references"
         dayKind: null,
         preposition: "of",
         referenceEvent: "effective_date",
+        referenceEventText: null,
         boundKind: "within",
       },
       "within 90 days of the effective date of this chapter",
@@ -635,6 +671,7 @@ describe("derived effective date — auto-trigger for effective_date references"
         dayKind: null,
         preposition: "of",
         referenceEvent: "effective_date",
+        referenceEventText: null,
         boundKind: "within",
       },
       "within 60 days of the effective date of this act",
@@ -658,6 +695,7 @@ describe("derived effective date — auto-trigger for effective_date references"
         dayKind: null,
         preposition: "of",
         referenceEvent: "effective_date",
+        referenceEventText: null,
         boundKind: "within",
       },
       "within 30 days of the effective date",
@@ -690,6 +728,7 @@ describe("derived effective date — auto-trigger for effective_date references"
         dayKind: null,
         preposition: "of",
         referenceEvent: "effective_date",
+        referenceEventText: null,
         boundKind: "within",
       },
       "within 30 days of the effective date",
@@ -711,6 +750,7 @@ describe("derived effective date — auto-trigger for effective_date references"
         dayKind: null,
         preposition: null,
         referenceEvent: null,
+        referenceEventText: null,
         boundKind: "within",
       },
       "within 30 days",
@@ -730,6 +770,7 @@ describe("derived effective date — auto-trigger for effective_date references"
         dayKind: null,
         preposition: "after",
         referenceEvent: "enactment",
+        referenceEventText: null,
         boundKind: "within",
       },
       "within 30 days after enactment",
@@ -749,6 +790,7 @@ describe("derived effective date — auto-trigger for effective_date references"
         dayKind: null,
         preposition: "of",
         referenceEvent: "effective_date",
+        referenceEventText: null,
         boundKind: "within",
       },
       "within 90 days of the effective date",
@@ -779,6 +821,7 @@ describe("real pack integration", () => {
         dayKind: null,
         preposition: null,
         referenceEvent: "effective_date",
+        referenceEventText: null,
         boundKind: "within",
       },
       "within 30 days after the effective date",
@@ -833,6 +876,7 @@ describe("real pack integration", () => {
         dayKind: null,
         preposition: "of",
         referenceEvent: "effective_date",
+        referenceEventText: null,
         boundKind: "within",
       },
       "within 90 days of the effective date of this chapter",
@@ -845,4 +889,77 @@ describe("real pack integration", () => {
     expect(result.warnings.length).toBeGreaterThan(0);
     expect(result.warnings[0]).toContain("effective_date");
   });
+});
+
+describe("resolution invariant: resolved ↔ date/rrule consistency", () => {
+  const trigger: ResolutionInput = {
+    name: "triggerDate", value: "2026-06-01",
+    source: "test", authority: "test", citation: "test",
+  };
+
+  const cases: Array<{ label: string; expr: ParsedAnchoredExpression; inputs: ResolutionInput[] }> = [
+    {
+      label: "fixed date with year",
+      expr: makeExpr({ kind: "fixed_date", month: 12, day: 15, year: 2026 }),
+      inputs: [],
+    },
+    {
+      label: "fixed date without year",
+      expr: makeExpr({ kind: "fixed_date", month: 8, day: 1, year: null }),
+      inputs: [],
+    },
+    {
+      label: "relative duration with trigger",
+      expr: makeExpr({
+        kind: "relative_duration", quantity: 30, unit: "days",
+        preposition: "within", dayKind: null, referenceEvent: null,
+        referenceEventText: null, boundKind: "within",
+      }),
+      inputs: [trigger],
+    },
+    {
+      label: "relative duration without trigger",
+      expr: makeExpr({
+        kind: "relative_duration", quantity: 30, unit: "days",
+        preposition: "within", dayKind: null, referenceEvent: null,
+        referenceEventText: null, boundKind: "within",
+      }),
+      inputs: [],
+    },
+    {
+      label: "recurrence with anchor year",
+      expr: makeExpr({
+        kind: "recurrence", frequency: "yearly", interval: 2,
+        byMonth: 12, byMonthDay: 15, yearParity: "even",
+        anchorEvent: null, boundKind: "on", dayKind: null, anchorYear: 2026,
+      }),
+      inputs: [],
+    },
+    {
+      label: "recurrence without anchor",
+      expr: makeExpr({
+        kind: "recurrence", frequency: "yearly", interval: 1,
+        byMonth: null, byMonthDay: null, yearParity: null,
+        anchorEvent: null, boundKind: "on", dayKind: null,
+      }),
+      inputs: [],
+    },
+  ];
+
+  for (const { label, expr, inputs } of cases) {
+    it(`${label}: resolved=false implies no statutoryDate and no rrule`, () => {
+      const result = resolve(expr, inputs, testPack);
+      if (!result.resolved) {
+        expect("statutoryDate" in result).toBe(false);
+        expect("rrule" in result).toBe(false);
+      }
+    });
+
+    it(`${label}: statutoryDate or rrule present implies resolved=true`, () => {
+      const result = resolve(expr, inputs, testPack);
+      if ("statutoryDate" in result || "rrule" in result) {
+        expect(result.resolved).toBe(true);
+      }
+    });
+  }
 });

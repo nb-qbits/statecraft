@@ -42,6 +42,9 @@ class TemporalVisitor extends BaseCstVisitor {
     if (ctx["recurrenceExpression"]) {
       return this.visit(ctx["recurrenceExpression"]!) as TemporalExpression;
     }
+    if (ctx["invertedDuration"]) {
+      return this.visit(ctx["invertedDuration"]!) as TemporalExpression;
+    }
     if (ctx["relativeDuration"]) {
       return this.visit(ctx["relativeDuration"]!) as TemporalExpression;
     }
@@ -95,6 +98,24 @@ class TemporalVisitor extends BaseCstVisitor {
     };
   }
 
+  invertedDuration(ctx: Record<string, CstNode[] | IToken[]>): TemporalExpression {
+    const quantity = this.visit(ctx["quantity"] as CstNode[]) as number;
+    const dayKindVal = ctx["dayKind"]
+      ? (this.visit(ctx["dayKind"] as CstNode[]) as DayKind)
+      : null;
+    const unit = this.visit(ctx["timeUnit"] as CstNode[]) as TimeUnit;
+    return {
+      kind: "relative_duration",
+      quantity,
+      unit,
+      dayKind: dayKindVal,
+      preposition: null,
+      referenceEvent: null,
+      referenceEventText: null,
+      boundKind: "no_longer_than",
+    };
+  }
+
   recurrenceExpression(ctx: Record<string, CstNode[] | IToken[]>): TemporalExpression {
     const quantity = this.visit(ctx["quantity"] as CstNode[]) as number;
 
@@ -131,6 +152,7 @@ class TemporalVisitor extends BaseCstVisitor {
       dayKind: dayKindVal,
       preposition,
       referenceEvent,
+      referenceEventText: null,
       boundKind,
     };
   }
@@ -157,6 +179,36 @@ class TemporalVisitor extends BaseCstVisitor {
         kind: "recurrence", frequency: "yearly", interval: 1,
         byMonth: null, byMonthDay: null, yearParity: null,
         anchorEvent: "regular_session", boundKind: "no_later_than", dayKind: null,
+      };
+    }
+
+    if (ctx["quantity"]) {
+      const quantity = this.visit(ctx["quantity"] as CstNode[]) as number;
+      const dayKindVal = ctx["dayKind"]
+        ? (this.visit(ctx["dayKind"] as CstNode[]) as DayKind)
+        : null;
+      const unit = this.visit(ctx["timeUnit"] as CstNode[]) as TimeUnit;
+
+      let preposition: string | null = null;
+      let referenceEvent: ReferenceEvent | null = null;
+      if (ctx["referenceClause"]) {
+        const ref = this.visit(ctx["referenceClause"] as CstNode[]) as {
+          preposition: string;
+          referenceEvent: ReferenceEvent;
+        };
+        preposition = ref.preposition;
+        referenceEvent = ref.referenceEvent;
+      }
+
+      return {
+        kind: "relative_duration",
+        quantity,
+        unit,
+        dayKind: dayKindVal,
+        preposition,
+        referenceEvent,
+        referenceEventText: null,
+        boundKind: "no_longer_than",
       };
     }
 
@@ -187,10 +239,19 @@ class TemporalVisitor extends BaseCstVisitor {
 
   relativeDuration(ctx: Record<string, CstNode[] | IToken[]>): TemporalExpression {
     const quantity = this.visit(ctx["quantity"] as CstNode[]) as number;
-    const dayKindVal = ctx["dayKind"]
-      ? (this.visit(ctx["dayKind"] as CstNode[]) as DayKind)
-      : null;
-    const unit = this.visit(ctx["timeUnit"] as CstNode[]) as TimeUnit;
+
+    let dayKindVal: DayKind | null = null;
+    let unit: TimeUnit = "days";
+
+    if (ctx["Workday"]) {
+      dayKindVal = "working";
+      unit = "days";
+    } else {
+      dayKindVal = ctx["dayKind"]
+        ? (this.visit(ctx["dayKind"] as CstNode[]) as DayKind)
+        : null;
+      unit = this.visit(ctx["timeUnit"] as CstNode[]) as TimeUnit;
+    }
 
     let preposition: string | null = null;
     let referenceEvent: ReferenceEvent | null = null;
@@ -212,6 +273,7 @@ class TemporalVisitor extends BaseCstVisitor {
       dayKind: dayKindVal,
       preposition,
       referenceEvent,
+      referenceEventText: null,
       boundKind,
     };
   }

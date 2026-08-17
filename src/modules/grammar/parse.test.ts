@@ -13,7 +13,7 @@ function span(text: string): AnchoredSpan {
 
 describe("grammar version", () => {
   it("exports a version string", () => {
-    expect(GRAMMAR_VERSION).toBe("1.4.0");
+    expect(GRAMMAR_VERSION).toBe("1.6.1");
   });
 });
 
@@ -61,7 +61,7 @@ describe("relative durations — within N days", () => {
     expect(r.result.expression).toEqual({
       kind: "relative_duration",
       quantity: 30, unit: "days", dayKind: null,
-      preposition: null, referenceEvent: null, boundKind: "within",
+      preposition: null, referenceEvent: null, referenceEventText: null, boundKind: "within",
     });
   });
 
@@ -72,7 +72,7 @@ describe("relative durations — within N days", () => {
     expect(r.result.expression).toEqual({
       kind: "relative_duration",
       quantity: 1, unit: "days", dayKind: "working",
-      preposition: null, referenceEvent: null, boundKind: "within",
+      preposition: null, referenceEvent: null, referenceEventText: null, boundKind: "within",
     });
   });
 
@@ -83,7 +83,7 @@ describe("relative durations — within N days", () => {
     expect(r.result.expression).toEqual({
       kind: "relative_duration",
       quantity: 7, unit: "days", dayKind: null,
-      preposition: null, referenceEvent: null, boundKind: "no_longer_than",
+      preposition: null, referenceEvent: null, referenceEventText: null, boundKind: "no_longer_than",
     });
   });
 
@@ -94,7 +94,7 @@ describe("relative durations — within N days", () => {
     expect(r.result.expression).toEqual({
       kind: "relative_duration",
       quantity: 24, unit: "hours", dayKind: null,
-      preposition: null, referenceEvent: null, boundKind: "within",
+      preposition: null, referenceEvent: null, referenceEventText: null, boundKind: "within",
     });
   });
 
@@ -105,7 +105,7 @@ describe("relative durations — within N days", () => {
     expect(r.result.expression).toEqual({
       kind: "relative_duration",
       quantity: 5, unit: "days", dayKind: "business",
-      preposition: null, referenceEvent: null, boundKind: "within",
+      preposition: null, referenceEvent: null, referenceEventText: null, boundKind: "within",
     });
   });
 
@@ -116,7 +116,7 @@ describe("relative durations — within N days", () => {
     expect(r.result.expression).toEqual({
       kind: "relative_duration",
       quantity: 30, unit: "days", dayKind: null,
-      preposition: "after", referenceEvent: "effective_date",
+      preposition: "after", referenceEvent: "effective_date", referenceEventText: null,
       boundKind: "within",
     });
   });
@@ -128,7 +128,7 @@ describe("relative durations — within N days", () => {
     expect(r.result.expression).toEqual({
       kind: "relative_duration",
       quantity: 60, unit: "days", dayKind: null,
-      preposition: "of", referenceEvent: "enactment",
+      preposition: "of", referenceEvent: "enactment", referenceEventText: null,
       boundKind: "within",
     });
   });
@@ -140,7 +140,7 @@ describe("relative durations — within N days", () => {
     expect(r.result.expression).toEqual({
       kind: "relative_duration",
       quantity: 90, unit: "days", dayKind: "calendar",
-      preposition: "from", referenceEvent: "passage",
+      preposition: "from", referenceEvent: "passage", referenceEventText: null,
       boundKind: "within",
     });
   });
@@ -154,7 +154,7 @@ describe("repeating intervals — every N days", () => {
     expect(r.result.expression).toEqual({
       kind: "relative_duration",
       quantity: 2, unit: "days", dayKind: "business",
-      preposition: null, referenceEvent: null, boundKind: "no_longer_than",
+      preposition: null, referenceEvent: null, referenceEventText: null, boundKind: "no_longer_than",
     });
   });
 
@@ -165,7 +165,7 @@ describe("repeating intervals — every N days", () => {
     expect(r.result.expression).toEqual({
       kind: "relative_duration",
       quantity: 30, unit: "days", dayKind: null,
-      preposition: null, referenceEvent: null, boundKind: "no_longer_than",
+      preposition: null, referenceEvent: null, referenceEventText: null, boundKind: "no_longer_than",
     });
   });
 });
@@ -399,7 +399,7 @@ describe("at least N days — minimum-bound durations", () => {
     expect(r.result.expression).toEqual({
       kind: "relative_duration",
       quantity: 30, unit: "days", dayKind: null,
-      preposition: null, referenceEvent: null, boundKind: "at_least",
+      preposition: null, referenceEvent: null, referenceEventText: null, boundKind: "at_least",
     });
   });
 
@@ -410,7 +410,7 @@ describe("at least N days — minimum-bound durations", () => {
     expect(r.result.expression).toEqual({
       kind: "relative_duration",
       quantity: 5, unit: "days", dayKind: "business",
-      preposition: null, referenceEvent: null, boundKind: "at_least",
+      preposition: null, referenceEvent: null, referenceEventText: null, boundKind: "at_least",
     });
   });
 
@@ -421,7 +421,7 @@ describe("at least N days — minimum-bound durations", () => {
     expect(r.result.expression).toEqual({
       kind: "relative_duration",
       quantity: 60, unit: "days", dayKind: "calendar",
-      preposition: "after", referenceEvent: "effective_date",
+      preposition: "after", referenceEvent: "effective_date", referenceEventText: null,
       boundKind: "at_least",
     });
   });
@@ -513,7 +513,7 @@ describe("trailing scope after reference event", () => {
     expect(r.result.expression).toEqual({
       kind: "relative_duration",
       quantity: 90, unit: "days", dayKind: null,
-      preposition: "of", referenceEvent: "effective_date",
+      preposition: "of", referenceEvent: "effective_date", referenceEventText: null,
       boundKind: "within",
     });
   });
@@ -525,7 +525,7 @@ describe("trailing scope after reference event", () => {
     expect(r.result.expression).toEqual({
       kind: "relative_duration",
       quantity: 60, unit: "days", dayKind: null,
-      preposition: "of", referenceEvent: "effective_date",
+      preposition: "of", referenceEvent: "effective_date", referenceEventText: null,
       boundKind: "within",
     });
   });
@@ -537,7 +537,7 @@ describe("trailing scope after reference event", () => {
     expect(r.result.expression).toEqual({
       kind: "relative_duration",
       quantity: 180, unit: "days", dayKind: null,
-      preposition: "of", referenceEvent: "effective_date",
+      preposition: "of", referenceEvent: "effective_date", referenceEventText: null,
       boundKind: "within",
     });
   });
@@ -680,5 +680,280 @@ describe("parse failure details", () => {
     expect(r.result.parsed).toBe(false);
     if (r.result.parsed) return;
     expect(r.result.reason).toBeTruthy();
+  });
+});
+
+describe("trailing scope clauses (1.1)", () => {
+  it("parses 'within 24 hours of its submission'", () => {
+    const r = parseTemporalExpression(span("within 24 hours of its submission"));
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "relative_duration",
+      quantity: 24, unit: "hours", dayKind: null,
+      preposition: null, referenceEvent: null,
+      referenceEventText: "its submission",
+      boundKind: "within",
+    });
+  });
+
+  it("parses 'within 48 hours of the submission of such a refusal'", () => {
+    const r = parseTemporalExpression(span("within 48 hours of the submission of such a refusal"));
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "relative_duration",
+      quantity: 48, unit: "hours", dayKind: null,
+      preposition: null, referenceEvent: null,
+      referenceEventText: "the submission of such a refusal",
+      boundKind: "within",
+    });
+  });
+
+  it("parses 'within 24 hours of such placement'", () => {
+    const r = parseTemporalExpression(span("within 24 hours of such placement"));
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "relative_duration",
+      quantity: 24, unit: "hours", dayKind: null,
+      preposition: null, referenceEvent: null,
+      referenceEventText: "such placement",
+      boundKind: "within",
+    });
+  });
+
+  it("parses 'within one working day of placement in restorative housing'", () => {
+    const r = parseTemporalExpression(
+      span("within one working day of placement in restorative housing"),
+    );
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "relative_duration",
+      quantity: 1, unit: "days", dayKind: "working",
+      preposition: null, referenceEvent: null,
+      referenceEventText: "placement in restorative housing",
+      boundKind: "within",
+    });
+  });
+
+  it("does not interfere with known reference events", () => {
+    const r = parseTemporalExpression(span("within 30 days of the effective date of this act"));
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "relative_duration",
+      quantity: 30, unit: "days", dayKind: null,
+      preposition: "of", referenceEvent: "effective_date", referenceEventText: null,
+      boundKind: "within",
+    });
+  });
+
+  it("parses trailing scope after 'at least'", () => {
+    const r = parseTemporalExpression(span("at least 30 days after the filing of the complaint"));
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "relative_duration",
+      quantity: 30, unit: "days", dayKind: null,
+      preposition: null, referenceEvent: null,
+      referenceEventText: "the filing of the complaint",
+      boundKind: "at_least",
+    });
+  });
+});
+
+describe("inverted constructions (1.2)", () => {
+  it("parses 'before seven days have passed'", () => {
+    const r = parseTemporalExpression(span("before seven days have passed"));
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "relative_duration",
+      quantity: 7, unit: "days", dayKind: null,
+      preposition: null, referenceEvent: null, referenceEventText: null,
+      boundKind: "no_longer_than",
+    });
+  });
+
+  it("parses 'before 30 calendar days have passed'", () => {
+    const r = parseTemporalExpression(span("before 30 calendar days have passed"));
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "relative_duration",
+      quantity: 30, unit: "days", dayKind: "calendar",
+      preposition: null, referenceEvent: null, referenceEventText: null,
+      boundKind: "no_longer_than",
+    });
+  });
+
+  it("parses 'not later than 30 days after the effective date'", () => {
+    const r = parseTemporalExpression(span("not later than 30 days after the effective date"));
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "relative_duration",
+      quantity: 30, unit: "days", dayKind: null,
+      preposition: "after", referenceEvent: "effective_date", referenceEventText: null,
+      boundKind: "no_longer_than",
+    });
+  });
+
+  it("parses 'not later than 60 business days after enactment'", () => {
+    const r = parseTemporalExpression(span("not later than 60 business days after enactment"));
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "relative_duration",
+      quantity: 60, unit: "days", dayKind: "business",
+      preposition: "after", referenceEvent: "enactment", referenceEventText: null,
+      boundKind: "no_longer_than",
+    });
+  });
+
+  it("rejects 'before the deadline' (no quantity)", () => {
+    const r = parseTemporalExpression(span("before the deadline"));
+    expect(r.result.parsed).toBe(false);
+  });
+
+  it("rejects 'before seven days' (missing 'have passed')", () => {
+    const r = parseTemporalExpression(span("before seven days"));
+    expect(r.result.parsed).toBe(false);
+  });
+
+  it("rejects 'before zero days have passed' (zero quantity)", () => {
+    const r = parseTemporalExpression(span("before zero days have passed"));
+    expect(r.result.parsed).toBe(false);
+  });
+});
+
+describe("workday support", () => {
+  it("parses 'within one workday'", () => {
+    const r = parseTemporalExpression(span("within one workday"));
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "relative_duration",
+      quantity: 1, unit: "days", dayKind: "working",
+      preposition: null, referenceEvent: null, referenceEventText: null,
+      boundKind: "within",
+    });
+  });
+
+  it("parses 'within one workday of such placement'", () => {
+    const r = parseTemporalExpression(span("within one workday of such placement"));
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "relative_duration",
+      quantity: 1, unit: "days", dayKind: "working",
+      preposition: null, referenceEvent: null,
+      referenceEventText: "such placement",
+      boundKind: "within",
+    });
+  });
+
+  it("parses 'within five workdays'", () => {
+    const r = parseTemporalExpression(span("within five workdays"));
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "relative_duration",
+      quantity: 5, unit: "days", dayKind: "working",
+      preposition: null, referenceEvent: null, referenceEventText: null,
+      boundKind: "within",
+    });
+  });
+
+  it("rejects 'workday' alone (no prefix)", () => {
+    const r = parseTemporalExpression(span("workday"));
+    expect(r.result.parsed).toBe(false);
+  });
+});
+
+describe("combined fixed date plus recurrence (1.6)", () => {
+  it("parses 'By December 15, 2026, and each December 15 in even-numbered years thereafter'", () => {
+    const r = parseTemporalExpression(
+      span("By December 15, 2026, and each December 15 in even-numbered years thereafter"),
+    );
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "recurrence", frequency: "yearly", interval: 1,
+      byMonth: 12, byMonthDay: 15, yearParity: "even",
+      anchorEvent: null, boundKind: "on", dayKind: null,
+      anchorYear: 2026,
+    });
+  });
+
+  it("parses 'December 15, 2026, and each December 15 in even-numbered years thereafter'", () => {
+    const r = parseTemporalExpression(
+      span("December 15, 2026, and each December 15 in even-numbered years thereafter"),
+    );
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "recurrence", frequency: "yearly", interval: 1,
+      byMonth: 12, byMonthDay: 15, yearParity: "even",
+      anchorEvent: null, boundKind: "on", dayKind: null,
+      anchorYear: 2026,
+    });
+  });
+
+  it("parses 'October 1, 2027, and each October 1 thereafter'", () => {
+    const r = parseTemporalExpression(
+      span("October 1, 2027, and each October 1 thereafter"),
+    );
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "recurrence", frequency: "yearly", interval: 1,
+      byMonth: 10, byMonthDay: 1, yearParity: null,
+      anchorEvent: null, boundKind: "on", dayKind: null,
+      anchorYear: 2027,
+    });
+  });
+
+  it("parses 'July 1, 2026, and every 4 years thereafter'", () => {
+    const r = parseTemporalExpression(
+      span("July 1, 2026, and every 4 years thereafter"),
+    );
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "recurrence", frequency: "yearly", interval: 4,
+      byMonth: 7, byMonthDay: 1, yearParity: null,
+      anchorEvent: null, boundKind: "on", dayKind: null,
+      anchorYear: 2026,
+    });
+  });
+
+  it("rejects 'By December 15, 2026, and the Board shall submit a report' (adversarial)", () => {
+    const r = parseTemporalExpression(
+      span("By December 15, 2026, and the Board shall submit a report"),
+    );
+    expect(r.result.parsed).toBe(false);
+  });
+
+  it("standalone parts still parse independently", () => {
+    const fixed = parseTemporalExpression(span("By December 15, 2026"));
+    expect(fixed.result.parsed).toBe(true);
+    if (!fixed.result.parsed) return;
+    expect(fixed.result.expression).toEqual({
+      kind: "fixed_date", month: 12, day: 15, year: 2026,
+    });
+
+    const recurrence = parseTemporalExpression(
+      span("each December 15 in even-numbered years thereafter"),
+    );
+    expect(recurrence.result.parsed).toBe(true);
+    if (!recurrence.result.parsed) return;
+    expect(recurrence.result.expression).toEqual({
+      kind: "recurrence", frequency: "yearly", interval: 1,
+      byMonth: 12, byMonthDay: 15, yearParity: "even",
+      anchorEvent: null, boundKind: "on", dayKind: null,
+    });
   });
 });

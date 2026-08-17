@@ -132,10 +132,32 @@ export function validateAndRepairResponse(
       repaired = true;
     }
 
+    const rawActor = item["actor"];
+    const rawActorQuotedText = item["actorQuotedText"];
+    const actor = typeof rawActor === "string" && rawActor.trim().length > 0
+      ? rawActor.trim()
+      : null;
+    const actorQuotedText = typeof rawActorQuotedText === "string" && rawActorQuotedText.trim().length > 0
+      ? rawActorQuotedText.trim()
+      : null;
+
+    const rawDependsOnQuotedText = item["dependsOnQuotedText"];
+    const rawDependsOnDescription = item["dependsOnDescription"];
+    const dependsOnQuotedText = typeof rawDependsOnQuotedText === "string" && rawDependsOnQuotedText.trim().length > 0
+      ? rawDependsOnQuotedText.trim()
+      : null;
+    const dependsOnDescription = typeof rawDependsOnDescription === "string" && rawDependsOnDescription.trim().length > 0
+      ? rawDependsOnDescription.trim()
+      : null;
+
     validProposals.push({
       segmentId: finalSegmentId,
       quotedText: finalQuotedText,
       kind: kind as SpanProposalKind,
+      actor,
+      actorQuotedText,
+      dependsOnQuotedText,
+      dependsOnDescription,
     });
   }
 
@@ -173,6 +195,10 @@ export const EXTRACTION_RESPONSE_SCHEMA = {
             type: "string",
             enum: Object.values(SpanProposalKind),
           },
+          actor: { type: ["string", "null"] },
+          actorQuotedText: { type: ["string", "null"] },
+          dependsOnQuotedText: { type: ["string", "null"] },
+          dependsOnDescription: { type: ["string", "null"] },
         },
         required: ["segmentId", "quotedText", "kind"],
         additionalProperties: false,

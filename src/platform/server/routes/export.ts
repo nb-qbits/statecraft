@@ -83,10 +83,14 @@ export function registerExportRoutes(
         for (const record of records) {
           const summary = buildSummary(record);
 
-          const descParts = [
-            `Statutory date: ${record.deadlineDate}`,
-            `Adjusted date: ${record.adjustedDate}`,
-          ];
+          const isEstimated = record.dateProvenance === "generic_default";
+
+          const descParts: string[] = [];
+          if (isEstimated) {
+            descParts.push("⚠ ESTIMATED — not verified for this jurisdiction");
+          }
+          descParts.push(`Statutory date: ${record.deadlineDate}`);
+          descParts.push(`Adjusted date: ${record.adjustedDate}`);
           if (record.deadlineDate !== record.adjustedDate) {
             descParts.push(
               `Adjustment: statutory date adjusted per ${record.citations.find((c) => c.includes("§ 1-210")) ?? record.ruleIds.join(", ")}`,
@@ -98,11 +102,13 @@ export function registerExportRoutes(
           descParts.push(`Citations: ${record.citations.join(", ")}`);
           const description = descParts.join("\n");
 
+          const summaryText = isEstimated ? `[ESTIMATED] ${summary}` : summary;
+
           lines.push("BEGIN:VEVENT");
           lines.push(`UID:${record.recordVersionId}@policyaction`);
           lines.push(`DTSTART;VALUE=DATE:${formatIcsDate(record.adjustedDate)}`);
           lines.push(`DTEND;VALUE=DATE:${formatIcsDate(nextDay(record.adjustedDate))}`);
-          lines.push(foldLine(`SUMMARY:${escapeIcs(summary)}`));
+          lines.push(foldLine(`SUMMARY:${escapeIcs(summaryText)}`));
           lines.push(foldLine(`DESCRIPTION:${escapeIcs(description)}`));
           lines.push("TRANSP:TRANSPARENT");
 
@@ -152,7 +158,7 @@ export function registerExportRoutes(
         }
 
         const csvLines: string[] = [
-          "record_version_id,kind,quoted_text,statutory_date,adjusted_date,rrule,occurrence_seq,rule_ids,citations,deliverable,actor",
+          "record_version_id,kind,quoted_text,statutory_date,adjusted_date,rrule,occurrence_seq,rule_ids,citations,deliverable,actor,date_provenance",
         ];
 
         for (const record of records) {
@@ -168,6 +174,7 @@ export function registerExportRoutes(
             record.citations.join("; "),
             record.deliverable ?? "",
             record.actor ?? "",
+            record.dateProvenance,
           ]));
 
           if (record.rrule) {
@@ -187,6 +194,7 @@ export function registerExportRoutes(
                 occ.citations.join("; "),
                 record.deliverable ?? "",
                 record.actor ?? "",
+                record.dateProvenance,
               ]));
             }
           }

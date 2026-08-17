@@ -4,10 +4,12 @@ import { createToken, Lexer } from "chevrotain";
 export const EvenNumbered = createToken({ name: "EvenNumbered", pattern: /even[- ]numbered/i });
 export const OddNumbered = createToken({ name: "OddNumbered", pattern: /odd[- ]numbered/i });
 export const RegularSession = createToken({ name: "RegularSession", pattern: /regular session/i });
+export const HavePassed = createToken({ name: "HavePassed", pattern: /have passed/i });
 export const Within = createToken({ name: "Within", pattern: /within/i });
 export const AtLeast = createToken({ name: "AtLeast", pattern: /at least/i });
 export const NoLongerThan = createToken({ name: "NoLongerThan", pattern: /no longer than/i });
 export const NoLaterThan = createToken({ name: "NoLaterThan", pattern: /no later than/i });
+export const NotLaterThan = createToken({ name: "NotLaterThan", pattern: /not later than/i });
 export const OnOrBefore = createToken({ name: "OnOrBefore", pattern: /on or before/i });
 export const BecomesEffective = createToken({ name: "BecomesEffective", pattern: /becomes? effective/i });
 export const Every = createToken({ name: "Every", pattern: /every/i });
@@ -31,6 +33,7 @@ export const Working = createToken({ name: "Working", pattern: /working/i });
 export const Quarterly = createToken({ name: "Quarterly", pattern: /quarterly/i });
 export const Annual = createToken({ name: "Annual", pattern: /annual(?:ly)?/i });
 
+export const Workday = createToken({ name: "Workday", pattern: /workdays?/i });
 export const Days = createToken({ name: "Days", pattern: /days?/i });
 export const Hours = createToken({ name: "Hours", pattern: /hours?/i });
 export const Years = createToken({ name: "Years", pattern: /years?/i });
@@ -46,6 +49,7 @@ export const Month = createToken({
 export const Act = createToken({ name: "Act", pattern: /act/i });
 export const Chapter = createToken({ name: "Chapter", pattern: /chapter/i });
 export const Section = createToken({ name: "Section", pattern: /section/i });
+export const Before = createToken({ name: "Before", pattern: /before/i });
 export const By = createToken({ name: "By", pattern: /by/i });
 export const On = createToken({ name: "On", pattern: /on/i });
 
@@ -71,8 +75,10 @@ export const allTokens = [
   EvenNumbered,
   OddNumbered,
   RegularSession,
+  HavePassed,
   AtLeast,
   NoLongerThan,
+  NotLaterThan,
   NoLaterThan,
   OnOrBefore,
   BecomesEffective,
@@ -89,6 +95,7 @@ export const allTokens = [
   From,
   Calendar,
   Business,
+  Workday,
   Working,
   First,
   Days,
@@ -103,6 +110,7 @@ export const allTokens = [
   Act,
   Chapter,
   Section,
+  Before,
   NumberWord,
   NumberLiteral,
   By,

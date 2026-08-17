@@ -85,8 +85,10 @@ describe("§ 1-210(E) — rollover to next business day", () => {
       const result = adjustForNonBusinessDay("2026-01-05", holidaySet);
       expect(result.adjustedDate).toBe("2026-01-05");
       expect(result.wasAdjusted).toBe(false);
-      expect(result.ruleIds).toEqual([]);
-      expect(result.citations).toEqual([]);
+      expect(result.ruleIds).toEqual(["va-1-210-E-evaluated-no-adjustment"]);
+      expect(result.citations).toEqual([
+        "Va. Code § 1-210(E) evaluated — date falls on a business day, no adjustment required",
+      ]);
     });
   });
 

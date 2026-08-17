@@ -8,7 +8,7 @@ import type {
   TemporalExpression,
 } from "./types.js";
 
-export const GRAMMAR_VERSION = "1.4.0";
+export const GRAMMAR_VERSION = "1.6.1";
 
 export function parseTemporalExpression(span: AnchoredSpan): SpanParseResult {
   const result = parseText(span.text);
@@ -26,21 +26,30 @@ function parseText(text: string): ParseResult {
     return { parsed: false, reason: "empty input", position: 0 };
   }
 
+  const combined = tryCombinedFixedRecurrence(trimmed);
+  if (combined) return combined;
+
+  const result = attemptParse(trimmed);
+  if (result.parsed) return result;
+
+  const withScope = tryExtractWithTrailingScope(trimmed);
+  if (withScope) return withScope;
+
+  if (result.reason.startsWith("unexpected character")) {
+    const stripped = stripLeadingContext(trimmed);
+    if (stripped !== null) {
+      return parseText(stripped);
+    }
+  }
+
+  return result;
+}
+
+function attemptParse(trimmed: string): ParseResult {
   const lexResult = TemporalLexer.tokenize(trimmed);
 
   if (lexResult.errors.length > 0) {
     const err = lexResult.errors[0]!;
-
-    // If the lexer fails at the very start (offset 0), the input may have
-    // leading context words before a deadline keyword.  Try stripping
-    // everything before the first "by <Month>" and re-parse.
-    if (err.offset === 0) {
-      const stripped = stripLeadingContext(trimmed);
-      if (stripped !== null) {
-        return parseText(stripped);
-      }
-    }
-
     return {
       parsed: false,
       reason: `unexpected character '${trimmed[err.offset]}'`,
@@ -102,6 +111,60 @@ function parseText(text: string): ParseResult {
   }
 
   return { parsed: true, expression };
+}
+
+const COMBINED_RE = /^(.+),\s*and\s+((?:each|every)\b.+)$/is;
+
+function tryCombinedFixedRecurrence(text: string): ParseResult | null {
+  const m = COMBINED_RE.exec(text);
+  if (!m) return null;
+
+  const fixedPart = m[1]!.trim();
+  const recurrencePart = m[2]!.trim();
+
+  const fixedResult = attemptParse(fixedPart);
+  if (!fixedResult.parsed) return null;
+  if (fixedResult.expression.kind !== "fixed_date") return null;
+  if (fixedResult.expression.year === null) return null;
+
+  const recResult = attemptParse(recurrencePart);
+  if (!recResult.parsed) return null;
+  if (recResult.expression.kind !== "recurrence") return null;
+
+  const rec = recResult.expression;
+  return {
+    parsed: true,
+    expression: {
+      ...rec,
+      byMonth: rec.byMonth ?? fixedResult.expression.month,
+      byMonthDay: rec.byMonthDay ?? fixedResult.expression.day,
+      anchorYear: fixedResult.expression.year,
+    },
+  };
+}
+
+const TRAILING_SCOPE_RE =
+  /^(.+?\b(?:days?|hours?|workdays?)\b)\s+(of|after|from)\s+(.+)$/is;
+
+const KNOWN_EVENT_RE = /^(?:the\s+)?(?:effective date|enactment|passage)\b/i;
+
+function tryExtractWithTrailingScope(text: string): ParseResult | null {
+  const m = TRAILING_SCOPE_RE.exec(text);
+  if (!m) return null;
+
+  const coreText = m[1]!.trim();
+  const scopeText = m[3]!.trim();
+
+  if (KNOWN_EVENT_RE.test(scopeText)) return null;
+
+  const coreResult = attemptParse(coreText);
+  if (!coreResult.parsed) return null;
+  if (coreResult.expression.kind !== "relative_duration") return null;
+
+  return {
+    parsed: true,
+    expression: { ...coreResult.expression, referenceEventText: scopeText },
+  };
 }
 
 const MONTHS =

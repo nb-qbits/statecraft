@@ -20,6 +20,9 @@ export function adjustForNonBusinessDay(
   if (wasAdjusted) {
     ruleIds.push("va-1-210-E");
     citations.push("Va. Code § 1-210(E)");
+  } else {
+    ruleIds.push("va-1-210-E-evaluated-no-adjustment");
+    citations.push("Va. Code § 1-210(E) evaluated — date falls on a business day, no adjustment required");
   }
 
   return {

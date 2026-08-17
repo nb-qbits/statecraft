@@ -4,19 +4,79 @@ export function formatUnresolvedReason(f: Finding): string {
   if (!f.grammarParsed) {
     return "This expression does not match a recognized date or duration pattern.";
   }
-  if (f.missingInputs?.includes("triggerDate")) {
-    return "This deadline runs from an event this bill does not date.";
-  }
   if (f.unresolvedReason?.includes("hour-scale")) {
     return "This duration is measured in hours, not days — it cannot be resolved to a calendar date.";
   }
-  if (f.unresolvedReason?.includes("recurrence")) {
-    return "This is a repeating obligation, not a single deadline.";
+  if (f.unresolvedReason?.includes("no date anchor")) {
+    return "This recurrence has no date anchor — cannot generate occurrences without a fixed month and day.";
+  }
+  if (f.unresolvedReason?.includes("legislative session")) {
+    return "This recurrence is anchored to a legislative session — requires a session calendar to generate occurrences.";
+  }
+  if (f.unresolvedReason?.startsWith("runs from an event this bill does not date:")) {
+    return `Runs from an event this bill does not date: ${f.unresolvedReason.slice("runs from an event this bill does not date: ".length)}.`;
+  }
+  if (f.missingInputs?.includes("triggerDate")) {
+    return "This deadline runs from an event this bill does not date.";
+  }
+  if (f.unresolvedReason?.includes("No jurisdiction pack available")) {
+    return "Statutory date computation is not yet supported for this jurisdiction.";
+  }
+  if (f.unresolvedReason?.includes("year not specified")) {
+    return "The year is not specified in this date expression.";
   }
   if (f.unresolvedReason) {
     return f.unresolvedReason;
   }
   return "Could not be automatically resolved.";
+}
+
+const MONTH_NAMES = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
+
+export function formatRruleSchedule(rrule: string): string {
+  const parts = new Map(rrule.split(";").map((p) => {
+    const [k, v] = p.split("=");
+    return [k, v] as [string, string];
+  }));
+
+  const freq = parts.get("FREQ");
+  const interval = parseInt(parts.get("INTERVAL") ?? "1", 10);
+  const byMonth = parts.get("BYMONTH");
+  const byMonthDay = parts.get("BYMONTHDAY");
+
+  const monthStr = byMonth ? MONTH_NAMES[parseInt(byMonth, 10) - 1] : null;
+  const dayStr = byMonthDay ?? null;
+
+  let base: string;
+  if (freq === "YEARLY" && interval === 2) {
+    base = "every two years";
+  } else if (freq === "YEARLY" && interval === 1) {
+    base = "every year";
+  } else if (freq === "MONTHLY" && interval === 3) {
+    base = "every quarter";
+  } else if (freq === "MONTHLY") {
+    base = interval > 1 ? `every ${interval} months` : "every month";
+  } else if (freq === "WEEKLY") {
+    base = interval > 1 ? `every ${interval} weeks` : "every week";
+  } else if (freq === "DAILY") {
+    base = interval > 1 ? `every ${interval} days` : "every day";
+  } else {
+    base = `every ${interval > 1 ? interval + " " : ""}${(freq ?? "year").toLowerCase()}s`;
+  }
+
+  if (monthStr && dayStr) {
+    return `${base} on ${monthStr} ${dayStr}`;
+  }
+  if (monthStr) {
+    return `${base} in ${monthStr}`;
+  }
+  if (dayStr) {
+    return `${base} on day ${dayStr}`;
+  }
+  return base;
 }
 
 export function formatDate(iso: string): string {
@@ -96,8 +156,13 @@ export function formatLane(lane: string): string {
   }
 }
 
+const KIND_LABELS: Record<string, string> = {
+  temporal_constraint: "recurring obligation",
+  obligation_deadline: "deadline",
+};
+
 export function formatKind(kind: string): string {
-  return kind.replace(/_/g, " ");
+  return KIND_LABELS[kind] ?? kind.replace(/_/g, " ");
 }
 
 export function formatRejectionReason(reason: string): string {

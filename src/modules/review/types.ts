@@ -48,6 +48,7 @@ export type ReviewAction =
 
 export const DateProvenance = {
   computed: "computed",
+  generic_default: "generic_default",
   reviewer_asserted: "reviewer_asserted",
   verbatim_from_instrument: "verbatim_from_instrument",
 } as const;
@@ -72,6 +73,7 @@ export interface Analysis {
   readonly analysisId: AnalysisId;
   readonly documentVersionId: DocumentVersionId;
   readonly configHash: string;
+  readonly stageVersions: Record<string, string> | null;
   readonly status: AnalysisStatus;
   readonly error: string | null;
   readonly startedAt: string;
@@ -99,6 +101,9 @@ export interface ReviewProposal {
   readonly ruleIds: readonly string[];
   readonly citations: readonly string[];
   readonly packVersion: string | null;
+  readonly actor: string | null;
+  readonly actorQuotedText: string | null;
+  readonly dependsOnDescription: string | null;
   readonly supportLevel: SupportLevel;
   readonly lane: Lane;
   readonly laneReasons: readonly LaneReason[];

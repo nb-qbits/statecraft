@@ -1,4 +1,4 @@
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { createHash } from "node:crypto";
 import {
@@ -54,6 +54,7 @@ function rowToAnalysis(row: typeof analyses.$inferSelect): Analysis {
     analysisId: row.analysisId as AnalysisId,
     documentVersionId: row.documentVersionId as DocumentVersionId,
     configHash: row.configHash,
+    stageVersions: row.stageVersions as Record<string, string> | null,
     status: row.status as AnalysisStatus,
     error: row.error,
     startedAt: row.startedAt.toISOString(),
@@ -83,6 +84,9 @@ function rowToProposal(row: typeof proposals.$inferSelect): ReviewProposal {
     ruleIds: (row.ruleIds as string[]) ?? [],
     citations: (row.citations as string[]) ?? [],
     packVersion: row.packVersion,
+    actor: row.actor ?? null,
+    actorQuotedText: row.actorQuotedText ?? null,
+    dependsOnDescription: row.dependsOnDescription ?? null,
     supportLevel: row.supportLevel as SupportLevel,
     lane: row.lane as Lane,
     laneReasons: (row.laneReasons as unknown as LaneReason[]) ?? [],
@@ -145,6 +149,7 @@ export interface ReviewRepository {
   insertAnalysis(
     documentVersionId: DocumentVersionId,
     configHash: string,
+    stageVersions?: Record<string, string>,
   ): Promise<Analysis>;
   getAnalysis(analysisId: AnalysisId): Promise<Analysis | null>;
   getAnalysisByConfig(
@@ -156,16 +161,36 @@ export interface ReviewRepository {
     status: AnalysisStatus,
     error?: string,
   ): Promise<void>;
+  getLatestCompletedAnalysis(
+    documentVersionId: DocumentVersionId,
+  ): Promise<Analysis | null>;
 
   // Proposals
   insertProposals(proposalRows: ProposalInsert[]): Promise<void>;
   getProposalsByVersion(
     documentVersionId: DocumentVersionId,
   ): Promise<ReviewProposal[]>;
+  deletePendingProposalsByVersion(
+    documentVersionId: DocumentVersionId,
+  ): Promise<number>;
   getProposal(proposalId: ProposalId): Promise<ReviewProposal | null>;
+  getLatestProposalByAnchor(
+    documentVersionId: DocumentVersionId,
+    anchorId: AnchorId,
+  ): Promise<ReviewProposal | null>;
   updateProposalStatus(
     proposalId: ProposalId,
     status: ProposalStatus,
+  ): Promise<void>;
+  updateProposalResolution(
+    proposalId: ProposalId,
+    fields: {
+      status: ProposalStatus;
+      resolved: boolean;
+      statutoryDate: string | null;
+      adjustedDate: string | null;
+      citations: string[];
+    },
   ): Promise<void>;
 
   // Review events
@@ -237,6 +262,9 @@ export interface ProposalInsert {
   readonly citations: readonly string[];
   readonly rrule: string | null;
   readonly packVersion: string | null;
+  readonly actor: string | null;
+  readonly actorQuotedText: string | null;
+  readonly dependsOnDescription: string | null;
   readonly supportLevel: string;
   readonly lane: string;
   readonly laneReasons: unknown;
@@ -301,12 +329,14 @@ export function createReviewRepository(
     async insertAnalysis(
       documentVersionId: DocumentVersionId,
       configHash: string,
+      stageVersions?: Record<string, string>,
     ): Promise<Analysis> {
       const rows = await db
         .insert(analyses)
         .values({
           documentVersionId,
           configHash,
+          stageVersions: stageVersions as Record<string, unknown>,
           status: "running",
         })
         .returning();
@@ -357,6 +387,23 @@ export function createReviewRepository(
         .where(eq(analyses.analysisId, analysisId));
     },
 
+    async getLatestCompletedAnalysis(
+      documentVersionId: DocumentVersionId,
+    ): Promise<Analysis | null> {
+      const rows = await db
+        .select()
+        .from(analyses)
+        .where(
+          and(
+            eq(analyses.documentVersionId, documentVersionId),
+            eq(analyses.status, "completed"),
+          ),
+        )
+        .orderBy(desc(analyses.startedAt))
+        .limit(1);
+      return rows.length > 0 ? rowToAnalysis(rows[0]!) : null;
+    },
+
     async insertProposals(proposalRows: ProposalInsert[]): Promise<void> {
       if (proposalRows.length === 0) return;
       await db.insert(proposals).values(
@@ -380,6 +427,9 @@ export function createReviewRepository(
           citations: p.citations as unknown as Record<string, unknown>,
           rrule: p.rrule,
           packVersion: p.packVersion,
+          actor: p.actor,
+          actorQuotedText: p.actorQuotedText,
+          dependsOnDescription: p.dependsOnDescription,
           supportLevel: p.supportLevel,
           lane: p.lane,
           laneReasons: p.laneReasons as Record<string, unknown>,
@@ -399,6 +449,21 @@ export function createReviewRepository(
       return rows.map(rowToProposal);
     },
 
+    async deletePendingProposalsByVersion(
+      documentVersionId: DocumentVersionId,
+    ): Promise<number> {
+      const deleted = await db
+        .delete(proposals)
+        .where(
+          and(
+            eq(proposals.documentVersionId, documentVersionId),
+            eq(proposals.status, "pending_review"),
+          ),
+        )
+        .returning({ id: proposals.proposalId });
+      return deleted.length;
+    },
+
     async getProposal(
       proposalId: ProposalId,
     ): Promise<ReviewProposal | null> {
@@ -410,6 +475,24 @@ export function createReviewRepository(
       return rows.length > 0 ? rowToProposal(rows[0]!) : null;
     },
 
+    async getLatestProposalByAnchor(
+      documentVersionId: DocumentVersionId,
+      anchorId: AnchorId,
+    ): Promise<ReviewProposal | null> {
+      const rows = await db
+        .select()
+        .from(proposals)
+        .where(
+          and(
+            eq(proposals.documentVersionId, documentVersionId),
+            eq(proposals.anchorId, anchorId as string),
+          ),
+        )
+        .orderBy(desc(proposals.createdAt))
+        .limit(1);
+      return rows.length > 0 ? rowToProposal(rows[0]!) : null;
+    },
+
     async updateProposalStatus(
       proposalId: ProposalId,
       status: ProposalStatus,
@@ -417,6 +500,28 @@ export function createReviewRepository(
       await db
         .update(proposals)
         .set({ status })
+        .where(eq(proposals.proposalId, proposalId));
+    },
+
+    async updateProposalResolution(
+      proposalId: ProposalId,
+      fields: {
+        status: ProposalStatus;
+        resolved: boolean;
+        statutoryDate: string | null;
+        adjustedDate: string | null;
+        citations: string[];
+      },
+    ): Promise<void> {
+      await db
+        .update(proposals)
+        .set({
+          status: fields.status,
+          resolved: fields.resolved,
+          statutoryDate: fields.statutoryDate,
+          adjustedDate: fields.adjustedDate,
+          citations: fields.citations,
+        })
         .where(eq(proposals.proposalId, proposalId));
     },
 

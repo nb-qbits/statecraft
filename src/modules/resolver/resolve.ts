@@ -107,13 +107,8 @@ function generateOccurrences(
     const occRuleIds: string[] = [];
     const occCitations: string[] = [];
 
-    if (adjustment.wasAdjusted) {
-      occRuleIds.push(...adjustment.ruleIds);
-      occCitations.push(...adjustment.citations);
-    } else {
-      occRuleIds.push("va-1-210-E-evaluated-no-adjustment");
-      occCitations.push("Va. Code § 1-210(E) evaluated — date falls on a business day, no adjustment required");
-    }
+    occRuleIds.push(...adjustment.ruleIds);
+    occCitations.push(...adjustment.citations);
 
     return {
       occurrenceDate: isoDate,
@@ -177,13 +172,8 @@ function resolveFixedDate(
   const ruleIds: string[] = ["verbatim-date"];
   const citations: string[] = [`date stated in instrument: '${expr.text}'`];
 
-  if (adjustment.wasAdjusted) {
-    ruleIds.push(...adjustment.ruleIds);
-    citations.push(...adjustment.citations);
-  } else {
-    ruleIds.push("va-1-210-E-evaluated-no-adjustment");
-    citations.push("Va. Code § 1-210(E) evaluated — date falls on a business day, no adjustment required");
-  }
+  ruleIds.push(...adjustment.ruleIds);
+  citations.push(...adjustment.citations);
 
   return {
     resolved: true,
@@ -206,6 +196,7 @@ function resolveRelativeDuration(
     boundKind: string;
     preposition: string | null;
     referenceEvent: string | null;
+    referenceEventText?: string | null;
   },
   suppliedInputs: readonly ResolutionInput[],
   pack: JurisdictionPack,
@@ -240,9 +231,13 @@ function resolveRelativeDuration(
       );
     }
 
+    const reason = expression.referenceEventText
+      ? `runs from an event this bill does not date: ${expression.referenceEventText}`
+      : "triggerDate is required to resolve a relative duration";
+
     return {
       resolved: false,
-      reason: "triggerDate is required to resolve a relative duration",
+      reason,
       missingInputs: ["triggerDate"],
       warnings,
       inputs: [...suppliedInputs],
@@ -312,7 +307,7 @@ function resolveRecurrenceExpression(
 ): ResolutionResult {
   const needsAnchor =
     expression.anchorEvent === "regular_session" ||
-    (expression.byMonth === null && expression.byMonthDay === null && expression.anchorEvent === null);
+    (expression.byMonth === null && expression.byMonthDay === null && expression.anchorEvent === null && !expression.anchorYear);
 
   if (needsAnchor && expression.anchorEvent !== "regular_session") {
     return {
@@ -338,11 +333,18 @@ function resolveRecurrenceExpression(
   const horizon = DEFAULT_HORIZON_YEARS;
   const horizonEnd = `${new Date().getFullYear() + horizon}-12-31`;
 
-  const startYear = expression.yearParity === "even"
-    ? nearestEvenYear(new Date().getFullYear())
-    : expression.yearParity === "odd"
-      ? nearestOddYear(new Date().getFullYear())
-      : new Date().getFullYear();
+  let startYear: number;
+  if (expression.anchorYear != null) {
+    startYear = expression.anchorYear;
+    if (expression.yearParity === "even" && startYear % 2 !== 0) startYear++;
+    else if (expression.yearParity === "odd" && startYear % 2 !== 1) startYear++;
+  } else {
+    startYear = expression.yearParity === "even"
+      ? nearestEvenYear(new Date().getFullYear())
+      : expression.yearParity === "odd"
+        ? nearestOddYear(new Date().getFullYear())
+        : new Date().getFullYear();
+  }
 
   const dtstart = new Date(Date.UTC(
     startYear,

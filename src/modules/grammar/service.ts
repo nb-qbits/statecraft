@@ -72,19 +72,16 @@ export function createGrammarService(deps: GrammarServiceDeps) {
         return buildResult(documentVersionId, existing);
       }
 
-      if (
-        version.grammarStatus === "parsed_grammar" &&
-        version.grammarVersion !== GRAMMAR_VERSION
-      ) {
+      await grammarRepository.deleteResultsByVersion(documentVersionId);
+      if (version.grammarStatus === "parsed_grammar") {
         logger.info(
           {
             documentVersionId,
             storedVersion: version.grammarVersion,
             currentVersion: GRAMMAR_VERSION,
           },
-          "grammar version changed, re-parsing",
+          "re-parsing grammar",
         );
-        await grammarRepository.deleteResultsByVersion(documentVersionId);
       }
 
       const anchorResults =

@@ -71,12 +71,12 @@ export function createRoutingService(deps: RoutingServiceDeps) {
         }
       }
 
-      if (version.routingStatus === "routed" && version.routerVersion !== ROUTER_VERSION) {
+      await routingRepository.deleteResultsByVersion(documentVersionId);
+      if (version.routingStatus === "routed") {
         logger.info(
           { documentVersionId, storedVersion: version.routerVersion, currentVersion: ROUTER_VERSION },
-          "router version changed, re-routing",
+          "re-routing",
         );
-        await routingRepository.deleteResultsByVersion(documentVersionId);
       }
 
       const [evaluations, grammarResults, resolutionResults, segments, candidates] =
