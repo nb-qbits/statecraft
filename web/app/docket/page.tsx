@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import { loadAllBills } from "@/lib/docket-data";
+import { loadAllBills, removeStoredBill } from "@/lib/docket-data";
 import type { DocketBill, DocketTask, StatusCounts } from "@/lib/docket-types";
 import {
   countStatuses,
@@ -130,15 +130,15 @@ function AgencyCard({ agency, selected, onSelect }: { agency: AgencyInfo; select
       </svg>
       <div className="min-w-0">
         <div
-          className="truncate text-[12.5px] font-semibold leading-tight"
+          className="truncate text-[15px] font-semibold leading-tight"
           style={{ color: "#1D1D1F" }}
         >
           {agency.name}
         </div>
-        <div className="my-0.5 text-[11px]" style={{ color: "#86868B" }}>
+        <div className="my-0.5 text-[13px]" style={{ color: "#86868B" }}>
           {agency.tasks.length} task{agency.tasks.length !== 1 ? "s" : ""} · {agency.bills.size} bill(s)
         </div>
-        <div className="text-[11.5px] font-bold" style={{ color: agency.ringColor }}>
+        <div className="text-[13px] font-bold" style={{ color: agency.ringColor }}>
           {agency.countdownText}
         </div>
       </div>
@@ -146,7 +146,8 @@ function AgencyCard({ agency, selected, onSelect }: { agency: AgencyInfo; select
   );
 }
 
-function BillCard({ bill }: { bill: DocketBill }) {
+function BillCard({ bill, onRemove }: { bill: DocketBill; onRemove: (dvId: string) => void }) {
+  const [confirmRemove, setConfirmRemove] = useState(false);
   const counts = countStatuses(bill.tasks);
   const total = bill.tasks.length || 1;
   const overdPct = (counts.overdue / total) * 100;
@@ -161,40 +162,85 @@ function BillCard({ bill }: { bill: DocketBill }) {
   const nextDue = pending[0]?.due ? formatDate(pending[0].due) : "—";
 
   return (
-    <Link href={`/docket/bill/${bill.dvId}`} className="block no-underline">
-      <div
-        className="cursor-pointer rounded-[12px] border bg-white transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
-        style={{ borderColor: "#D8D8DC", padding: "22px 24px", boxShadow: "0 1px 4px rgba(0,0,0,0.07)" }}
-      >
-        <div style={{ fontSize: "11.5px", letterSpacing: "0.03em", color: "#6E6E73", marginBottom: "6px", fontFamily: "var(--font-body)" }}>
-          {bill.number} · {bill.session}
-        </div>
+    <div className="relative">
+      <Link href={`/docket/bill/${bill.dvId}`} className="block no-underline">
         <div
-          style={{
-            fontFamily: "var(--font-heading)",
-            fontSize: "18px",
-            fontWeight: 700,
-            letterSpacing: "-0.02em",
-            color: "#16233F",
-            lineHeight: 1.25,
-            marginBottom: "10px",
-          }}
+          className="cursor-pointer rounded-[12px] border bg-white transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
+          style={{ borderColor: "#D8D8DC", padding: "22px 24px", boxShadow: "0 1px 4px rgba(0,0,0,0.07)" }}
         >
-          {bill.title}
+          <div className="flex items-start justify-between">
+            <div style={{ fontSize: "13px", letterSpacing: "0.03em", color: "#6E6E73", marginBottom: "6px", fontFamily: "var(--font-body)" }}>
+              {bill.number} · {bill.session}
+            </div>
+          </div>
+          <div
+            style={{
+              fontFamily: "var(--font-heading)",
+              fontSize: "22px",
+              fontWeight: 700,
+              letterSpacing: "-0.02em",
+              color: "#16233F",
+              lineHeight: 1.25,
+              marginBottom: "10px",
+            }}
+          >
+            {bill.title}
+          </div>
+          <div className="mb-3 flex h-[7px] overflow-hidden rounded" style={{ background: "#EDEDF0" }}>
+            <div style={{ width: `${overdPct}%`, background: "#B8452F" }} />
+            <div style={{ width: `${needsPct}%`, background: "#8377B0" }} />
+            <div style={{ width: `${soonPct}%`, background: "#C79A44" }} />
+            <div style={{ width: `${upPct}%`, background: "#4C6D96" }} />
+            <div style={{ width: `${donePct}%`, background: "#5C8B71" }} />
+          </div>
+          <div className="flex justify-between text-[14px]" style={{ color: "#6E6E73" }}>
+            <span>{bill.tasks.length} tracked tasks</span>
+            <span>Next due {nextDue}</span>
+          </div>
         </div>
-        <div className="mb-3 flex h-[7px] overflow-hidden rounded" style={{ background: "#EDEDF0" }}>
-          <div style={{ width: `${overdPct}%`, background: "#B8452F" }} />
-          <div style={{ width: `${needsPct}%`, background: "#8377B0" }} />
-          <div style={{ width: `${soonPct}%`, background: "#C79A44" }} />
-          <div style={{ width: `${upPct}%`, background: "#4C6D96" }} />
-          <div style={{ width: `${donePct}%`, background: "#5C8B71" }} />
+      </Link>
+      {!confirmRemove ? (
+        <button
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmRemove(true); }}
+          className="absolute right-2 top-2 flex h-[26px] w-[26px] items-center justify-center rounded-full opacity-0 transition-opacity hover:opacity-100 group-hover:opacity-100"
+          style={{ background: "rgba(0,0,0,0.06)", color: "#86868B", border: "none", cursor: "pointer" }}
+          title="Remove bill"
+          onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
+          onMouseLeave={(e) => (e.currentTarget.style.opacity = "0")}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      ) : (
+        <div
+          className="absolute inset-0 flex flex-col items-center justify-center rounded-[12px]"
+          style={{ background: "rgba(255,255,255,0.95)", backdropFilter: "blur(2px)", zIndex: 10 }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="mb-3 text-[14px] font-medium" style={{ color: "#1D1D1F" }}>
+            Remove {bill.title}?
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onRemove(bill.dvId); }}
+              className="rounded-[8px] px-4 py-1.5 text-[14px] font-semibold"
+              style={{ background: "#B8452F", color: "#FFFFFF", border: "none", cursor: "pointer" }}
+            >
+              Remove
+            </button>
+            <button
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmRemove(false); }}
+              className="rounded-[8px] px-4 py-1.5 text-[14px] font-medium"
+              style={{ color: "#6E6E73", background: "none", border: "1px solid #D8D8DC", cursor: "pointer" }}
+            >
+              Cancel
+            </button>
+          </div>
         </div>
-        <div className="flex justify-between text-[12.5px]" style={{ color: "#6E6E73" }}>
-          <span>{bill.tasks.length} tracked tasks</span>
-          <span>Next due {nextDue}</span>
-        </div>
-      </div>
-    </Link>
+      )}
+    </div>
   );
 }
 
@@ -216,7 +262,7 @@ function StatCard({
         boxShadow: "0 1px 4px rgba(0,0,0,0.07)",
       }}
     >
-      <div style={{ fontSize: "12px", fontWeight: 500, color: "#6E6E73", marginBottom: "8px", fontFamily: "var(--font-body)" }}>
+      <div style={{ fontSize: "13px", fontWeight: 500, color: "#6E6E73", marginBottom: "8px", fontFamily: "var(--font-body)" }}>
         {label}
       </div>
       <div
@@ -271,6 +317,12 @@ export default function DashboardPage() {
   const billCount = bills.length;
   const billLimit = 10;
 
+  const handleRemoveBill = (dvId: string) => {
+    removeStoredBill(dvId);
+    setBills((prev) => prev.filter((b) => b.dvId !== dvId));
+    if (billFilter === dvId) setBillFilter("all");
+  };
+
   const hasBills = bills.length > 0;
 
   return (
@@ -282,7 +334,7 @@ export default function DashboardPage() {
         <div
           style={{
             fontFamily: "var(--font-heading)",
-            fontSize: "25px",
+            fontSize: "30px",
             fontWeight: 700,
             letterSpacing: "-0.03em",
             color: "#16233F",
@@ -290,7 +342,7 @@ export default function DashboardPage() {
         >
           Dashboard
         </div>
-        <div className="text-[13px]" style={{ color: "#6E6E73" }}>
+        <div className="text-[14px]" style={{ color: "#6E6E73" }}>
           {today}
         </div>
       </div>
@@ -302,7 +354,7 @@ export default function DashboardPage() {
           </div>
         ) : !hasBills ? (
           <div className="py-16 text-center" style={{ color: "#AEAEB2" }}>
-            <div className="mb-3 text-[13.5px]">No bills tracked yet.</div>
+            <div className="mb-3 text-[15px]">No bills tracked yet.</div>
             <Link
               href="/docket/add"
               className="text-sm font-medium no-underline"
@@ -315,14 +367,14 @@ export default function DashboardPage() {
           <>
             {/* Bill filter pills */}
             <div className="mb-6 flex items-center gap-3">
-              <span className="text-[13px] font-medium" style={{ color: "#6E6E73" }}>
+              <span className="text-[14px] font-medium" style={{ color: "#6E6E73" }}>
                 Show:
               </span>
               <div className="flex flex-wrap gap-2">
                 <button
                   onClick={() => setBillFilter("all")}
                   style={{
-                    fontSize: "13px",
+                    fontSize: "14px",
                     fontWeight: 600,
                     padding: "6px 16px",
                     borderRadius: "9999px",
@@ -339,7 +391,7 @@ export default function DashboardPage() {
                     key={b.dvId}
                     onClick={() => setBillFilter(b.dvId)}
                     style={{
-                      fontSize: "13px",
+                      fontSize: "14px",
                       fontWeight: 600,
                       padding: "6px 16px",
                       borderRadius: "9999px",
@@ -400,7 +452,7 @@ export default function DashboardPage() {
               <div className="mb-8">
                 <div
                   style={{
-                    fontSize: "16px",
+                    fontSize: "18px",
                     fontWeight: 700,
                     color: "#16233F",
                     fontFamily: "var(--font-heading)",
@@ -443,12 +495,12 @@ export default function DashboardPage() {
                         className="flex items-center justify-between bg-white px-5 py-3"
                         style={{ borderBottom: "1px solid #EFEFF1" }}
                       >
-                        <div className="text-[13px] font-semibold" style={{ color: "#16233F" }}>
+                        <div className="text-[15px] font-semibold" style={{ color: "#16233F" }}>
                           {ag.name} — {ag.tasks.length} task{ag.tasks.length !== 1 ? "s" : ""}
                         </div>
                         <button
                           onClick={() => setSelectedAgency(null)}
-                          className="text-[12px]"
+                          className="text-[13px]"
                           style={{ color: "#86868B", cursor: "pointer", background: "none", border: "none" }}
                         >
                           Close
@@ -471,21 +523,21 @@ export default function DashboardPage() {
                                 style={{ backgroundColor: meta.dot }}
                               />
                               <div className="min-w-0 flex-1">
-                                <div className="text-[13px] leading-snug" style={{ color: "#1D1D1F" }}>
+                                <div className="text-[15px] leading-snug" style={{ color: "#1D1D1F" }}>
                                   {task.obligation}
                                 </div>
-                                <div className="mt-0.5 text-[11px]" style={{ color: "#86868B" }}>
+                                <div className="mt-0.5 text-[13px]" style={{ color: "#86868B" }}>
                                   {task.billNumber} · {task.citation}
                                 </div>
                               </div>
                               <div className="flex flex-shrink-0 items-center gap-3">
                                 {task.due && (
-                                  <span className="text-[12px] font-medium" style={{ color: "#1D1D1F" }}>
+                                  <span className="text-[16px] font-semibold" style={{ color: "#1D1D1F" }}>
                                     {formatDate(task.due)}
                                   </span>
                                 )}
                                 <span
-                                  className="rounded-full px-2 py-0.5 text-[10.5px] font-semibold"
+                                  className="rounded-full px-2 py-0.5 text-[12px] font-semibold"
                                   style={{ color: meta.color, backgroundColor: meta.bg }}
                                 >
                                   {meta.label}
@@ -503,7 +555,7 @@ export default function DashboardPage() {
 
             <div
               style={{
-                fontSize: "16px",
+                fontSize: "18px",
                 fontWeight: 700,
                 color: "#16233F",
                 fontFamily: "var(--font-heading)",
@@ -522,7 +574,7 @@ export default function DashboardPage() {
               {bills
                 .filter((b) => billFilter === "all" || b.dvId === billFilter)
                 .map((bill) => (
-                  <BillCard key={bill.dvId} bill={bill} />
+                  <BillCard key={bill.dvId} bill={bill} onRemove={handleRemoveBill} />
                 ))}
               {billCount < billLimit && (
                 <Link href="/docket/add" className="block no-underline">
@@ -539,8 +591,8 @@ export default function DashboardPage() {
                       <line x1="12" y1="8" x2="12" y2="16" />
                       <line x1="8" y1="12" x2="16" y2="12" />
                     </svg>
-                    <div className="text-[13.5px] font-medium">Add a bill</div>
-                    <div className="mt-0.5 text-xs">
+                    <div className="text-[15px] font-medium">Add a bill</div>
+                    <div className="mt-0.5 text-[13px]">
                       {billLimit - billCount} of {billLimit} slots remaining
                     </div>
                   </div>

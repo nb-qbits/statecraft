@@ -35,7 +35,7 @@ import type {
   Project,
 } from "./types.js";
 
-import { computeConfigHash, currentStageVersions } from "../shared/engine-versions.js";
+import { computeConfigHash, currentStageVersions, stageVersionsToRecord } from "../shared/engine-versions.js";
 import type { ProposalInsert } from "../../platform/db/review-repository.js";
 
 export interface PipelineServices {
@@ -355,7 +355,7 @@ export function createReviewService(deps: ReviewServiceDeps) {
         analysis = await reviewRepository.insertAnalysis(
           documentVersionId,
           configHash,
-          { ...versions },
+          stageVersionsToRecord(versions),
         );
       }
 

@@ -13,7 +13,7 @@ function span(text: string): AnchoredSpan {
 
 describe("grammar version", () => {
   it("exports a version string", () => {
-    expect(GRAMMAR_VERSION).toBe("1.6.1");
+    expect(GRAMMAR_VERSION).toBe("1.7.0");
   });
 });
 
@@ -476,6 +476,56 @@ describe("yearless deadline dates — no later than <month> <day>", () => {
     // day 30 passes basic bounds (1-31) since we can't validate without year
     expect(r.result.expression).toEqual({
       kind: "fixed_date", month: 2, day: 30, year: null,
+    });
+  });
+});
+
+describe("deadline with 'of each year' recurrence qualifier", () => {
+  it("parses 'Not later than March 31 of each calendar year'", () => {
+    const r = parseTemporalExpression(span("Not later than March 31 of each calendar year"));
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "recurrence", frequency: "yearly", interval: 1,
+      byMonth: 3, byMonthDay: 31,
+      yearParity: null, anchorEvent: null,
+      boundKind: "no_later_than", dayKind: null,
+    });
+  });
+
+  it("parses 'Not later than December 31 of each calendar year'", () => {
+    const r = parseTemporalExpression(span("Not later than December 31 of each calendar year"));
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "recurrence", frequency: "yearly", interval: 1,
+      byMonth: 12, byMonthDay: 31,
+      yearParity: null, anchorEvent: null,
+      boundKind: "no_later_than", dayKind: null,
+    });
+  });
+
+  it("parses 'by June 30 of each year'", () => {
+    const r = parseTemporalExpression(span("by June 30 of each year"));
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "recurrence", frequency: "yearly", interval: 1,
+      byMonth: 6, byMonthDay: 30,
+      yearParity: null, anchorEvent: null,
+      boundKind: "no_later_than", dayKind: null,
+    });
+  });
+
+  it("dehyphenates 'Not later than December 31 of each cal- endar year'", () => {
+    const r = parseTemporalExpression(span("Not later than December 31 of each cal- endar year"));
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "recurrence", frequency: "yearly", interval: 1,
+      byMonth: 12, byMonthDay: 31,
+      yearParity: null, anchorEvent: null,
+      boundKind: "no_later_than", dayKind: null,
     });
   });
 });

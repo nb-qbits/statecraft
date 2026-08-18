@@ -131,7 +131,7 @@ function DayCell({ day, dateKey, isToday, isSelected, tasks, onSelect }: DayCell
       {/* Day number */}
       <span
         style={{
-          fontSize: "13px",
+          fontSize: "14px",
           fontWeight: isToday ? 700 : 500,
           color: isToday ? "#C8983E" : "#1D1D1F",
           width: "24px",
@@ -220,7 +220,7 @@ function CompactTaskCard({ task }: { task: DocketTask }) {
       {task.billNumber && (
         <div
           style={{
-            fontSize: "10.5px",
+            fontSize: "14px",
             color: "#86868B",
             marginBottom: "4px",
           }}
@@ -241,7 +241,7 @@ function CompactTaskCard({ task }: { task: DocketTask }) {
       >
         <div
           style={{
-            fontSize: "11px",
+            fontSize: "13px",
             color: "#6E6E73",
             overflow: "hidden",
             textOverflow: "ellipsis",
@@ -253,7 +253,7 @@ function CompactTaskCard({ task }: { task: DocketTask }) {
         </div>
         <span
           style={{
-            fontSize: "10.5px",
+            fontSize: "12px",
             fontWeight: 600,
             color: meta.color,
             backgroundColor: meta.bg,
@@ -270,7 +270,7 @@ function CompactTaskCard({ task }: { task: DocketTask }) {
       {/* Obligation text */}
       <div
         style={{
-          fontSize: "12.5px",
+          fontSize: "15px",
           color: "#1D1D1F",
           lineHeight: 1.45,
           display: "-webkit-box",
@@ -290,14 +290,14 @@ function CompactTaskCard({ task }: { task: DocketTask }) {
             display: "flex",
             alignItems: "baseline",
             gap: "6px",
-            fontSize: "12px",
+            fontSize: "16px",
           }}
         >
           <span style={{ fontWeight: 600, color: "#1D1D1F" }}>
             {formatDate(task.due)}
           </span>
           {daysLabel && (
-            <span style={{ fontSize: "11px", color: meta.color, fontWeight: 500 }}>
+            <span style={{ fontSize: "13px", color: meta.color, fontWeight: 500 }}>
               {daysLabel}
             </span>
           )}
@@ -305,7 +305,7 @@ function CompactTaskCard({ task }: { task: DocketTask }) {
       )}
 
       {/* Provenance summary */}
-      <div style={{ fontSize: "10.5px", color: "#AEAEB2", marginTop: "4px" }}>
+      <div style={{ fontSize: "14px", color: "#AEAEB2", marginTop: "4px" }}>
         {provenanceSummary(task)}
       </div>
     </div>
@@ -325,7 +325,7 @@ function DayDetailPanel({
         style={{
           padding: "24px 20px",
           color: "#AEAEB2",
-          fontSize: "13px",
+          fontSize: "14px",
           textAlign: "center",
         }}
       >
@@ -339,7 +339,7 @@ function DayDetailPanel({
       <div
         style={{
           padding: "16px 16px 8px",
-          fontSize: "15px",
+          fontSize: "17px",
           fontWeight: 600,
           color: "#16233F",
           fontFamily:
@@ -354,7 +354,7 @@ function DayDetailPanel({
           style={{
             padding: "20px 16px",
             color: "#AEAEB2",
-            fontSize: "13px",
+            fontSize: "14px",
           }}
         >
           No deadlines on this day.
@@ -458,7 +458,7 @@ export default function CalendarPage() {
         <div
           style={{
             fontFamily: "var(--font-heading)",
-            fontSize: "25px",
+            fontSize: "30px",
             fontWeight: 700,
             letterSpacing: "-0.03em",
             color: "#16233F",
@@ -466,7 +466,7 @@ export default function CalendarPage() {
         >
           Calendar
         </div>
-        <div style={{ fontSize: "12.5px", color: "#6E6E73", fontFamily: "var(--font-body)" }}>
+        <div style={{ fontSize: "14px", color: "#6E6E73", fontFamily: "var(--font-body)" }}>
           Today &mdash; {todayLabel}
         </div>
       </div>
@@ -488,7 +488,7 @@ export default function CalendarPage() {
                 type="button"
                 onClick={() => setBillFilter("all")}
                 style={{
-                  fontSize: "12.5px",
+                  fontSize: "14px",
                   fontWeight: 600,
                   padding: "5px 14px",
                   borderRadius: "9999px",
@@ -508,7 +508,7 @@ export default function CalendarPage() {
                   type="button"
                   onClick={() => setBillFilter(b.dvId)}
                   style={{
-                    fontSize: "12.5px",
+                    fontSize: "14px",
                     fontWeight: 600,
                     padding: "5px 14px",
                     borderRadius: "9999px",
@@ -546,7 +546,7 @@ export default function CalendarPage() {
                 </button>
                 <span
                   style={{
-                    fontSize: "16px",
+                    fontSize: "18px",
                     fontWeight: 700,
                     color: "#16233F",
                     fontFamily:
@@ -584,7 +584,7 @@ export default function CalendarPage() {
                   )
                 }
                 style={{
-                  fontSize: "12.5px",
+                  fontSize: "14px",
                   fontWeight: 600,
                   padding: "6px 16px",
                   borderRadius: "8px",
@@ -619,7 +619,7 @@ export default function CalendarPage() {
                       style={{
                         padding: "8px 0",
                         textAlign: "center",
-                        fontSize: "11.5px",
+                        fontSize: "13px",
                         fontWeight: 600,
                         color: "#86868B",
                         textTransform: "uppercase",
@@ -680,7 +680,7 @@ export default function CalendarPage() {
               <div className="mt-8">
                 <div
                   style={{
-                    fontSize: "14px",
+                    fontSize: "16px",
                     fontWeight: 600,
                     color: "#16233F",
                     marginBottom: "4px",
@@ -690,7 +690,7 @@ export default function CalendarPage() {
                 </div>
                 <div
                   style={{
-                    fontSize: "12.5px",
+                    fontSize: "14px",
                     color: "#86868B",
                     marginBottom: "12px",
                   }}

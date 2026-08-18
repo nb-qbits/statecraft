@@ -234,6 +234,8 @@ function createMockReviewRepository(): ReviewRepository {
     getRecordsByReviewEvent: vi.fn(async (eventId: ReviewEventId) =>
       storedRecords.filter((r) => r.reviewEventId === eventId),
     ),
+    getAcceptedRecordCountByVersion: vi.fn(async () => 0),
+    deleteAllReviewDataByVersion: vi.fn(async () => ({ deletedAnalyses: 0, deletedProposals: 0, deletedRecords: 0 })),
     getEvaluatorPromptHash: vi.fn(async () => "ph_eval_test"),
     getIdempotencyResponse: vi.fn(async () => null),
     setIdempotencyResponse: vi.fn(),
@@ -269,6 +271,7 @@ function createDeps() {
       insertVersion: vi.fn(),
       listVersions: vi.fn(),
       getDocument: vi.fn(),
+      updateJurisdiction: vi.fn(),
     } as unknown as IngestionRepository,
     parsingRepository: {
       getSegmentsByVersion: vi.fn(async () => []),

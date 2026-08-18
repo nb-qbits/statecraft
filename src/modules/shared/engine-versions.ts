@@ -9,6 +9,7 @@ import { ROUTER_VERSION } from "../routing/types.js";
 import { REVIEW_VERSION } from "../review/types.js";
 
 export interface StageVersions {
+  parser?: string | undefined;
   scanner: string;
   extractor: string;
   anchorer: string;
@@ -19,8 +20,11 @@ export interface StageVersions {
   review: string;
 }
 
-export function currentStageVersions(): StageVersions {
+export function currentStageVersions(
+  runtime?: { parserVersion?: string },
+): StageVersions {
   return {
+    parser: runtime?.parserVersion,
     scanner: SCANNER_VERSION,
     extractor: EXTRACTOR_VERSION,
     anchorer: ANCHORER_VERSION,
@@ -35,10 +39,18 @@ export function currentStageVersions(): StageVersions {
 export function computeConfigHash(versions?: StageVersions): string {
   const v = versions ?? currentStageVersions();
   const ordered = [
-    v.scanner, v.extractor, v.anchorer, v.grammar,
+    v.parser ?? "", v.scanner, v.extractor, v.anchorer, v.grammar,
     v.resolver, v.evaluator, v.router, v.review,
   ];
   return createHash("sha256").update(ordered.join(":")).digest("hex");
+}
+
+export function stageVersionsToRecord(versions: StageVersions): Record<string, string> {
+  const result: Record<string, string> = {};
+  for (const [key, val] of Object.entries(versions)) {
+    if (val !== undefined) result[key] = val;
+  }
+  return result;
 }
 
 export function staleStages(

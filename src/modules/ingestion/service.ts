@@ -39,6 +39,7 @@ export interface IngestionRepository {
   getVersion(documentVersionId: DocumentVersionId): Promise<DocumentVersion | null>;
   listVersions(documentId: DocumentId): Promise<DocumentVersion[]>;
   getDocument(documentId: DocumentId): Promise<SourceDocument | null>;
+  updateJurisdiction(documentVersionId: DocumentVersionId, jurisdiction: string): Promise<void>;
 }
 
 export interface UploadInput {

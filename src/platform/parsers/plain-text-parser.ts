@@ -4,10 +4,12 @@ import {
   splitByStructure,
   splitOnEmbeddedSections,
   isPageFooter,
+  detectLineNumbers,
+  stripDetectedLineNumber,
 } from "./structural-segmentation.js";
 
 const ADAPTER_ID = "plain-text";
-const VERSION = "1.4.0";
+const VERSION = "1.6.0";
 
 const LINE_NUMBER_MARGIN = /^\s*\d{1,4}\s{2,}/;
 
@@ -114,27 +116,6 @@ export function createPlainTextParser(): DocumentParser {
   };
 }
 
-function detectLineNumbers(lines: string[]): boolean {
-  const candidateLines = lines.filter(l => l.trim().length > 0).slice(0, 30);
-  if (candidateLines.length < 5) return false;
-
-  let matchCount = 0;
-  let lastNumber = 0;
-  let sequentialCount = 0;
-
-  for (const line of candidateLines) {
-    const match = /^(\s*\d{1,4})\s+/.exec(line);
-    if (match) {
-      matchCount++;
-      const num = parseInt(match[1]!.trim(), 10);
-      if (num === lastNumber + 1) sequentialCount++;
-      lastNumber = num;
-    }
-  }
-
-  return matchCount >= candidateLines.length * 0.7 && sequentialCount >= 3;
-}
-
 function preprocessLines(lines: string[], hasLineNumbers: boolean): PreprocessResult {
   const processed: string[] = [];
   let strippedChars = 0;
@@ -162,14 +143,4 @@ function trimTrailingBlanks(lines: string[]): string[] {
 
 function stripLineNumberMargin(line: string): string {
   return line.replace(LINE_NUMBER_MARGIN, "");
-}
-
-function stripDetectedLineNumber(line: string): string {
-  let result = line;
-  for (let i = 0; i < 3; i++) {
-    const stripped = result.replace(/^\s*\d{1,4}\s+/, "");
-    if (stripped === result) break;
-    result = stripped;
-  }
-  return result;
 }

@@ -189,6 +189,7 @@ function createMockRepos() {
     getVersion: vi.fn(async () => makeVersion()),
     listVersions: vi.fn(),
     getDocument: vi.fn(),
+    updateJurisdiction: vi.fn(),
   };
 
   const parsingRepository: ParsingRepository = {

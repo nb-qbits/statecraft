@@ -7,7 +7,7 @@ const NOT_PDF = Buffer.from("not a pdf");
 
 function makeSidecarResponse(overrides: Partial<SidecarResponse> = {}): SidecarResponse {
   return {
-    version: "1.1.0",
+    version: "1.3.0",
     pages: [
       {
         pageNumber: 1,
@@ -27,6 +27,7 @@ function makeSidecarResponse(overrides: Partial<SidecarResponse> = {}): SidecarR
 
 function makeSidecarClient(response?: SidecarResponse | Error): SidecarClient {
   return {
+    getContractVersion: vi.fn(async () => "1.3.0"),
     parsePdf: vi.fn(async () => {
       if (response instanceof Error) throw response;
       return response ?? makeSidecarResponse();
@@ -37,7 +38,7 @@ function makeSidecarClient(response?: SidecarResponse | Error): SidecarClient {
 describe("pdf-parser", () => {
   it("has correct parserVersion", () => {
     const parser = createPdfParser(makeSidecarClient());
-    expect(parser.parserVersion).toBe("1.1.0");
+    expect(parser.parserVersion).toBe("1.4.0");
   });
 
   it("rejects non-PDF input", async () => {
@@ -58,7 +59,7 @@ describe("pdf-parser", () => {
     expect(result.paragraphs.length).toBeGreaterThan(0);
     expect(result.fidelity).toBe("inferred");
     expect(result.parserAdapter).toBe("pdf");
-    expect(result.parserVersion).toBe("1.1.0");
+    expect(result.parserVersion).toBe("1.4.0");
   });
 
   it("applies structural segmentation to sidecar output", async () => {
@@ -155,6 +156,37 @@ describe("pdf-parser", () => {
     const allText = result.paragraphs.map(p => p.runs[0]!.text).join(" ");
     expect(allText).not.toContain("- 1 -");
   });
+
+  it("strips embedded line numbers from congressional-style PDF text", async () => {
+    const response = makeSidecarResponse({
+      pages: [
+        {
+          pageNumber: 1,
+          text: [
+            "1 Be it enacted by the Senate and House",
+            "2 of Representatives of the United States of America",
+            "3 in Congress assembled,",
+            "4 SECTION 1. SHORT TITLE.",
+            "5 This Act may be cited as the ''Example Act''.",
+            "6 SEC. 2. DEADLINE.",
+            "7 Not later than 90 days after the date",
+            "8 of the enactment of this Act, the Secretary",
+            "9 shall submit a report.",
+          ].join("\n"),
+          hasTextLayer: true,
+          charCount: 300,
+        },
+      ],
+      metadata: { fonts: ["Times-Roman"], pageCount: 1, hasTextLayer: true },
+    });
+    const parser = createPdfParser(makeSidecarClient(response));
+    const result = await parser(PDF_MAGIC);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const allText = result.paragraphs.map(p => p.runs[0]!.text).join(" ");
+    expect(allText).toContain("Not later than 90 days after the date");
+    expect(allText).not.toMatch(/^\d+\s+Be it/m);
+  });
 });
 
 describe("createSidecarClient", () => {
@@ -173,7 +205,7 @@ describe("createSidecarClient", () => {
     const client = createSidecarClient("http://localhost:8000");
     const result = await client.parsePdf(Buffer.from("pdf bytes"));
 
-    expect(result.version).toBe("1.1.0");
+    expect(result.version).toBe("1.3.0");
     expect(result.pages).toHaveLength(1);
     expect(globalThis.fetch).toHaveBeenCalledOnce();
   });

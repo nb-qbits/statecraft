@@ -66,7 +66,7 @@ function ChevronIcon({ open }: { open: boolean }) {
         display: "inline-block",
         transition: "transform 0.2s ease",
         transform: open ? "rotate(90deg)" : "rotate(0deg)",
-        fontSize: "11.5px",
+        fontSize: "13px",
         color: "#86868B",
       }}
     >
@@ -83,12 +83,12 @@ function ComputedRight({ task }: { task: DocketTask }) {
     <div className="flex items-center gap-3 shrink-0">
       <div className="text-right">
         {task.due && (
-          <div style={{ fontSize: "13px", fontWeight: 500, color: "#1D1D1F" }}>
+          <div style={{ fontSize: "16px", fontWeight: 600, color: "#1D1D1F" }}>
             {formatDate(task.due)}
           </div>
         )}
         {daysLabel && (
-          <div style={{ fontSize: "11.5px", fontWeight: 500, color: meta.color }}>
+          <div style={{ fontSize: "13px", fontWeight: 500, color: meta.color }}>
             {daysLabel}
           </div>
         )}
@@ -107,18 +107,18 @@ function ReviewerRight({ task }: { task: DocketTask }) {
       <div className="text-right">
         <div
           className="flex items-center justify-end gap-1 mb-0.5"
-          style={{ fontSize: "10.5px", color: "#A67326", fontWeight: 600 }}
+          style={{ fontSize: "12px", color: "#A67326", fontWeight: 600 }}
         >
           <PersonIcon />
           <span>Entered by {task.reviewerName}</span>
         </div>
         {task.due && (
-          <div style={{ fontSize: "13px", fontWeight: 500, color: "#1D1D1F" }}>
+          <div style={{ fontSize: "16px", fontWeight: 600, color: "#1D1D1F" }}>
             {formatDate(task.due)}
           </div>
         )}
         {daysLabel && (
-          <div style={{ fontSize: "11.5px", fontWeight: 500, color: meta.color }}>
+          <div style={{ fontSize: "13px", fontWeight: 500, color: meta.color }}>
             {daysLabel}
           </div>
         )}
@@ -157,7 +157,7 @@ function UnresolvedRight({
         <div
           className="text-right"
           style={{
-            fontSize: "12px",
+            fontSize: "14px",
             color: "#5B5B8C",
             fontWeight: 500,
             maxWidth: "230px",
@@ -173,7 +173,7 @@ function UnresolvedRight({
             onClick={() => setFormOpen(true)}
             className="flex items-center gap-1"
             style={{
-              fontSize: "12px",
+              fontSize: "14px",
               color: "#5B5B8C",
               fontWeight: 600,
               background: "none",
@@ -187,7 +187,7 @@ function UnresolvedRight({
           </button>
         ) : (
           <div className="flex items-center gap-2">
-            <span style={{ fontSize: "12px", color: "#5B5B8C" }}>
+            <span style={{ fontSize: "13px", color: "#5B5B8C" }}>
               {task.inputAsk}
             </span>
             <input
@@ -195,7 +195,7 @@ function UnresolvedRight({
               value={dateValue}
               onChange={(e) => setDateValue(e.target.value)}
               style={{
-                fontSize: "12px",
+                fontSize: "13px",
                 border: "1px solid #EFEFF1",
                 borderRadius: "6px",
                 padding: "4px 8px",
@@ -205,7 +205,7 @@ function UnresolvedRight({
               onClick={handleSave}
               disabled={saving || !dateValue}
               style={{
-                fontSize: "12px",
+                fontSize: "14px",
                 fontWeight: 600,
                 backgroundColor: "#5B5B8C",
                 color: "#FFFFFF",
@@ -224,7 +224,7 @@ function UnresolvedRight({
                 setDateValue("");
               }}
               style={{
-                fontSize: "12px",
+                fontSize: "13px",
                 color: "#5B5B8C",
                 background: "none",
                 border: "none",
@@ -252,7 +252,7 @@ function ProvenanceDrillDown({ task }: { task: DocketTask }) {
         onClick={() => setOpen(!open)}
         className="flex items-center gap-1.5"
         style={{
-          fontSize: "11.5px",
+          fontSize: "13px",
           color: "#86868B",
           background: "none",
           border: "none",
@@ -284,12 +284,12 @@ function ProvenanceDrillDown({ task }: { task: DocketTask }) {
                   color: "#AEAEB2",
                   fontWeight: 600,
                   minWidth: "44px",
-                  fontSize: "12px",
+                  fontSize: "13px",
                 }}
               >
                 {row.actor}
               </span>
-              <span style={{ fontSize: "12px" }}>
+              <span style={{ fontSize: "13px" }}>
                 <span style={{ color: "#6E6E73" }}>{row.label}</span>
                 <span style={{ color: "#6E6E73" }}> &mdash; </span>
                 <span style={{ color: "#1D1D1F" }}>{row.result}</span>
@@ -306,7 +306,7 @@ export function TaskCard({ task, onAddDate, showBillContext, id }: TaskCardProps
   const meta = STATUS_META[task.status];
 
   return (
-    <div id={id} style={{ padding: "15px 20px", borderBottom: "1px solid #EFEFF1" }}>
+    <div id={id} style={{ padding: "18px 20px", borderBottom: "1px solid #EFEFF1" }}>
       <div className="flex items-center gap-4">
         {/* Status dot */}
         <div
@@ -324,12 +324,12 @@ export function TaskCard({ task, onAddDate, showBillContext, id }: TaskCardProps
         {/* Content area */}
         <div className="flex-1 min-w-0">
           <div
-            style={{ fontSize: "14px", color: "#1D1D1F", marginBottom: "2px" }}
+            style={{ fontSize: "15px", color: "#1D1D1F", marginBottom: "2px" }}
             className="truncate"
           >
             {task.obligation}
           </div>
-          <div style={{ fontSize: "11.5px", color: "#86868B" }}>
+          <div style={{ fontSize: "13px", color: "#86868B" }}>
             {showBillContext && task.billNumber && (
               <span style={{ marginRight: "6px" }}>{task.billNumber} &middot;</span>
             )}

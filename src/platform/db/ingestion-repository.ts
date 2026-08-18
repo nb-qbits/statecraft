@@ -153,6 +153,18 @@ export function createIngestionRepository(
       return rows.map(rowToDocumentVersion);
     },
 
+    async updateJurisdiction(
+      documentVersionId: DocumentVersionId,
+      jurisdiction: string,
+    ): Promise<void> {
+      await db
+        .update(documentVersions)
+        .set({
+          legalIdentity: sql`jsonb_set(legal_identity, '{jurisdiction}', ${JSON.stringify(jurisdiction)}::jsonb)`,
+        })
+        .where(eq(documentVersions.documentVersionId, documentVersionId));
+    },
+
     async getDocument(
       documentId: DocumentId,
     ): Promise<SourceDocument | null> {

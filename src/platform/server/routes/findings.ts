@@ -24,6 +24,7 @@ export interface FindingsDeps {
   evaluationRepository: EvaluationRepository;
   routingRepository: RoutingRepository;
   reviewRepository: ReviewRepository;
+  parserVersion: string;
   logger: Logger;
 }
 
@@ -34,7 +35,7 @@ export function registerFindingsRoutes(
   const {
     ingestionRepository, parsingRepository, anchoringRepository,
     grammarRepository, resolverRepository, evaluationRepository,
-    routingRepository, reviewRepository, logger,
+    routingRepository, reviewRepository, parserVersion, logger,
   } = deps;
 
   app.get<{ Params: { documentVersionId: string } }>(
@@ -63,11 +64,12 @@ export function registerFindingsRoutes(
 
         const latestAnalysis = await reviewRepository.getLatestCompletedAnalysis(dvId);
         const latestAnalysisId = latestAnalysis?.analysisId ?? null;
-        const proposals = latestAnalysisId
+        const proposals = (latestAnalysisId
           ? allProposals.filter((p) => p.analysisId === latestAnalysisId)
-          : allProposals;
+          : allProposals
+        ).filter((p) => p.kind !== "effective_date");
 
-        const current = currentStageVersions();
+        const current = currentStageVersions({ parserVersion });
         const currentHash = computeConfigHash(current);
         let stale: string[] = [];
         if (latestAnalysis && latestAnalysis.configHash !== currentHash) {

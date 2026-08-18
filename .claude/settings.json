@@ -201,7 +201,16 @@
       "Bash(screencapture -x /tmp/docket-verify-dash3.png)",
       "Bash(screencapture -x /tmp/docket-verify-dash4.png)",
       "Bash(PGPASSWORD=policyaction psql -h localhost -U policyaction -d policyaction -c \"\\\\dt\")",
-      "Bash(PGPASSWORD=policyaction psql -h localhost -p 5432 -U policyaction -d policyaction -t -A -c \"SELECT id FROM document_versions LIMIT 10;\")"
+      "Bash(PGPASSWORD=policyaction psql -h localhost -p 5432 -U policyaction -d policyaction -t -A -c \"SELECT id FROM document_versions LIMIT 10;\")",
+      "Bash(sed -i '' 's/\"1\\\\.4\\\\.0\"/\"1.5.0\"/g' src/platform/parsers/plain-text-parser.test.ts)",
+      "Bash(sed -i '' 's/\"1\\\\.1\\\\.0\"/\"1.2.0\"/g' src/platform/parsers/pdf-parser.test.ts)",
+      "Bash(node --loader ts-node/esm -e ' *)",
+      "Bash(rm -d /tmp/hr2409.pdf 2>/dev/null; docker cp statecraft-minio-1:/data/policyaction/documents/af0455190698bcd19d2b11ae689c9225f36c5f205bcf0ae1c3ef94577303bc00/018681ba-0c44-40fb-bb41-26663525dfe2/part.1 /tmp/hr2409.pdf)",
+      "Bash(AWS_ACCESS_KEY_ID=minioadmin AWS_SECRET_ACCESS_KEY=minioadmin aws --endpoint-url http://localhost:9000 s3 cp s3://policyaction/documents/af0455190698bcd19d2b11ae689c9225f36c5f205bcf0ae1c3ef94577303bc00 /tmp/hr2409_raw.pdf)",
+      "Bash(AWS_ACCESS_KEY_ID=minioadmin AWS_SECRET_ACCESS_KEY=minioadmin aws --endpoint-url http://localhost:9000 s3 cp s3://policyaction/documents/cc28611c84b515a1fb700c2908e804ddabd329cb442765a1e17346b691ad845c /tmp/va_bill.pdf)",
+      "Bash(AWS_ACCESS_KEY_ID=minioadmin AWS_SECRET_ACCESS_KEY=minioadmin aws --endpoint-url http://localhost:9000 s3 cp s3://policyaction/documents/639b10b5236e418ebd3adbe9ae9c233c56238247162b887bc455150e8b24f7a1 /tmp/hr5749.pdf)",
+      "Bash(DOCKER_HOST=unix:///var/run/docker.sock docker ps)",
+      "Bash(open -a Docker)"
     ],
     "deny": [
       "Read(./.env)",
@@ -227,7 +236,8 @@
       "/Users/vgrover/Downloads/software/statecraft/web/app/plan",
       "/Users/vgrover/Downloads/software/statecraft/web/app/docket/bill",
       "/Users/vgrover/Downloads/software/statecraft/web/app/api/v1/documents/[documentVersionId]",
-      "/Users/vgrover/Downloads/software/statecraft/web/app/api/v1/documents/[documentVersionId]/anchors/[anchorId]"
+      "/Users/vgrover/Downloads/software/statecraft/web/app/api/v1/documents/[documentVersionId]/anchors/[anchorId]",
+      "/private/tmp/hr2409.pdf"
     ]
   }
 }

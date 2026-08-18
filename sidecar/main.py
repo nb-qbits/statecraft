@@ -9,7 +9,7 @@ import re
 
 app = FastAPI(title="policyaction-sidecar", version="1.0.0")
 
-CONTRACT_VERSION = "1.0.0"
+CONTRACT_VERSION = "1.1.0"
 MIN_BODY_FONT_SIZE = 9.0
 
 PAGE_FOOTER_RE = re.compile(
@@ -45,6 +45,26 @@ def _is_line_number_row(row_chars: list[dict], body_margin: float) -> bool:
     return all(c["text"].strip().isdigit() for c in content)
 
 
+def _build_line_with_gaps(chars: list[dict]) -> str:
+    """Concatenate characters, inserting a space when the x0 gap between
+    consecutive non-space characters exceeds 30% of the font size.
+    Handles small-caps headings where inter-word spacing is positional,
+    not an explicit space character."""
+    if not chars:
+        return ""
+    parts: list[str] = []
+    prev_x1: float | None = None
+    for c in chars:
+        if prev_x1 is not None and c["text"].strip():
+            gap = c["x0"] - prev_x1
+            threshold = c.get("size", 12.0) * 0.3
+            if gap > threshold:
+                parts.append(" ")
+        parts.append(c["text"])
+        prev_x1 = c["x0"] + c.get("width", 0)
+    return "".join(parts)
+
+
 def _extract_page(page) -> dict:
     """Extract text from a single page with geometric line-number stripping."""
     raw_chars = page.chars
@@ -69,13 +89,14 @@ def _extract_page(page) -> dict:
     page_width = page.width
     body_margin = _find_body_left_margin(chars)
 
-    # Group chars by top coordinate (1pt tolerance for same line)
+    # Group chars by top coordinate (3pt tolerance catches small-caps
+    # heading fragments rendered at a slightly different baseline)
     rows: dict[float, list[dict]] = {}
     for c in chars:
         top = round(c["top"], 0)
         matched = False
         for existing_top in list(rows.keys()):
-            if abs(existing_top - top) <= 1:
+            if abs(existing_top - top) <= 3:
                 rows[existing_top].append(c)
                 matched = True
                 break
@@ -109,7 +130,7 @@ def _extract_page(page) -> dict:
         if not content:
             continue
 
-        line = "".join(c["text"] for c in content).rstrip()
+        line = _build_line_with_gaps(content).rstrip()
         if not line.strip():
             continue
         text_lines.append(line)
@@ -132,7 +153,7 @@ def _extract_page(page) -> dict:
 
 @app.get("/health")
 async def health():
-    return {"status": "ok"}
+    return {"status": "ok", "contractVersion": CONTRACT_VERSION}
 
 
 @app.post("/v1/parse")

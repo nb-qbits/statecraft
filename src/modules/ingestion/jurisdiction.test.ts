@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { normalizeJurisdiction } from "./jurisdiction.js";
+import { normalizeJurisdiction, inferJurisdictionFromText } from "./jurisdiction.js";
 
 describe("normalizeJurisdiction", () => {
   it("normalizes 'Virginia' to 'us-va'", () => {
@@ -28,5 +28,21 @@ describe("normalizeJurisdiction", () => {
 
   it("trims whitespace", () => {
     expect(normalizeJurisdiction("  Virginia  ")).toBe("us-va");
+  });
+});
+
+describe("inferJurisdictionFromText", () => {
+  it("detects federal enactment clause", () => {
+    const text = "Be it enacted by the Senate and House of Representatives of the United States of America in Congress assembled,";
+    expect(inferJurisdictionFromText(text)).toBe("us-fed");
+  });
+
+  it("detects Virginia enactment clause", () => {
+    const text = "Be it enacted by the General Assembly of Virginia:";
+    expect(inferJurisdictionFromText(text)).toBe("us-va");
+  });
+
+  it("returns null for unrecognized text", () => {
+    expect(inferJurisdictionFromText("Section 1. Short title.")).toBeNull();
   });
 });

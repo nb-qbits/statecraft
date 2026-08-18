@@ -1,4 +1,4 @@
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, inArray } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { createHash } from "node:crypto";
 import {
@@ -224,6 +224,14 @@ export interface ReviewRepository {
   getOccurrencesByRecord(
     recordVersionId: string,
   ): Promise<Occurrence[]>;
+
+  // Force-reparse support
+  getAcceptedRecordCountByVersion(
+    documentVersionId: DocumentVersionId,
+  ): Promise<number>;
+  deleteAllReviewDataByVersion(
+    documentVersionId: DocumentVersionId,
+  ): Promise<{ deletedAnalyses: number; deletedProposals: number; deletedRecords: number }>;
 
   // Provenance helpers
   getEvaluatorPromptHash(
@@ -687,6 +695,68 @@ export function createReviewRepository(
         responseStatus: status,
         responseBody: body as Record<string, unknown>,
       });
+    },
+
+    async getAcceptedRecordCountByVersion(
+      documentVersionId: DocumentVersionId,
+    ): Promise<number> {
+      const rows = await db
+        .select({ id: registerRecords.recordId })
+        .from(registerRecords)
+        .where(
+          and(
+            eq(registerRecords.documentVersionId, documentVersionId),
+            eq(registerRecords.status, "active"),
+          ),
+        );
+      return rows.length;
+    },
+
+    async deleteAllReviewDataByVersion(
+      documentVersionId: DocumentVersionId,
+    ): Promise<{ deletedAnalyses: number; deletedProposals: number; deletedRecords: number }> {
+      const recordRows = await db
+        .select({ recordVersionId: registerRecords.recordVersionId })
+        .from(registerRecords)
+        .where(eq(registerRecords.documentVersionId, documentVersionId));
+      if (recordRows.length > 0) {
+        const rvIds = recordRows.map(r => r.recordVersionId);
+        await db.delete(deadlineOccurrences).where(
+          inArray(deadlineOccurrences.recordVersionId, rvIds),
+        );
+      }
+
+      const deletedRecords = await db
+        .delete(registerRecords)
+        .where(eq(registerRecords.documentVersionId, documentVersionId))
+        .returning({ id: registerRecords.recordId });
+
+      const proposalRows = await db
+        .select({ proposalId: proposals.proposalId })
+        .from(proposals)
+        .where(eq(proposals.documentVersionId, documentVersionId));
+      if (proposalRows.length > 0) {
+        const pIds = proposalRows.map(p => p.proposalId);
+        await db.delete(reviewEvents).where(
+          inArray(reviewEvents.proposalId, pIds),
+        );
+      }
+
+      const deletedProposals = await db
+        .delete(proposals)
+        .where(eq(proposals.documentVersionId, documentVersionId))
+        .returning({ id: proposals.proposalId });
+
+      const deletedAnalyses = await db
+        .delete(analyses)
+        .where(eq(analyses.documentVersionId, documentVersionId))
+        .returning({ id: analyses.analysisId });
+
+      return {
+        deletedAnalyses: deletedAnalyses.length,
+        deletedProposals: deletedProposals.length,
+        deletedRecords: deletedRecords.length,
+      };
     },
 
     async insertOccurrences(

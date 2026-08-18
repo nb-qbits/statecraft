@@ -12,7 +12,7 @@ export function StatusBadge({ status }: StatusBadgeProps) {
 
   return (
     <span
-      className="rounded-full px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap"
+      className="rounded-full px-2.5 py-1 text-[12px] font-semibold whitespace-nowrap"
       style={{ backgroundColor: meta.bg, color: meta.color }}
     >
       {meta.label}

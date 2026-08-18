@@ -146,6 +146,7 @@ function createStubs() {
     ),
     listVersions: vi.fn(),
     getDocument: vi.fn(),
+    updateJurisdiction: vi.fn(),
   };
 
   const parsingRepository: ParsingRepository = {

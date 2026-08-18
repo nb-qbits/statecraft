@@ -125,8 +125,10 @@ export async function uploadDocument(
 export async function* streamAnalysis(
   dvId: string,
   signal?: AbortSignal,
+  options?: { forceReparse?: boolean },
 ): AsyncGenerator<StageEvent> {
-  const res = await fetch(`/api/v1/documents/${dvId}/analyze`, {
+  const qs = options?.forceReparse ? "?forceReparse=true" : "";
+  const res = await fetch(`/api/v1/documents/${dvId}/analyze${qs}`, {
     method: "POST",
     signal,
   });

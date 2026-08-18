@@ -124,7 +124,12 @@ export class TemporalParser extends CstParser {
     this.OR2([
       { ALT: () => {
         this.SUBRULE(this.fixedDateOptionalYear);
-        this.OPTION(() => this.SUBRULE(this.parityClause));
+        this.OPTION(() => {
+          this.OR3([
+            { ALT: () => this.SUBRULE(this.parityClause) },
+            { ALT: () => this.SUBRULE(this.ofEachYearClause) },
+          ]);
+        });
       }},
       { ALT: () => {
         this.SUBRULE(this.deadlineEventAnchor);
@@ -136,6 +141,14 @@ export class TemporalParser extends CstParser {
         this.OPTION3(() => this.SUBRULE(this.referenceClause));
       }},
     ]);
+  });
+
+  // "of each [calendar] year"
+  ofEachYearClause = this.RULE("ofEachYearClause", () => {
+    this.CONSUME(Of);
+    this.CONSUME(Each);
+    this.OPTION(() => this.CONSUME(Calendar));
+    this.CONSUME(Years);
   });
 
   // event anchor within deadline: "the first day of each regular session"

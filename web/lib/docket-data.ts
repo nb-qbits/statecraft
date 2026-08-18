@@ -32,6 +32,16 @@ export function removeStoredBill(dvId: string): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(bills));
 }
 
+export function removeAllStoredBills(): void {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify([]));
+}
+
+export function keepOnlyBills(dvIds: string[]): void {
+  const keep = new Set(dvIds);
+  const bills = getStoredBills().filter((b) => keep.has(b.dvId));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(bills));
+}
+
 export async function loadBill(dvId: string): Promise<DocketBill | null> {
   try {
     const data: FindingsResponse = await fetchFindings(dvId);
@@ -45,7 +55,7 @@ export async function loadBill(dvId: string): Promise<DocketBill | null> {
       : `${identity.instrumentType} ${identity.number}`;
 
     const tasks = data.findings
-      .filter((f) => f.anchored && f.grammarParsed)
+      .filter((f) => f.anchored)
       .map((f) => findingToDocketTask(f, dvId, number));
 
     const stored = getStoredBills().find((b) => b.dvId === dvId);

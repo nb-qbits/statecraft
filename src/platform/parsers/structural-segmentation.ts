@@ -1,11 +1,12 @@
 import type { ParsedParagraph, ParsedRun } from "../../modules/parsing/types.js";
 
-export const SECTION_HEADING = /^(SECTION|Section|ARTICLE|Article|CHAPTER|Chapter|TITLE|Title|PART|Part)\s+\d+/;
+export const SECTION_HEADING = /^(SECTION|Section|SEC\.|Sec\.|ARTICLE|Article|CHAPTER|Chapter|TITLE|Title|PART|Part)\s+\d+/;
 export const SUBSECTION_LETTER = /^([A-Z])\.\s/;
+export const PAREN_SUBSECTION = /^\(([a-z])\)\s/;
 export const NUMBERED_SUBDIVISION = /^(\d{1,2})\.\s/;
 export const SECTION_SYMBOL = /^§\s*[\d.:-]+/;
 export const ENACTMENT_BOUNDARY = /reenacted as follows\s*:\s*$/;
-export const ENACTMENT_CLAUSE = /^Be it enacted by the General Assembly/;
+export const ENACTMENT_CLAUSE = /^Be it enacted by the (General Assembly|Senate and House)/;
 
 export const PAGE_FOOTER_PATTERNS = [
   /^\s*-\s*\d+\s*-\s*$/,
@@ -119,6 +120,17 @@ export function splitByStructure(lines: readonly string[]): SplitResult {
       continue;
     }
 
+    const headingMatch = SECTION_HEADING.exec(trimmed);
+    if (headingMatch) {
+      flushParagraph();
+      inPreamble = false;
+      seenEnactmentClause = false;
+      sectionStack = updateSectionStack(sectionStack, trimmed);
+      paragraphIndex = 0;
+      currentLines.push(trimmed);
+      continue;
+    }
+
     if (inPreamble && seenEnactmentClause) {
       currentLines.push(trimmed);
       continue;
@@ -134,16 +146,13 @@ export function splitByStructure(lines: readonly string[]): SplitResult {
       continue;
     }
 
-    const headingMatch = SECTION_HEADING.exec(trimmed);
-    if (headingMatch) {
+    if (!inPreamble && SUBSECTION_LETTER.test(trimmed)) {
       flushParagraph();
-      sectionStack = updateSectionStack(sectionStack, trimmed);
-      paragraphIndex = 0;
       currentLines.push(trimmed);
       continue;
     }
 
-    if (!inPreamble && SUBSECTION_LETTER.test(trimmed)) {
+    if (!inPreamble && PAREN_SUBSECTION.test(trimmed)) {
       flushParagraph();
       currentLines.push(trimmed);
       continue;
@@ -222,11 +231,43 @@ function extractParentPath(structuralPath: string): string {
   return match ? match[1]! : structuralPath;
 }
 
+export function detectLineNumbers(lines: readonly string[]): boolean {
+  const candidateLines = lines.filter(l => l.trim().length > 0).slice(0, 30);
+  if (candidateLines.length < 5) return false;
+
+  let matchCount = 0;
+  let lastNumber = 0;
+  let sequentialCount = 0;
+
+  for (const line of candidateLines) {
+    const match = /^(\s*\d{1,4})\s+/.exec(line);
+    if (match) {
+      matchCount++;
+      const num = parseInt(match[1]!.trim(), 10);
+      if (num === lastNumber + 1) sequentialCount++;
+      lastNumber = num;
+    }
+  }
+
+  return matchCount >= candidateLines.length * 0.7 && sequentialCount >= 3;
+}
+
+export function stripDetectedLineNumber(line: string): string {
+  let result = line;
+  for (let i = 0; i < 3; i++) {
+    const stripped = result.replace(/^\s*\d{1,4}\s+/, "");
+    if (stripped === result) break;
+    result = stripped;
+  }
+  return result;
+}
+
 export function updateSectionStack(current: readonly string[], heading: string): string[] {
-  const match = /^(SECTION|Section|ARTICLE|Article|CHAPTER|Chapter|TITLE|Title|PART|Part)\s+(\S+)/i.exec(heading);
+  const match = /^(SECTION|Section|SEC\.|Sec\.|ARTICLE|Article|CHAPTER|Chapter|TITLE|Title|PART|Part)\s+(\S+)/i.exec(heading);
   if (!match) return [...current];
 
-  const type = match[1]!.toLowerCase();
+  let type = match[1]!.toLowerCase().replace(/\.$/, "");
+  if (type === "sec") type = "section";
   const number = match[2]!.replace(/[.:]$/, "");
   const entry = `${type}[${number}]`;
 

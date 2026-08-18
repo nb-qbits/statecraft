@@ -149,7 +149,7 @@ function DesktopSidebar({ pathname, billCount }: { pathname: string; billCount: 
             <h1 style={{ fontFamily: "var(--font-heading)", fontSize: "19px", fontWeight: 700, lineHeight: 1.2, color: "#F5F2E8", letterSpacing: "-0.02em" }}>
               Docket
             </h1>
-            <p className="text-[11px] text-[#9AA6BC]">Legislative deadlines</p>
+            <p className="text-[13px] text-[#9AA6BC]">Legislative deadlines</p>
           </div>
         </div>
       </div>
@@ -169,7 +169,7 @@ function DesktopSidebar({ pathname, billCount }: { pathname: string; billCount: 
               }`}
             >
               {item.icon}
-              <span style={{ fontSize: "14px", fontFamily: "var(--font-body)" }}>{item.label}</span>
+              <span style={{ fontSize: "15px", fontFamily: "var(--font-body)" }}>{item.label}</span>
             </Link>
           );
         })}
@@ -177,14 +177,14 @@ function DesktopSidebar({ pathname, billCount }: { pathname: string; billCount: 
 
       {/* Bottom section */}
       <div className="mt-auto flex flex-col gap-4">
-        <p className="text-[11.5px] leading-relaxed text-[#9AA6BC]">
+        <p className="text-[13px] leading-relaxed text-[#9AA6BC]">
           Every computed date cites the rule that produced it. Unresolved items
           are real obligations, not failures.
         </p>
 
         {/* Plan meter */}
         <div className="rounded-lg bg-white/[0.06] p-3">
-          <div className="flex items-center justify-between text-[12px]">
+          <div className="flex items-center justify-between text-[13px]">
             <span className="text-[#B7BECF]">Free plan</span>
             <span className="text-[#B7BECF]">{billCount}/{billLimit} bills</span>
           </div>
@@ -200,13 +200,13 @@ function DesktopSidebar({ pathname, billCount }: { pathname: string; billCount: 
         <div className="flex flex-col gap-2">
           <Link
             href="/docket/admin"
-            className="text-[11.5px] text-[#7C86A0] hover:text-[#9AA6BC] transition-colors"
+            className="text-[13px] text-[#7C86A0] hover:text-[#9AA6BC] transition-colors"
           >
             Admin console
           </Link>
           <Link
             href="/login"
-            className="text-[11.5px] text-[#7C86A0] hover:text-[#9AA6BC] transition-colors"
+            className="text-[13px] text-[#7C86A0] hover:text-[#9AA6BC] transition-colors"
           >
             Sign out
           </Link>
@@ -234,7 +234,7 @@ function MobileBottomBar({ pathname }: { pathname: string }) {
             }`}
           >
             <span className="[&>svg]:h-5 [&>svg]:w-5">{item.icon}</span>
-            <span className="text-[10px]">
+            <span className="text-[11px]">
               {item.label === "Add a bill" ? "Add" : item.label}
             </span>
           </Link>

@@ -172,6 +172,7 @@ function createStubs() {
       insertVersion: vi.fn(),
       listVersions: vi.fn(),
       getDocument: vi.fn(),
+      updateJurisdiction: vi.fn(),
     } as unknown as IngestionRepository,
     parsingRepository: {
       getSegmentsByVersion: vi.fn(async () => [makeSegment("1"), makeSegment("2")]),

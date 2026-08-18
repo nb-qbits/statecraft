@@ -15,3 +15,12 @@ export function normalizeJurisdiction(input: string): string {
   if (canonical) return canonical;
   return input.toLowerCase().trim();
 }
+
+const FEDERAL_ENACTMENT = /Be it enacted by the Senate and House of Representatives/i;
+const VIRGINIA_ENACTMENT = /Be it enacted by the General Assembly of Virginia/i;
+
+export function inferJurisdictionFromText(text: string): string | null {
+  if (FEDERAL_ENACTMENT.test(text)) return "us-fed";
+  if (VIRGINIA_ENACTMENT.test(text)) return "us-va";
+  return null;
+}

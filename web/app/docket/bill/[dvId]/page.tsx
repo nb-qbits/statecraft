@@ -168,11 +168,11 @@ function TaskPopover({
       >
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <MarkerGlyph status={task.status} size={16} />
-          <span style={{ fontSize: "12px", fontWeight: 700, color: meta.color }}>
+          <span style={{ fontSize: "13px", fontWeight: 700, color: meta.color }}>
             {meta.label}
           </span>
           {relLabel && (
-            <span style={{ fontSize: "11.5px", color: meta.color, fontWeight: 500, opacity: 0.8 }}>
+            <span style={{ fontSize: "13px", color: meta.color, fontWeight: 500, opacity: 0.8 }}>
               &middot; {relLabel}
             </span>
           )}
@@ -197,7 +197,7 @@ function TaskPopover({
       {/* Body */}
       <div style={{ padding: "16px 18px 14px" }}>
         {/* Full obligation */}
-        <div style={{ fontSize: "13.5px", color: "#1D1D1F", lineHeight: 1.5, marginBottom: "14px" }}>
+        <div style={{ fontSize: "15px", color: "#1D1D1F", lineHeight: 1.5, marginBottom: "14px" }}>
           {task.obligation}
         </div>
 
@@ -218,8 +218,8 @@ function TaskPopover({
             <span style={{ fontSize: "10px", fontWeight: 700, color: "#E7E3D6" }}>{initials}</span>
           </div>
           <div>
-            <div style={{ fontSize: "12.5px", fontWeight: 600, color: "#16233F" }}>{actor}</div>
-            <div style={{ fontSize: "11px", color: "#86868B" }}>Responsible agency</div>
+            <div style={{ fontSize: "14px", fontWeight: 600, color: "#16233F" }}>{actor}</div>
+            <div style={{ fontSize: "13px", color: "#86868B" }}>Responsible agency</div>
           </div>
         </div>
 
@@ -236,19 +236,19 @@ function TaskPopover({
           }}
         >
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: "10px", fontWeight: 600, color: "#86868B", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "3px" }}>
+            <div style={{ fontSize: "13px", fontWeight: 600, color: "#86868B", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "3px" }}>
               Due date
             </div>
-            <div style={{ fontSize: "13px", fontWeight: 600, color: "#1D1D1F" }}>
+            <div style={{ fontSize: "16px", fontWeight: 600, color: "#1D1D1F" }}>
               {task.due ? formatDate(task.due) : "—"}
             </div>
           </div>
           {task.citation && (
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: "10px", fontWeight: 600, color: "#86868B", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "3px" }}>
+              <div style={{ fontSize: "13px", fontWeight: 600, color: "#86868B", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "3px" }}>
                 Source
               </div>
-              <div style={{ fontSize: "13px", fontWeight: 500, color: "#1D1D1F" }}>
+              <div style={{ fontSize: "14px", fontWeight: 500, color: "#1D1D1F" }}>
                 {task.citation}
               </div>
             </div>
@@ -267,7 +267,7 @@ function TaskPopover({
               border: "none",
               cursor: "pointer",
               padding: 0,
-              fontSize: "11.5px",
+              fontSize: "13px",
               color: "#86868B",
             }}
           >
@@ -276,7 +276,7 @@ function TaskPopover({
                 display: "inline-block",
                 transition: "transform 0.2s ease",
                 transform: provOpen ? "rotate(90deg)" : "rotate(0deg)",
-                fontSize: "12px",
+                fontSize: "13px",
               }}
             >
               &#x203A;
@@ -300,7 +300,7 @@ function TaskPopover({
                     display: "flex",
                     gap: "8px",
                     marginBottom: i < provRows.length - 1 ? "5px" : 0,
-                    fontSize: "12px",
+                    fontSize: "13px",
                   }}
                 >
                   <span style={{ color: "#AEAEB2", fontWeight: 600, minWidth: "42px", flexShrink: 0 }}>
@@ -327,14 +327,14 @@ function TaskPopover({
               marginBottom: "12px",
             }}
           >
-            <div style={{ fontSize: "12px", color: STATUS_META.needs_input.color, fontWeight: 500, marginBottom: "6px" }}>
+            <div style={{ fontSize: "13px", color: STATUS_META.needs_input.color, fontWeight: 500, marginBottom: "6px" }}>
               {task.inputAsk}
             </div>
             {!dateFormOpen ? (
               <button
                 onClick={() => setDateFormOpen(true)}
                 style={{
-                  fontSize: "12px",
+                  fontSize: "14px",
                   fontWeight: 600,
                   color: "#5B5B8C",
                   background: "#FFFFFF",
@@ -353,7 +353,7 @@ function TaskPopover({
                   value={dateValue}
                   onChange={(e) => setDateValue(e.target.value)}
                   style={{
-                    fontSize: "12px",
+                    fontSize: "13px",
                     border: "1px solid #D4D0E6",
                     borderRadius: "6px",
                     padding: "5px 8px",
@@ -363,7 +363,7 @@ function TaskPopover({
                   onClick={handleSaveDate}
                   disabled={saving || !dateValue}
                   style={{
-                    fontSize: "12px",
+                    fontSize: "14px",
                     fontWeight: 600,
                     backgroundColor: "#5B5B8C",
                     color: "#FFFFFF",
@@ -378,7 +378,7 @@ function TaskPopover({
                 </button>
                 <button
                   onClick={() => { setDateFormOpen(false); setDateValue(""); }}
-                  style={{ fontSize: "12px", color: "#86868B", background: "none", border: "none", cursor: "pointer" }}
+                  style={{ fontSize: "13px", color: "#86868B", background: "none", border: "none", cursor: "pointer" }}
                 >
                   Cancel
                 </button>
@@ -399,7 +399,7 @@ function TaskPopover({
         <button
           onClick={onViewInList}
           style={{
-            fontSize: "12px",
+            fontSize: "13px",
             fontWeight: 600,
             color: "#3C5A82",
             background: "none",
@@ -519,7 +519,7 @@ function TimelineMarker({
           top: `${markerSize + 1 + labelYOffset}px`,
           left: "50%",
           transform: "translateX(-50%)",
-          fontSize: "9.5px",
+          fontSize: "10.5px",
           fontWeight: 600,
           color: meta.dot,
           whiteSpace: "nowrap",
@@ -631,10 +631,10 @@ function TimelineChart({
   if (datedTasks.length === 0) {
     return (
       <div className="py-12 text-center" style={{ color: "#AEAEB2" }}>
-        <div style={{ fontSize: "14px", fontWeight: 500, marginBottom: "4px" }}>
+        <div style={{ fontSize: "15px", fontWeight: 500, marginBottom: "4px" }}>
           No dated tasks to display
         </div>
-        <div style={{ fontSize: "12px" }}>
+        <div style={{ fontSize: "13px" }}>
           Tasks will appear here once dates are computed or supplied.
         </div>
       </div>
@@ -703,12 +703,12 @@ function TimelineChart({
         {activeStatuses.map((s) => (
           <div key={s} className="flex items-center gap-2">
             <MarkerGlyph status={s} size={14} />
-            <span style={{ fontSize: "12px", color: "#1D1D1F", fontWeight: 500 }}>
+            <span style={{ fontSize: "13px", color: "#1D1D1F", fontWeight: 500 }}>
               {STATUS_META[s].label}
             </span>
             <span
               style={{
-                fontSize: "11px",
+                fontSize: "13px",
                 fontWeight: 600,
                 color: STATUS_META[s].color,
                 backgroundColor: STATUS_META[s].bg,
@@ -722,7 +722,7 @@ function TimelineChart({
             </span>
           </div>
         ))}
-        <div style={{ marginLeft: "auto", fontSize: "11.5px", color: "#86868B" }}>
+        <div style={{ marginLeft: "auto", fontSize: "13px", color: "#86868B" }}>
           {datedTasks.length} task{datedTasks.length !== 1 ? "s" : ""} &middot;{" "}
           {agencies.length} agenc{agencies.length !== 1 ? "ies" : "y"}
         </div>
@@ -757,7 +757,7 @@ function TimelineChart({
                   style={{
                     color: "#6E6E73",
                     whiteSpace: "nowrap",
-                    fontSize: "11.5px",
+                    fontSize: "12.5px",
                     fontWeight: 600,
                     letterSpacing: "0.03em",
                     textTransform: "uppercase",
@@ -782,7 +782,7 @@ function TimelineChart({
               >
                 <span
                   style={{
-                    fontSize: "9.5px",
+                    fontSize: "10.5px",
                     fontWeight: 700,
                     color: "#fff",
                     backgroundColor: "#C8983E",
@@ -841,7 +841,7 @@ function TimelineChart({
                     <div
                       className="truncate"
                       style={{
-                        fontSize: "12.5px",
+                        fontSize: "14px",
                         fontWeight: 600,
                         color: "#16233F",
                         lineHeight: "1.3",
@@ -849,7 +849,7 @@ function TimelineChart({
                     >
                       {name}
                     </div>
-                    <div style={{ fontSize: "10.5px", fontWeight: 400, color: "#86868B", marginTop: "2px" }}>
+                    <div style={{ fontSize: "13px", fontWeight: 400, color: "#86868B", marginTop: "2px" }}>
                       {agTasks.length} task{agTasks.length !== 1 ? "s" : ""}
                     </div>
                   </div>
@@ -956,6 +956,645 @@ function TimelineChart({
   );
 }
 
+function UrgencyBanner({ tasks }: { tasks: DocketTask[] }) {
+  const overdueCount = tasks.filter((t) => t.status === "overdue").length;
+  if (overdueCount > 0) {
+    return (
+      <div
+        style={{
+          backgroundColor: "#A8442C",
+          color: "#FFFFFF",
+          padding: "10px 18px",
+          borderRadius: "10px",
+          marginBottom: "16px",
+          display: "flex",
+          alignItems: "center",
+          gap: "10px",
+          fontSize: "15px",
+          fontWeight: 600,
+          fontFamily: "var(--font-body)",
+        }}
+      >
+        <svg width="16" height="16" viewBox="0 0 20 20">
+          <path d="M10 1.5L19 17.5H1L10 1.5Z" fill="#fff" strokeLinejoin="round" />
+          <text x="10" y="14.5" textAnchor="middle" fontSize="10" fontWeight="800" fill="#A8442C">!</text>
+        </svg>
+        {overdueCount} deadline{overdueCount !== 1 ? "s" : ""} overdue &mdash; review immediately
+      </div>
+    );
+  }
+  return (
+    <div
+      style={{
+        backgroundColor: "#E9F2EC",
+        color: "#3F6B54",
+        padding: "10px 18px",
+        borderRadius: "10px",
+        marginBottom: "16px",
+        display: "flex",
+        alignItems: "center",
+        gap: "10px",
+        fontSize: "15px",
+        fontWeight: 600,
+        fontFamily: "var(--font-body)",
+      }}
+    >
+      <svg width="16" height="16" viewBox="0 0 20 20">
+        <circle cx="10" cy="10" r="9" fill="#3F6B54" />
+        <path d="M6 10.5L9 13.5L14 7.5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+      </svg>
+      All deadlines on track
+    </div>
+  );
+}
+
+function BriefingSummaryLine({ tasks }: { tasks: DocketTask[] }) {
+  const total = tasks.length;
+  const overdueCount = tasks.filter((t) => t.status === "overdue").length;
+  const needsInputCount = tasks.filter((t) => t.status === "needs_input").length;
+  const agencies = new Set(tasks.map((t) => t.actor || "Unassigned")).size;
+  const datedTasks = tasks
+    .filter((t) => t.due)
+    .sort((a, b) => (a.due ?? "").localeCompare(b.due ?? ""));
+  const today = new Date().toISOString().slice(0, 10);
+  const nextDue = datedTasks.find((t) => t.due! >= today);
+
+  const parts: string[] = [];
+  parts.push(`${total} obligation${total !== 1 ? "s" : ""} tracked`);
+  if (overdueCount > 0) parts.push(`${overdueCount} overdue`);
+  if (needsInputCount > 0) parts.push(`${needsInputCount} awaiting input`);
+  parts.push(`${agencies} agenc${agencies !== 1 ? "ies" : "y"}`);
+  if (nextDue) parts.push(`next deadline ${formatDate(nextDue.due!)}`);
+
+  return (
+    <div
+      style={{
+        fontSize: "14px",
+        color: "#6E6E73",
+        marginBottom: "16px",
+        fontFamily: "var(--font-body)",
+        lineHeight: 1.5,
+      }}
+    >
+      {parts.join(" · ")}
+    </div>
+  );
+}
+
+function CalendarSyncBar({
+  dvId,
+  onOpenModal,
+}: {
+  dvId: string;
+  onOpenModal: () => void;
+}) {
+  const [syncProvider, setSyncProvider] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(`docket_calendar_sync_${dvId}`);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed?.connected) setSyncProvider(parsed.provider);
+      }
+    } catch { /* ignore */ }
+  }, [dvId]);
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        padding: "10px 16px",
+        backgroundColor: "#FAFAFB",
+        borderRadius: "10px",
+        border: "1px solid #EDEDF0",
+        marginBottom: "20px",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
+          <rect x="1" y="3" width="16" height="13" rx="2" stroke="#16233F" strokeWidth="1.5" />
+          <line x1="1" y1="7.5" x2="17" y2="7.5" stroke="#16233F" strokeWidth="1.5" />
+          <line x1="5.5" y1="1" x2="5.5" y2="4.5" stroke="#16233F" strokeWidth="1.5" strokeLinecap="round" />
+          <line x1="12.5" y1="1" x2="12.5" y2="4.5" stroke="#16233F" strokeWidth="1.5" strokeLinecap="round" />
+        </svg>
+        <span style={{ fontSize: "14px", color: "#1D1D1F", fontWeight: 500 }}>
+          {syncProvider ? `Synced to ${syncProvider}` : "Calendar not connected"}
+        </span>
+        {syncProvider && (
+          <span
+            style={{
+              fontSize: "13px",
+              fontWeight: 600,
+              color: "#3F6B54",
+              backgroundColor: "#E9F2EC",
+              borderRadius: "4px",
+              padding: "1px 6px",
+            }}
+          >
+            Active
+          </span>
+        )}
+      </div>
+      <button
+        onClick={onOpenModal}
+        style={{
+          fontSize: "14px",
+          fontWeight: 600,
+          color: syncProvider ? "#6E6E73" : "#16233F",
+          backgroundColor: syncProvider ? "transparent" : "#FFFFFF",
+          border: syncProvider ? "none" : "1px solid #E5E5EA",
+          borderRadius: "8px",
+          padding: "5px 14px",
+          cursor: "pointer",
+          fontFamily: "var(--font-body)",
+        }}
+      >
+        {syncProvider ? "Change" : "Connect calendar"}
+      </button>
+    </div>
+  );
+}
+
+function ProviderButton({
+  label,
+  subtitle,
+  initial,
+  initialBg,
+  initialColor,
+  onClick,
+}: {
+  label: string;
+  subtitle: string;
+  initial: string;
+  initialBg: string;
+  initialColor: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: "14px",
+        width: "100%",
+        padding: "14px 16px",
+        backgroundColor: "#FAFAFB",
+        border: "1px solid #EDEDF0",
+        borderRadius: "10px",
+        cursor: "pointer",
+        textAlign: "left",
+      }}
+    >
+      <div
+        style={{
+          width: "36px",
+          height: "36px",
+          borderRadius: "8px",
+          backgroundColor: initialBg,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0,
+        }}
+      >
+        <span style={{ fontSize: "16px", fontWeight: 700, color: initialColor }}>
+          {initial}
+        </span>
+      </div>
+      <div>
+        <div style={{ fontSize: "15px", fontWeight: 600, color: "#1D1D1F" }}>
+          {label}
+        </div>
+        <div style={{ fontSize: "13px", color: "#86868B" }}>{subtitle}</div>
+      </div>
+    </button>
+  );
+}
+
+function CalendarSyncModal({
+  dvId,
+  onClose,
+}: {
+  dvId: string;
+  onClose: () => void;
+}) {
+  const [step, setStep] = useState<"select" | "confirm">("select");
+  const [provider, setProvider] = useState<string | null>(null);
+
+  function handleSelect(p: string) {
+    if (p === "apple") {
+      window.location.href = `/api/v1/documents/${dvId}/export/ics`;
+      try {
+        localStorage.setItem(
+          `docket_calendar_sync_${dvId}`,
+          JSON.stringify({ provider: "Apple Calendar", connected: true }),
+        );
+      } catch { /* ignore */ }
+      onClose();
+      return;
+    }
+    setProvider(p);
+    setStep("confirm");
+  }
+
+  function handleConnect() {
+    const name =
+      provider === "google" ? "Google Calendar" : "Microsoft Outlook";
+    try {
+      localStorage.setItem(
+        `docket_calendar_sync_${dvId}`,
+        JSON.stringify({ provider: name, connected: true }),
+      );
+    } catch { /* ignore */ }
+    onClose();
+  }
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 9999,
+        backgroundColor: "rgba(0,0,0,0.45)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+      onClick={onClose}
+    >
+      <div
+        style={{
+          backgroundColor: "#FFFFFF",
+          borderRadius: "16px",
+          width: "420px",
+          maxWidth: "90vw",
+          boxShadow: "0 20px 60px rgba(0,0,0,0.25)",
+          overflow: "hidden",
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div
+          style={{
+            padding: "20px 24px 16px",
+            borderBottom: "1px solid #EDEDF0",
+            display: "flex",
+            alignItems: "flex-start",
+            justifyContent: "space-between",
+          }}
+        >
+          <div>
+            <div
+              style={{
+                fontSize: "19px",
+                fontWeight: 700,
+                color: "#16233F",
+                fontFamily: "var(--font-heading)",
+              }}
+            >
+              {step === "select"
+                ? "Connect Calendar"
+                : `Connect ${provider === "google" ? "Google Calendar" : "Microsoft Outlook"}`}
+            </div>
+            <div style={{ fontSize: "14px", color: "#6E6E73", marginTop: "4px" }}>
+              {step === "select"
+                ? "Choose where to sync your deadlines"
+                : "Authorize access to add deadline events"}
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              color: "#86868B",
+              fontSize: "20px",
+              lineHeight: 1,
+            }}
+          >
+            &times;
+          </button>
+        </div>
+
+        <div style={{ padding: "20px 24px 24px" }}>
+          {step === "select" ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              <ProviderButton
+                label="Google Calendar"
+                subtitle="Sync via Google account"
+                initial="G"
+                initialBg="#E8F0FE"
+                initialColor="#4285F4"
+                onClick={() => handleSelect("google")}
+              />
+              <ProviderButton
+                label="Microsoft Outlook"
+                subtitle="Sync via Microsoft account"
+                initial="O"
+                initialBg="#E5F1FB"
+                initialColor="#0078D4"
+                onClick={() => handleSelect("outlook")}
+              />
+              <ProviderButton
+                label="Apple Calendar"
+                subtitle="Download .ics file"
+                initial="A"
+                initialBg="#F0F0F2"
+                initialColor="#1D1D1F"
+                onClick={() => handleSelect("apple")}
+              />
+            </div>
+          ) : (
+            <div>
+              <div
+                style={{
+                  padding: "16px",
+                  backgroundColor: "#FAFAFB",
+                  borderRadius: "10px",
+                  border: "1px solid #EDEDF0",
+                  fontSize: "15px",
+                  color: "#1D1D1F",
+                  lineHeight: 1.5,
+                  marginBottom: "20px",
+                }}
+              >
+                You&apos;ll be redirected to{" "}
+                {provider === "google" ? "Google" : "Microsoft"} to authorize
+                access. Statecraft will add deadline events to your calendar and
+                keep them updated.
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  gap: "10px",
+                  justifyContent: "flex-end",
+                }}
+              >
+                <button
+                  onClick={() => setStep("select")}
+                  style={{
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    padding: "8px 18px",
+                    borderRadius: "8px",
+                    border: "1px solid #E5E5EA",
+                    backgroundColor: "#FFFFFF",
+                    color: "#1D1D1F",
+                    cursor: "pointer",
+                  }}
+                >
+                  Back
+                </button>
+                <button
+                  onClick={handleConnect}
+                  style={{
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    padding: "8px 18px",
+                    borderRadius: "8px",
+                    border: "none",
+                    backgroundColor: "#16233F",
+                    color: "#F5F2E8",
+                    cursor: "pointer",
+                  }}
+                >
+                  Connect
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CitationSliver({ task }: { task: DocketTask }) {
+  if (task.determination === "reviewer") {
+    return (
+      <span
+        style={{
+          fontSize: "13px",
+          fontWeight: 600,
+          color: "#A67326",
+          backgroundColor: "rgba(200,152,62,0.12)",
+          borderRadius: "4px",
+          padding: "2px 8px",
+          display: "inline-block",
+        }}
+      >
+        Reviewer-supplied date
+      </span>
+    );
+  }
+  if (task.determination === "unresolved") {
+    return (
+      <span
+        style={{
+          fontSize: "13px",
+          fontWeight: 600,
+          color: "#5B5B8C",
+          backgroundColor: "rgba(131,119,176,0.12)",
+          borderRadius: "4px",
+          padding: "2px 8px",
+          display: "inline-block",
+        }}
+      >
+        {task.unresolvedReason}
+      </span>
+    );
+  }
+  return (
+    <span style={{ fontSize: "13px", color: "#86868B" }}>
+      {task.computedNote}
+    </span>
+  );
+}
+
+function TimelineTaskRow({
+  task,
+  onAddDate,
+}: {
+  task: DocketTask;
+  onAddDate?: (anchorId: string, date: string) => Promise<void>;
+}) {
+  const meta = STATUS_META[task.status];
+  const isOverdue = task.status === "overdue";
+  const relLabel = daysUntilLabel(task.due, task.status);
+  const [dateFormOpen, setDateFormOpen] = useState(false);
+  const [dateValue, setDateValue] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  async function handleSaveDate() {
+    if (!dateValue || !onAddDate) return;
+    setSaving(true);
+    try {
+      await onAddDate(task.anchorId, dateValue);
+    } finally {
+      setSaving(false);
+      setDateFormOpen(false);
+      setDateValue("");
+    }
+  }
+
+  return (
+    <div
+      style={{
+        padding: "16px 18px",
+        borderBottom: "1px solid #EDEDF0",
+        borderLeft: isOverdue ? "3px solid #A8442C" : "3px solid transparent",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}>
+        <div
+          style={{
+            width: "8px",
+            height: "8px",
+            borderRadius: "50%",
+            backgroundColor: meta.dot,
+            flexShrink: 0,
+            marginTop: "5px",
+            animation: isOverdue ? "pulseDot 1.8s infinite" : undefined,
+          }}
+        />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div
+            style={{
+              fontSize: "15px",
+              color: "#1D1D1F",
+              marginBottom: "3px",
+              lineHeight: 1.4,
+            }}
+          >
+            {task.obligation}
+          </div>
+          <div
+            style={{ fontSize: "13px", color: "#86868B", marginBottom: "5px" }}
+          >
+            {task.citation}
+          </div>
+          <CitationSliver task={task} />
+        </div>
+        <div style={{ textAlign: "right", flexShrink: 0 }}>
+          {task.due ? (
+            <>
+              <div
+                style={{ fontSize: "16px", fontWeight: 600, color: "#1D1D1F" }}
+              >
+                {formatDate(task.due)}
+              </div>
+              {relLabel && (
+                <div
+                  style={{
+                    fontSize: "13px",
+                    fontWeight: 500,
+                    color: meta.color,
+                  }}
+                >
+                  {relLabel}
+                </div>
+              )}
+            </>
+          ) : (
+            <span
+              style={{
+                fontSize: "13px",
+                fontWeight: 600,
+                color: STATUS_META.needs_input.color,
+                backgroundColor: STATUS_META.needs_input.bg,
+                borderRadius: "9999px",
+                padding: "2px 8px",
+              }}
+            >
+              Needs input
+            </span>
+          )}
+        </div>
+      </div>
+      {task.determination === "unresolved" && (
+        <div style={{ marginTop: "8px", paddingLeft: "20px" }}>
+          {!dateFormOpen ? (
+            <button
+              onClick={() => setDateFormOpen(true)}
+              style={{
+                fontSize: "14px",
+                fontWeight: 600,
+                color: "#5B5B8C",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                padding: 0,
+              }}
+            >
+              + Add date
+            </button>
+          ) : (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                flexWrap: "wrap",
+              }}
+            >
+              <span style={{ fontSize: "13px", color: "#5B5B8C" }}>
+                {task.inputAsk}
+              </span>
+              <input
+                type="date"
+                value={dateValue}
+                onChange={(e) => setDateValue(e.target.value)}
+                style={{
+                  fontSize: "13px",
+                  border: "1px solid #D4D0E6",
+                  borderRadius: "6px",
+                  padding: "4px 8px",
+                }}
+              />
+              <button
+                onClick={handleSaveDate}
+                disabled={saving || !dateValue}
+                style={{
+                  fontSize: "14px",
+                  fontWeight: 600,
+                  backgroundColor: "#5B5B8C",
+                  color: "#FFFFFF",
+                  border: "none",
+                  borderRadius: "6px",
+                  padding: "4px 12px",
+                  cursor: saving || !dateValue ? "not-allowed" : "pointer",
+                  opacity: saving || !dateValue ? 0.5 : 1,
+                }}
+              >
+                {saving ? "Saving..." : "Save"}
+              </button>
+              <button
+                onClick={() => {
+                  setDateFormOpen(false);
+                  setDateValue("");
+                }}
+                style={{
+                  fontSize: "13px",
+                  color: "#86868B",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function BillDetailPage({
   params,
 }: {
@@ -973,6 +1612,7 @@ export default function BillDetailPage({
   const [view, setView] = useState<View>("list");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [agencyFilter, setAgencyFilter] = useState("all");
+  const [syncModalOpen, setSyncModalOpen] = useState(false);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -998,7 +1638,7 @@ export default function BillDetailPage({
           : `${identity.instrumentType} ${identity.number}`;
       setTasks(
         data.findings
-          .filter((f) => f.anchored && f.grammarParsed)
+          .filter((f) => f.anchored)
           .map((f) => findingToDocketTask(f, dvId, num)),
       );
     } finally {
@@ -1036,7 +1676,7 @@ export default function BillDetailPage({
         : `${identity.instrumentType} ${identity.number}`;
       setTasks(
         data.findings
-          .filter((f) => f.anchored && f.grammarParsed)
+          .filter((f) => f.anchored)
           .map((f) => findingToDocketTask(f, dvId, num)),
       );
     },
@@ -1074,9 +1714,6 @@ export default function BillDetailPage({
     a[0].localeCompare(b[0]),
   );
 
-  // Unresolved tasks for timeline view
-  const unresolvedTasks = filtered.filter((t) => t.determination === "unresolved");
-
   return (
     <>
       {/* Top bar */}
@@ -1087,7 +1724,7 @@ export default function BillDetailPage({
         <div
           style={{
             fontFamily: "var(--font-heading)",
-            fontSize: "25px",
+            fontSize: "30px",
             fontWeight: 700,
             letterSpacing: "-0.03em",
             color: "#16233F",
@@ -1095,14 +1732,14 @@ export default function BillDetailPage({
         >
           Bill detail
         </div>
-        <div className="text-[13px]" style={{ color: "#6E6E73" }}>
+        <div className="text-[14px]" style={{ color: "#6E6E73" }}>
           {today}
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-5 md:p-8">
         {loading ? (
-          <div className="py-16 text-center text-sm" style={{ color: "#AEAEB2" }}>
+          <div className="py-16 text-center text-[15px]" style={{ color: "#AEAEB2" }}>
             Loading bill details...
           </div>
         ) : (
@@ -1110,7 +1747,7 @@ export default function BillDetailPage({
             {/* Back link */}
             <Link
               href="/docket"
-              className="mb-4 inline-block text-[13px] no-underline"
+              className="mb-4 inline-block text-[14px] no-underline"
               style={{ color: "#6E6E73" }}
             >
               &lt; All bills
@@ -1119,7 +1756,7 @@ export default function BillDetailPage({
             {/* Bill header */}
             <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
               <div className="min-w-0">
-                <div style={{ fontSize: "13px", letterSpacing: "0.03em", color: "#6E6E73", marginBottom: "6px", fontFamily: "var(--font-body)" }}>
+                <div style={{ fontSize: "14px", letterSpacing: "0.03em", color: "#6E6E73", marginBottom: "6px", fontFamily: "var(--font-body)" }}>
                   {billNumber} &middot; {billSession} &middot; {billJurisdiction}
                 </div>
                 <div
@@ -1141,7 +1778,7 @@ export default function BillDetailPage({
                 style={{
                   backgroundColor: "#16233F",
                   color: "#F5F2E8",
-                  fontSize: "13.5px",
+                  fontSize: "15px",
                   fontWeight: 600,
                   fontFamily: "var(--font-body)",
                   borderRadius: "10px",
@@ -1167,7 +1804,7 @@ export default function BillDetailPage({
                 <button
                   onClick={() => setView("list")}
                   style={{
-                    fontSize: "13px",
+                    fontSize: "14px",
                     fontWeight: 600,
                     padding: "6px 16px",
                     borderRadius: "9px",
@@ -1188,7 +1825,7 @@ export default function BillDetailPage({
                   onClick={() => setView("timeline")}
                   className="hidden md:inline-flex"
                   style={{
-                    fontSize: "13px",
+                    fontSize: "14px",
                     fontWeight: 600,
                     padding: "6px 16px",
                     borderRadius: "9px",
@@ -1206,7 +1843,7 @@ export default function BillDetailPage({
                   Timeline
                 </button>
               </div>
-              <span className="text-[11.5px] md:hidden" style={{ color: "#86868B" }}>
+              <span className="text-[13px] md:hidden" style={{ color: "#86868B" }}>
                 Timeline view available on larger screens.
               </span>
             </div>
@@ -1220,7 +1857,7 @@ export default function BillDetailPage({
                     key={sf.key}
                     onClick={() => setStatusFilter(sf.key)}
                     style={{
-                      fontSize: "12.5px",
+                      fontSize: "14px",
                       fontWeight: 600,
                       padding: "5px 14px",
                       borderRadius: "9999px",
@@ -1245,7 +1882,7 @@ export default function BillDetailPage({
                 style={{
                   WebkitAppearance: "menulist",
                   appearance: "auto" as never,
-                  fontSize: "12.5px",
+                  fontSize: "14px",
                   padding: "6px 12px",
                   borderRadius: "8px",
                   border: "1px solid #E5E5EA",
@@ -1265,7 +1902,7 @@ export default function BillDetailPage({
 
             {/* Coverage note */}
             {coverage && coverage.totalSegments > 0 && (
-              <div className="mb-4 text-xs" style={{ color: "#86868B" }}>
+              <div className="mb-4 text-[13px]" style={{ color: "#86868B" }}>
                 Coverage: {coverage.withCandidates} of {coverage.totalSegments} sections
                 contained deadline language. This is processing coverage — not a claim
                 about how many deadlines exist in this document.
@@ -1279,17 +1916,17 @@ export default function BillDetailPage({
                   <div className="py-10 text-center" style={{ color: "#AEAEB2" }}>
                     {tasks.length === 0 ? (
                       <>
-                        <div style={{ fontSize: "14px", marginBottom: "8px" }}>
+                        <div style={{ fontSize: "15px", marginBottom: "8px" }}>
                           No tracked tasks found for this document.
                         </div>
-                        <div style={{ fontSize: "12px", marginBottom: "16px" }}>
+                        <div style={{ fontSize: "13px", marginBottom: "16px" }}>
                           Analysis may have been interrupted. You can re-analyze to try again.
                         </div>
                         <button
                           onClick={handleReanalyze}
                           disabled={reanalyzing}
                           style={{
-                            fontSize: "13px",
+                            fontSize: "14px",
                             fontWeight: 600,
                             padding: "8px 20px",
                             borderRadius: "10px",
@@ -1304,14 +1941,14 @@ export default function BillDetailPage({
                         </button>
                       </>
                     ) : (
-                      <div className="text-sm">No tasks match the current filters.</div>
+                      <div className="text-[15px]">No tasks match the current filters.</div>
                     )}
                   </div>
                 ) : (
                   agencyGroups.map(([agency, agTasks]) => (
                     <div key={agency} className="mb-6">
                       <div
-                        className="mb-2.5 text-[12.5px] uppercase tracking-wide"
+                        className="mb-2.5 text-[14px] uppercase tracking-wide"
                         style={{ fontWeight: 600, color: "#16233F" }}
                       >
                         {agency}
@@ -1338,6 +1975,10 @@ export default function BillDetailPage({
             {/* Timeline view */}
             {view === "timeline" && (
               <div>
+                <UrgencyBanner tasks={filtered} />
+                <BriefingSummaryLine tasks={filtered} />
+                <CalendarSyncBar dvId={dvId} onOpenModal={() => setSyncModalOpen(true)} />
+
                 <div
                   className="mb-6 overflow-hidden rounded-[12px] border bg-white"
                   style={{ borderColor: "#D8D8DC", boxShadow: "0 1px 4px rgba(0,0,0,0.07)" }}
@@ -1358,7 +1999,7 @@ export default function BillDetailPage({
                     </svg>
                     <div
                       style={{
-                        fontSize: "16px",
+                        fontSize: "18px",
                         fontWeight: 700,
                         color: "#16233F",
                         fontFamily: "var(--font-heading)",
@@ -1385,57 +2026,82 @@ export default function BillDetailPage({
                   </div>
                 </div>
 
-                {unresolvedTasks.length > 0 && (
-                  <div>
-                    <div
-                      className="mb-3 flex items-center gap-3"
-                      style={{ padding: "0 2px" }}
-                    >
-                      <div
-                        style={{
-                          width: "4px",
-                          height: "22px",
-                          borderRadius: "2px",
-                          backgroundColor: STATUS_META.needs_input.dot,
-                        }}
-                      />
-                      <div
-                        style={{
-                          fontSize: "15px",
-                          fontWeight: 700,
-                          color: "#16233F",
-                          fontFamily: "var(--font-heading)",
-                          letterSpacing: "-0.01em",
-                        }}
-                      >
-                        Needs your input
+                {agencyGroups.length > 0 && (
+                  <div
+                    className="overflow-hidden rounded-[12px] border"
+                    style={{
+                      borderColor: "#D8D8DC",
+                      boxShadow: "0 1px 4px rgba(0,0,0,0.07)",
+                    }}
+                  >
+                    {agencyGroups.map(([agency, agTasks]) => (
+                      <div key={agency}>
+                        <div
+                          style={{
+                            position: "sticky",
+                            top: 0,
+                            zIndex: 10,
+                            backgroundColor: "#16233F",
+                            color: "#E7E3D6",
+                            padding: "10px 18px",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                          }}
+                        >
+                          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                            <div
+                              style={{
+                                width: "26px",
+                                height: "26px",
+                                borderRadius: "6px",
+                                backgroundColor: "rgba(231,227,214,0.15)",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                flexShrink: 0,
+                              }}
+                            >
+                              <span style={{ fontSize: "10px", fontWeight: 700, color: "#E7E3D6" }}>
+                                {getAgencyInitials(agency)}
+                              </span>
+                            </div>
+                            <span
+                              style={{
+                                fontSize: "15px",
+                                fontWeight: 700,
+                                fontFamily: "var(--font-body)",
+                              }}
+                            >
+                              {agency}
+                            </span>
+                          </div>
+                          <span
+                            style={{
+                              fontSize: "13px",
+                              fontWeight: 500,
+                              opacity: 0.6,
+                            }}
+                          >
+                            {agTasks.length} task{agTasks.length !== 1 ? "s" : ""}
+                          </span>
+                        </div>
+                        <div style={{ backgroundColor: "#FFFFFF" }}>
+                          {agTasks.map((t) => (
+                            <TimelineTaskRow
+                              key={t.anchorId}
+                              task={t}
+                              onAddDate={handleAddDate}
+                            />
+                          ))}
+                        </div>
                       </div>
-                      <span
-                        style={{
-                          fontSize: "11px",
-                          fontWeight: 600,
-                          color: STATUS_META.needs_input.color,
-                          backgroundColor: STATUS_META.needs_input.bg,
-                          borderRadius: "9999px",
-                          padding: "2px 8px",
-                        }}
-                      >
-                        {unresolvedTasks.length}
-                      </span>
-                    </div>
-                    <div
-                      className="overflow-hidden rounded-[12px] border bg-white"
-                      style={{ borderColor: "#D8D8DC", boxShadow: "0 1px 4px rgba(0,0,0,0.07)" }}
-                    >
-                      {unresolvedTasks.map((t) => (
-                        <TaskCard
-                          key={t.anchorId}
-                          task={t}
-                          onAddDate={handleAddDate}
-                        />
-                      ))}
-                    </div>
+                    ))}
                   </div>
+                )}
+
+                {syncModalOpen && (
+                  <CalendarSyncModal dvId={dvId} onClose={() => setSyncModalOpen(false)} />
                 )}
               </div>
             )}

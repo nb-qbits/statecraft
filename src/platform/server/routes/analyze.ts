@@ -13,6 +13,7 @@ import type { ResolverRepository } from "../../db/resolver-repository.js";
 import type { EvaluationRepository } from "../../db/evaluation-repository.js";
 import type { RoutingRepository } from "../../db/routing-repository.js";
 import type { ReviewRepository, ProposalInsert } from "../../db/review-repository.js";
+import type { ExtractionRepository } from "../../db/extraction-repository.js";
 import type { PipelineServices } from "../../../modules/review/service.js";
 
 import type { ProposalAnchorResult } from "../../../modules/anchoring/types.js";
@@ -21,7 +22,8 @@ import type { AnchoredResolution } from "../../../modules/resolver/types.js";
 import type { LaneAssignment } from "../../../modules/routing/types.js";
 
 import { normalizeActors } from "../../../modules/extraction/actor-normalizer.js";
-import { computeConfigHash, currentStageVersions } from "../../../modules/shared/engine-versions.js";
+import { computeConfigHash, currentStageVersions, stageVersionsToRecord } from "../../../modules/shared/engine-versions.js";
+import { inferJurisdictionFromText } from "../../../modules/ingestion/jurisdiction.js";
 
 export interface AnalyzeDeps {
   ingestionRepository: IngestionRepository;
@@ -33,7 +35,9 @@ export interface AnalyzeDeps {
   evaluationRepository: EvaluationRepository;
   routingRepository: RoutingRepository;
   reviewRepository: ReviewRepository;
+  extractionRepository: ExtractionRepository;
   pipeline: PipelineServices;
+  parserVersion: string;
   logger: Logger;
 }
 
@@ -56,13 +60,14 @@ export function registerAnalyzeRoutes(
     ingestionRepository, parsingRepository, scanningRepository,
     anchoringRepository, grammarRepository, resolverRepository,
     evaluationRepository, routingRepository, reviewRepository,
-    pipeline, logger,
+    extractionRepository, pipeline, parserVersion, logger,
   } = deps;
 
-  app.post<{ Params: { documentVersionId: string } }>(
+  app.post<{ Params: { documentVersionId: string }; Querystring: { forceReparse?: string } }>(
     "/api/v1/documents/:documentVersionId/analyze",
     async (req, reply) => {
       const dvId = req.params.documentVersionId as DocumentVersionId;
+      const forceReparse = req.query.forceReparse === "true";
 
       const version = await ingestionRepository.getVersion(dvId);
       if (!version) {
@@ -71,9 +76,50 @@ export function registerAnalyzeRoutes(
         });
       }
 
-      const versions = currentStageVersions();
+      if (forceReparse) {
+        const acceptedCount = await reviewRepository.getAcceptedRecordCountByVersion(dvId);
+        if (acceptedCount > 0) {
+          return reply.status(409).send({
+            error: {
+              code: "ACCEPTED_RECORDS_EXIST",
+              message: `Cannot force-reparse: ${acceptedCount} accepted register record(s) exist for this document. Revert them before reparsing.`,
+              acceptedRecordCount: acceptedCount,
+            },
+          });
+        }
+
+        logger.info({ dvId }, "force-reparse: deleting all pipeline data");
+
+        const reviewDeleted = await reviewRepository.deleteAllReviewDataByVersion(dvId);
+        await routingRepository.deleteResultsByVersion(dvId);
+        await evaluationRepository.deleteResultsByVersion(dvId);
+        await resolverRepository.deleteResultsByVersion(dvId);
+        await grammarRepository.deleteResultsByVersion(dvId);
+        await anchoringRepository.deleteResultsByVersion(dvId);
+        await extractionRepository.deleteCallsByVersion(dvId);
+        await scanningRepository.deleteCandidatesByVersion(dvId);
+        await parsingRepository.deleteSegmentsByVersion(dvId);
+
+        await parsingRepository.updateParseStatus(dvId, "unparsed");
+        await scanningRepository.updateScanStatus(dvId, "unscanned", "");
+        await extractionRepository.updateExtractionStatus(dvId, "unextracted", "");
+        await anchoringRepository.updateAnchoringStatus(dvId, "unanchored", "");
+        await grammarRepository.updateGrammarStatus(dvId, "unparsed_grammar", "");
+        await resolverRepository.updateResolutionStatus(dvId, "unresolved_resolver", "");
+        await evaluationRepository.updateEvaluationStatus(dvId, "unevaluated", "");
+        await routingRepository.updateRoutingStatus(dvId, "unrouted", "");
+
+        logger.info(
+          { dvId, ...reviewDeleted },
+          "force-reparse: all pipeline data deleted, statuses reset",
+        );
+      }
+
+      const versions = currentStageVersions({ parserVersion: parserVersion });
       const configHash = computeConfigHash(versions);
-      const existing = await reviewRepository.getAnalysisByConfig(dvId, configHash);
+      const existing = forceReparse
+        ? null
+        : await reviewRepository.getAnalysisByConfig(dvId, configHash);
 
       reply.raw.writeHead(200, {
         "Content-Type": "text/event-stream",
@@ -96,13 +142,21 @@ export function registerAnalyzeRoutes(
       } else if (existing) {
         analysisId = existing.analysisId;
       } else {
-        const analysis = await reviewRepository.insertAnalysis(dvId, configHash, { ...versions });
+        const analysis = await reviewRepository.insertAnalysis(dvId, configHash, stageVersionsToRecord(versions));
         analysisId = analysis.analysisId;
       }
 
       try {
         await pipeline.parse(dvId);
         const segments = await parsingRepository.getSegmentsByVersion(dvId);
+
+        const earlyText = segments.slice(0, 5).map(s => s.rawText).join(" ");
+        const inferred = inferJurisdictionFromText(earlyText);
+        if (inferred && inferred !== version.legalIdentity.jurisdiction) {
+          logger.info({ dvId, from: version.legalIdentity.jurisdiction, to: inferred }, "jurisdiction auto-corrected from document text");
+          await ingestionRepository.updateJurisdiction(dvId, inferred);
+        }
+
         reply.raw.write(sseEvent({
           stage: "parsed", status: "completed",
           counts: { provisions: segments.length },

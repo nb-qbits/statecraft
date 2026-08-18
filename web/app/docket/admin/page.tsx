@@ -45,7 +45,7 @@ export default function AdminPage() {
       >
         <div className="mb-6 flex items-center gap-2.5">
           <div
-            className="flex h-[30px] w-[30px] items-center justify-center rounded-[7px] text-sm font-bold text-white"
+            className="flex h-[30px] w-[30px] items-center justify-center rounded-[7px] text-[15px] font-bold text-white"
             style={{ background: "#4C6D96" }}
           >
             D
@@ -55,14 +55,14 @@ export default function AdminPage() {
           </div>
         </div>
         <div
-          className="mb-5 text-[11px] uppercase tracking-widest"
+          className="mb-5 text-[13px] uppercase tracking-widest"
           style={{ color: "#9AA6BC" }}
         >
           Internal console
         </div>
         <Link
           href="/docket"
-          className="mt-auto flex items-center gap-2 rounded-lg px-2.5 py-2 text-[13.5px] no-underline"
+          className="mt-auto flex items-center gap-2 rounded-lg px-2.5 py-2 text-[15px] no-underline"
           style={{ color: "#B7BECF" }}
         >
           <svg
@@ -84,7 +84,7 @@ export default function AdminPage() {
         <div
           style={{
             fontFamily: "var(--font-heading)",
-            fontSize: "25px",
+            fontSize: "30px",
             fontWeight: 700,
             letterSpacing: "-0.03em",
             color: "#16233F",
@@ -100,7 +100,7 @@ export default function AdminPage() {
             className="rounded-[12px] border bg-white"
             style={{ borderColor: "#D8D8DC", padding: "18px 20px", boxShadow: "0 1px 4px rgba(0,0,0,0.07)" }}
           >
-            <div style={{ fontSize: "12px", fontWeight: 500, color: "#6E6E73", marginBottom: "8px", fontFamily: "var(--font-body)" }}>
+            <div style={{ fontSize: "13px", fontWeight: 500, color: "#6E6E73", marginBottom: "8px", fontFamily: "var(--font-body)" }}>
               Total users
             </div>
             <div
@@ -121,7 +121,7 @@ export default function AdminPage() {
             className="rounded-[12px] border bg-white"
             style={{ borderColor: "#D8D8DC", padding: "18px 20px", boxShadow: "0 1px 4px rgba(0,0,0,0.07)" }}
           >
-            <div style={{ fontSize: "12px", fontWeight: 500, color: "#6E6E73", marginBottom: "8px", fontFamily: "var(--font-body)" }}>
+            <div style={{ fontSize: "13px", fontWeight: 500, color: "#6E6E73", marginBottom: "8px", fontFamily: "var(--font-body)" }}>
               Documents processed
             </div>
             <div
@@ -142,7 +142,7 @@ export default function AdminPage() {
             className="rounded-[12px] border bg-white"
             style={{ borderColor: "#D8D8DC", padding: "18px 20px", boxShadow: "0 1px 4px rgba(0,0,0,0.07)" }}
           >
-            <div style={{ fontSize: "12px", fontWeight: 500, color: "#6E6E73", marginBottom: "8px", fontFamily: "var(--font-body)" }}>
+            <div style={{ fontSize: "13px", fontWeight: 500, color: "#6E6E73", marginBottom: "8px", fontFamily: "var(--font-body)" }}>
               Total tasks found
             </div>
             <div
@@ -162,7 +162,7 @@ export default function AdminPage() {
         </div>
 
         {/* Users table — placeholder since no real user data */}
-        <div className="mb-3 text-sm font-semibold" style={{ color: "#16233F" }}>
+        <div className="mb-3 text-[15px] font-semibold" style={{ color: "#16233F" }}>
           Users
         </div>
         <div
@@ -170,7 +170,7 @@ export default function AdminPage() {
           style={{ borderColor: "#D8D8DC", boxShadow: "0 1px 4px rgba(0,0,0,0.07)" }}
         >
           <div
-            className="grid border-b bg-white px-[18px] py-2.5 text-[11px] uppercase tracking-wide"
+            className="grid border-b bg-white px-[18px] py-2.5 text-[13px] uppercase tracking-wide"
             style={{
               gridTemplateColumns: "1.4fr 1.6fr 0.8fr 0.8fr 1fr",
               color: "#86868B",
@@ -184,7 +184,7 @@ export default function AdminPage() {
             <div>Joined</div>
           </div>
           <div
-            className="grid bg-white px-[18px] py-3 text-[13px]"
+            className="grid bg-white px-[18px] py-3 text-[15px]"
             style={{
               gridTemplateColumns: "1.4fr 1.6fr 0.8fr 0.8fr 1fr",
               color: "#1D1D1F",
@@ -199,7 +199,7 @@ export default function AdminPage() {
         </div>
 
         {/* Documents table — real data from tracked bills */}
-        <div className="mb-3 text-sm font-semibold" style={{ color: "#16233F" }}>
+        <div className="mb-3 text-[15px] font-semibold" style={{ color: "#16233F" }}>
           Documents processed
         </div>
         <div
@@ -207,7 +207,7 @@ export default function AdminPage() {
           style={{ borderColor: "#D8D8DC", boxShadow: "0 1px 4px rgba(0,0,0,0.07)" }}
         >
           <div
-            className="grid border-b bg-white px-[18px] py-2.5 text-[11px] uppercase tracking-wide"
+            className="grid border-b bg-white px-[18px] py-2.5 text-[13px] uppercase tracking-wide"
             style={{
               gridTemplateColumns: "1fr 1fr 1.4fr 1fr 1fr",
               color: "#86868B",
@@ -221,18 +221,18 @@ export default function AdminPage() {
             <div>Status</div>
           </div>
           {loading ? (
-            <div className="bg-white px-[18px] py-4 text-sm" style={{ color: "#AEAEB2" }}>
+            <div className="bg-white px-[18px] py-4 text-[15px]" style={{ color: "#AEAEB2" }}>
               Loading...
             </div>
           ) : bills.length === 0 ? (
-            <div className="bg-white px-[18px] py-4 text-sm" style={{ color: "#AEAEB2" }}>
+            <div className="bg-white px-[18px] py-4 text-[15px]" style={{ color: "#AEAEB2" }}>
               No documents processed yet.
             </div>
           ) : (
             bills.map((bill, i) => (
               <div
                 key={bill.dvId}
-                className="grid bg-white px-[18px] py-3 text-[13px]"
+                className="grid bg-white px-[18px] py-3 text-[15px]"
                 style={{
                   gridTemplateColumns: "1fr 1fr 1.4fr 1fr 1fr",
                   color: "#1D1D1F",
@@ -265,7 +265,7 @@ export default function AdminPage() {
         <div className="mt-8 md:hidden">
           <Link
             href="/docket"
-            className="text-sm no-underline"
+            className="text-[15px] no-underline"
             style={{ color: "#4C6D96" }}
           >
             ← Back to Dashboard

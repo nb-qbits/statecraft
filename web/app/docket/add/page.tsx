@@ -86,7 +86,7 @@ function StageRow({
       }}
     >
       <div
-        className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-xs font-bold"
+        className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-[13px] font-bold"
         style={{
           background: done ? "#3F6B54" : active ? "#C8983E" : "#EDEDF0",
           color: done || active ? "#fff" : "#AEAEB2",
@@ -104,7 +104,7 @@ function StageRow({
       <div className="min-w-0 pt-0.5">
         <div
           style={{
-            fontSize: "13.5px",
+            fontSize: "15px",
             color: done ? "#3F6B54" : active ? "#1D1D1F" : "#AEAEB2",
             fontWeight: active ? 600 : done ? 500 : 400,
             transition: "color 0.3s ease",
@@ -115,7 +115,7 @@ function StageRow({
         {done && detail && (
           <div
             style={{
-              fontSize: "11.5px",
+              fontSize: "13px",
               color: "#86868B",
               marginTop: "2px",
             }}
@@ -143,7 +143,7 @@ function StageRow({
                 }}
               />
             </div>
-            <span style={{ fontSize: "10.5px", color: "#AEAEB2" }}>
+            <span style={{ fontSize: "13px", color: "#AEAEB2" }}>
               Working...
             </span>
           </div>
@@ -166,7 +166,7 @@ export default function AddBillPage() {
   const [lastDvId, setLastDvId] = useState<string | null>(null);
   const elapsed = useElapsed(processing);
 
-  const [jurisdiction, setJurisdiction] = useState("us-va");
+  const [jurisdiction, setJurisdiction] = useState("us-fed");
   const [session, setSession] = useState("");
   const [instrumentType, setInstrumentType] = useState("bill");
   const [billNumber, setBillNumber] = useState("");
@@ -284,7 +284,7 @@ export default function AddBillPage() {
           <div
             style={{
               fontFamily: "var(--font-heading)",
-              fontSize: "25px",
+              fontSize: "30px",
               fontWeight: 700,
               letterSpacing: "-0.03em",
               color: "#16233F",
@@ -292,7 +292,7 @@ export default function AddBillPage() {
           >
             Analyzing
           </div>
-          <div className="text-[13px]" style={{ color: "#6E6E73" }}>
+          <div className="text-[14px]" style={{ color: "#6E6E73" }}>
             {today}
           </div>
         </div>
@@ -302,7 +302,7 @@ export default function AddBillPage() {
             <div className="mb-2 text-center">
               <div
                 style={{
-                  fontSize: "20px",
+                  fontSize: "22px",
                   fontWeight: 700,
                   color: "#16233F",
                   fontFamily: "var(--font-heading)",
@@ -312,7 +312,7 @@ export default function AddBillPage() {
                 {allDone ? "Analysis complete" : "Processing your bill"}
               </div>
               {file && (
-                <div style={{ fontSize: "13px", color: "#86868B", marginTop: "6px" }}>
+                <div style={{ fontSize: "14px", color: "#86868B", marginTop: "6px" }}>
                   {file.name}
                   {!error && (
                     <span style={{ color: "#AEAEB2" }}> &middot; {elapsed}</span>
@@ -370,10 +370,10 @@ export default function AddBillPage() {
                   background: "#FBEAE5",
                 }}
               >
-                <div style={{ fontSize: "13px", fontWeight: 600, color: "#B8452F", marginBottom: "4px" }}>
+                <div style={{ fontSize: "15px", fontWeight: 600, color: "#B8452F", marginBottom: "4px" }}>
                   Something went wrong
                 </div>
-                <div style={{ fontSize: "12.5px", color: "#B8452F", lineHeight: "1.5" }}>
+                <div style={{ fontSize: "14px", color: "#B8452F", lineHeight: "1.5" }}>
                   {error}
                 </div>
                 <div style={{ display: "flex", gap: "8px", marginTop: "10px" }}>
@@ -381,7 +381,7 @@ export default function AddBillPage() {
                     <button
                       onClick={handleRetry}
                       style={{
-                        fontSize: "12.5px",
+                        fontSize: "14px",
                         fontWeight: 600,
                         color: "#fff",
                         background: "#B8452F",
@@ -403,7 +403,7 @@ export default function AddBillPage() {
                       setLastDvId(null);
                     }}
                     style={{
-                      fontSize: "12.5px",
+                      fontSize: "14px",
                       fontWeight: 600,
                       color: "#B8452F",
                       background: "none",
@@ -422,7 +422,7 @@ export default function AddBillPage() {
             {!error && !allDone && (
               <div
                 className="mt-4 text-center"
-                style={{ fontSize: "11.5px", color: "#AEAEB2" }}
+                style={{ fontSize: "13px", color: "#AEAEB2" }}
               >
                 This typically takes 15–45 seconds depending on document length.
               </div>
@@ -442,7 +442,7 @@ export default function AddBillPage() {
         <div
           style={{
             fontFamily: "var(--font-heading)",
-            fontSize: "25px",
+            fontSize: "30px",
             fontWeight: 700,
             letterSpacing: "-0.03em",
             color: "#16233F",
@@ -450,13 +450,13 @@ export default function AddBillPage() {
         >
           Add a bill
         </div>
-        <div style={{ fontSize: "12.5px", color: "#6E6E73", fontFamily: "var(--font-body)" }}>
+        <div style={{ fontSize: "14px", color: "#6E6E73", fontFamily: "var(--font-body)" }}>
           Today — {today}
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-5 md:p-8">
-        <p className="mb-6 text-sm leading-relaxed" style={{ color: "#1D1D1F" }}>
+        <p className="mb-6 text-[15px] leading-relaxed" style={{ color: "#1D1D1F" }}>
           Every deadline is matched to the exact section it comes from and the
           agency or office responsible — nothing is guessed.
         </p>
@@ -468,7 +468,7 @@ export default function AddBillPage() {
           >
             <button
               onClick={() => setUploadMode("file")}
-              className="rounded-[9px] px-[18px] py-2 text-[13.5px] font-semibold"
+              className="rounded-[9px] px-[18px] py-2 text-[15px] font-semibold"
               style={{
                 background: uploadMode === "file" ? "#fff" : "transparent",
                 color: uploadMode === "file" ? "#16233F" : "#6E6E73",
@@ -482,7 +482,7 @@ export default function AddBillPage() {
             </button>
             <button
               onClick={() => setUploadMode("url")}
-              className="rounded-[9px] px-[18px] py-2 text-[13.5px] font-semibold"
+              className="rounded-[9px] px-[18px] py-2 text-[15px] font-semibold"
               style={{
                 background: uploadMode === "url" ? "#fff" : "transparent",
                 color: uploadMode === "url" ? "#16233F" : "#6E6E73",
@@ -524,19 +524,19 @@ export default function AddBillPage() {
               </svg>
               {file ? (
                 <div>
-                  <div className="text-sm font-medium" style={{ color: "#1D1D1F" }}>
+                  <div className="text-[15px] font-medium" style={{ color: "#1D1D1F" }}>
                     {file.name}
                   </div>
-                  <div className="mt-1 text-xs" style={{ color: "#86868B" }}>
+                  <div className="mt-1 text-[13px]" style={{ color: "#86868B" }}>
                     Click or drop to replace
                   </div>
                 </div>
               ) : (
                 <div>
-                  <div className="text-sm" style={{ color: "#1D1D1F" }}>
+                  <div className="text-[15px]" style={{ color: "#1D1D1F" }}>
                     Drop a bill here, or click to browse
                   </div>
-                  <div className="mt-1 text-xs" style={{ color: "#86868B" }}>
+                  <div className="mt-1 text-[13px]" style={{ color: "#86868B" }}>
                     PDF, DOCX, or plain text
                   </div>
                 </div>
@@ -554,16 +554,16 @@ export default function AddBillPage() {
             </div>
           ) : (
             <div className="rounded-xl border p-4" style={{ borderColor: "#E5E5EA", background: "#FAFAFB" }}>
-              <label className="mb-2 block text-xs font-medium" style={{ color: "#86868B" }}>
+              <label className="mb-2 block text-[13px] font-medium" style={{ color: "#86868B" }}>
                 Paste a URL to the bill text
               </label>
               <input
                 type="url"
                 placeholder="https://..."
-                className="w-full rounded-lg border px-3 py-2.5 text-sm"
+                className="w-full rounded-lg border px-3 py-2.5 text-[15px]"
                 style={{ borderColor: "#E5E5EA" }}
               />
-              <p className="mt-2 text-xs" style={{ color: "#AEAEB2" }}>
+              <p className="mt-2 text-[13px]" style={{ color: "#AEAEB2" }}>
                 URL import is not yet available. Please upload a file instead.
               </p>
             </div>
@@ -572,13 +572,13 @@ export default function AddBillPage() {
 
         <div className="mb-6 grid gap-4 md:grid-cols-2">
           <div>
-            <label className="mb-1.5 block text-xs font-medium" style={{ color: "#86868B" }}>
+            <label className="mb-1.5 block text-[13px] font-medium" style={{ color: "#86868B" }}>
               Jurisdiction
             </label>
             <select
               value={jurisdiction}
               onChange={(e) => setJurisdiction(e.target.value)}
-              className="w-full rounded-lg border px-3 py-2.5 text-sm"
+              className="w-full rounded-lg border px-3 py-2.5 text-[15px]"
               style={{ borderColor: "#E5E5EA" }}
             >
               <option value="us-va">Virginia</option>
@@ -590,37 +590,37 @@ export default function AddBillPage() {
             </select>
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-medium" style={{ color: "#86868B" }}>
+            <label className="mb-1.5 block text-[13px] font-medium" style={{ color: "#86868B" }}>
               Session / Congress
             </label>
             <input
               value={session}
               onChange={(e) => setSession(e.target.value)}
               placeholder="e.g. 2026 Regular Session"
-              className="w-full rounded-lg border px-3 py-2.5 text-sm"
+              className="w-full rounded-lg border px-3 py-2.5 text-[15px]"
               style={{ borderColor: "#E5E5EA" }}
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-medium" style={{ color: "#86868B" }}>
+            <label className="mb-1.5 block text-[13px] font-medium" style={{ color: "#86868B" }}>
               Bill number
             </label>
             <input
               value={billNumber}
               onChange={(e) => setBillNumber(e.target.value)}
               placeholder="e.g. HB 35"
-              className="w-full rounded-lg border px-3 py-2.5 text-sm"
+              className="w-full rounded-lg border px-3 py-2.5 text-[15px]"
               style={{ borderColor: "#E5E5EA" }}
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-xs font-medium" style={{ color: "#86868B" }}>
+            <label className="mb-1.5 block text-[13px] font-medium" style={{ color: "#86868B" }}>
               Stage
             </label>
             <select
               value={stage}
               onChange={(e) => setStage(e.target.value)}
-              className="w-full rounded-lg border px-3 py-2.5 text-sm"
+              className="w-full rounded-lg border px-3 py-2.5 text-[15px]"
               style={{ borderColor: "#E5E5EA" }}
             >
               <option value="introduced">Introduced</option>
@@ -632,7 +632,7 @@ export default function AddBillPage() {
 
         {error && (
           <div
-            className="mb-4 rounded-lg border px-4 py-3 text-sm"
+            className="mb-4 rounded-lg border px-4 py-3 text-[15px]"
             style={{
               borderColor: "#E5C5BF",
               background: "#FBEAE5",
@@ -646,7 +646,7 @@ export default function AddBillPage() {
         <button
           onClick={handleAnalyze}
           disabled={!file}
-          className="rounded-[10px] px-8 py-3 text-sm font-semibold transition-transform active:scale-[0.97] disabled:opacity-40"
+          className="rounded-[10px] px-8 py-3 text-[15px] font-semibold transition-transform active:scale-[0.97] disabled:opacity-40"
           style={{ background: "#16233F", color: "#F5F2E8" }}
         >
           Analyze bill

@@ -1135,6 +1135,7 @@ function SummaryView({
 // ─── Stale Analysis Banner ───
 
 const STAGE_DISPLAY: Record<string, string> = {
+  parser: "document parser",
   scanner: "candidate scanner",
   extractor: "obligation extractor",
   anchorer: "quote anchorer",
@@ -1166,11 +1167,13 @@ function StaleBanner({
     ? engineVersions.staleStages.map((s) => STAGE_DISPLAY[s] ?? s).join(", ")
     : null;
 
-  const handleReanalyse = async () => {
+  const parserIsStale = engineVersions.staleStages.includes("parser");
+
+  const handleReanalyse = async (forceReparse = false) => {
     setReanalysing(true);
     setError(null);
     try {
-      for await (const event of streamAnalysis(dvId)) {
+      for await (const event of streamAnalysis(dvId, undefined, { forceReparse })) {
         if (event.stage === "complete") break;
         if (event.status === "failed") {
           setError(event.error ?? "Re-analysis failed");
@@ -1181,7 +1184,12 @@ function StaleBanner({
       setReanalysing(false);
       onReanalysed();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Re-analysis failed");
+      const msg = e instanceof Error ? e.message : "Re-analysis failed";
+      if (msg.includes("ACCEPTED_RECORDS_EXIST")) {
+        setError("Cannot re-extract: accepted findings must be reverted first.");
+      } else {
+        setError(msg);
+      }
       setReanalysing(false);
     }
   };
@@ -1191,13 +1199,17 @@ function StaleBanner({
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <p className="text-sm font-medium text-amber-900">
-            This analysis used an earlier version of the engine.
+            {parserIsStale
+              ? "This document was extracted with an older version of the parser."
+              : "This analysis used an earlier version of the engine."}
           </p>
           <p className="mt-1 text-xs text-amber-800">
             {stageNames
               ? `Updated since this analysis: ${stageNames}.`
               : "The engine has been updated since this analysis was run."}{" "}
-            Re-analyse to get results from the current engine.
+            {parserIsStale
+              ? "Re-extract from source to apply parser improvements."
+              : "Re-analyse to get results from the current engine."}
           </p>
           {error && (
             <p className="mt-1 text-xs text-red-700">{error}</p>
@@ -1205,11 +1217,13 @@ function StaleBanner({
         </div>
         <button
           type="button"
-          onClick={handleReanalyse}
+          onClick={() => handleReanalyse(parserIsStale)}
           disabled={reanalysing}
           className="flex-shrink-0 rounded bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700 disabled:opacity-50"
         >
-          {reanalysing ? "Re-analysing…" : "Re-analyse"}
+          {reanalysing
+            ? (parserIsStale ? "Re-extracting…" : "Re-analysing…")
+            : (parserIsStale ? "Re-extract from source" : "Re-analyse")}
         </button>
       </div>
     </div>

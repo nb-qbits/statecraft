@@ -4,10 +4,12 @@ import {
   splitByStructure,
   splitOnEmbeddedSections,
   isPageFooter,
+  detectLineNumbers,
+  stripDetectedLineNumber,
 } from "./structural-segmentation.js";
 
 const ADAPTER_ID = "pdf";
-const VERSION = "1.1.0";
+const VERSION = "1.4.0";
 
 export interface SidecarPage {
   readonly pageNumber: number;
@@ -28,10 +30,22 @@ export interface SidecarResponse {
 
 export interface SidecarClient {
   parsePdf(bytes: Buffer): Promise<SidecarResponse>;
+  getContractVersion(): Promise<string>;
 }
 
 export function createSidecarClient(baseUrl: string): SidecarClient {
   return {
+    async getContractVersion(): Promise<string> {
+      try {
+        const res = await fetch(`${baseUrl}/health`);
+        if (!res.ok) return "unknown";
+        const body = (await res.json()) as { contractVersion?: string };
+        return body.contractVersion ?? "unknown";
+      } catch {
+        return "unknown";
+      }
+    },
+
     async parsePdf(bytes: Buffer): Promise<SidecarResponse> {
       const formData = new FormData();
       formData.append("file", new Blob([bytes as unknown as ArrayBuffer]), "document.pdf");
@@ -67,14 +81,18 @@ type ParsePdfFn = {
   parserVersion: string;
 };
 
-export function createPdfParser(sidecarClient: SidecarClient): ParsePdfFn {
+export function createPdfParser(sidecarClient: SidecarClient, sidecarVersion?: string): ParsePdfFn {
+  const compositeVersion = sidecarVersion
+    ? `${VERSION}+sidecar-${sidecarVersion}`
+    : VERSION;
+
   const parsePdf: ParsePdfFn = async (bytes: Buffer): Promise<ParseResult> => {
     if (!bytes.subarray(0, 5).equals(Buffer.from("%PDF-"))) {
       return {
         ok: false,
         reason: "Not a valid PDF file (missing %PDF- header)",
         parserAdapter: ADAPTER_ID,
-        parserVersion: VERSION,
+        parserVersion: compositeVersion,
       };
     }
 
@@ -86,7 +104,7 @@ export function createPdfParser(sidecarClient: SidecarClient): ParsePdfFn {
         ok: false,
         reason: `Sidecar error: ${err instanceof Error ? err.message : String(err)}`,
         parserAdapter: ADAPTER_ID,
-        parserVersion: VERSION,
+        parserVersion: compositeVersion,
       };
     }
 
@@ -95,7 +113,7 @@ export function createPdfParser(sidecarClient: SidecarClient): ParsePdfFn {
         ok: false,
         reason: "Scanned PDF with no extractable text",
         parserAdapter: ADAPTER_ID,
-        parserVersion: VERSION,
+        parserVersion: compositeVersion,
       };
     }
 
@@ -109,13 +127,22 @@ export function createPdfParser(sidecarClient: SidecarClient): ParsePdfFn {
         ok: false,
         reason: "PDF contains no text content after extraction",
         parserAdapter: ADAPTER_ID,
-        parserVersion: VERSION,
+        parserVersion: compositeVersion,
       };
     }
 
     const lines = rawText.split("\n");
     const contentLines = lines.filter(l => !isPageFooter(l));
-    const trimmedLines = trimTrailingBlanks(contentLines);
+    const hasLineNumbers = detectLineNumbers(contentLines);
+    let lineNumberCharsStripped = 0;
+    const processedLines = hasLineNumbers
+      ? contentLines.map(l => {
+          const stripped = stripDetectedLineNumber(l);
+          lineNumberCharsStripped += l.length - stripped.length;
+          return stripped;
+        })
+      : contentLines;
+    const trimmedLines = trimTrailingBlanks(processedLines);
     const hasBlankLines = trimmedLines.some(l => l.trim().length === 0);
 
     let paragraphs;
@@ -136,7 +163,7 @@ export function createPdfParser(sidecarClient: SidecarClient): ParsePdfFn {
         ok: false,
         reason: `Content coverage failure: ${nonEmptyCount - consumedCount} non-empty lines not in any segment (${consumedCount} consumed of ${nonEmptyCount})`,
         parserAdapter: ADAPTER_ID,
-        parserVersion: VERSION,
+        parserVersion: compositeVersion,
       };
     }
 
@@ -145,7 +172,7 @@ export function createPdfParser(sidecarClient: SidecarClient): ParsePdfFn {
         ok: false,
         reason: "PDF contains no text content after segmentation",
         parserAdapter: ADAPTER_ID,
-        parserVersion: VERSION,
+        parserVersion: compositeVersion,
       };
     }
 
@@ -156,8 +183,8 @@ export function createPdfParser(sidecarClient: SidecarClient): ParsePdfFn {
 
     const characterAccounting: CharacterAccounting = {
       inputChars: rawText.length,
-      strippedChars: 0,
-      preprocessedChars: rawText.length,
+      strippedChars: lineNumberCharsStripped,
+      preprocessedChars: rawText.length - lineNumberCharsStripped,
       segmentRawChars,
     };
 
@@ -165,13 +192,13 @@ export function createPdfParser(sidecarClient: SidecarClient): ParsePdfFn {
       ok: true,
       paragraphs,
       parserAdapter: ADAPTER_ID,
-      parserVersion: VERSION,
+      parserVersion: compositeVersion,
       fidelity: "inferred",
       characterAccounting,
     };
   };
 
-  parsePdf.parserVersion = VERSION;
+  parsePdf.parserVersion = compositeVersion;
   return parsePdf;
 }
 

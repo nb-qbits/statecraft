@@ -226,10 +226,23 @@ class TemporalVisitor extends BaseCstVisitor {
       }
     }
 
+    if (ctx["ofEachYearClause"] && dateExpr.kind === "fixed_date") {
+      return {
+        kind: "recurrence", frequency: "yearly", interval: 1,
+        byMonth: dateExpr.month, byMonthDay: dateExpr.day,
+        yearParity: null, anchorEvent: null,
+        boundKind: "no_later_than", dayKind: null,
+      };
+    }
+
     return dateExpr;
   }
 
   deadlineEventAnchor(): void {
+    // semantic value is produced by deadlineExpression
+  }
+
+  ofEachYearClause(): void {
     // semantic value is produced by deadlineExpression
   }
 

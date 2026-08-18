@@ -8,7 +8,7 @@ import type {
   TemporalExpression,
 } from "./types.js";
 
-export const GRAMMAR_VERSION = "1.6.1";
+export const GRAMMAR_VERSION = "1.7.0";
 
 export function parseTemporalExpression(span: AnchoredSpan): SpanParseResult {
   const result = parseText(span.text);
@@ -20,8 +20,12 @@ export function parseTemporalExpression(span: AnchoredSpan): SpanParseResult {
   };
 }
 
+function dehyphenate(text: string): string {
+  return text.replace(/(\w)- (\w)/g, "$1$2");
+}
+
 function parseText(text: string): ParseResult {
-  const trimmed = text.trim();
+  const trimmed = dehyphenate(text.trim());
   if (trimmed.length === 0) {
     return { parsed: false, reason: "empty input", position: 0 };
   }

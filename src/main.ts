@@ -103,13 +103,16 @@ async function main(): Promise<void> {
 
   const parsingRepository = createParsingRepository(db);
   const sidecarClient = createSidecarClient(env.SIDECAR_URL);
+  const sidecarVersion = await sidecarClient.getContractVersion();
+  logger.info({ sidecarVersion }, "sidecar contract version");
+  const parsePdfFn = createPdfParser(sidecarClient, sidecarVersion);
   const parsingService = createParsingService({
     ingestionRepository: repository,
     parsingRepository,
     storage,
     plainTextParser: createPlainTextParser(),
     parseDocx: parseDocxAsync,
-    parsePdf: createPdfParser(sidecarClient),
+    parsePdf: parsePdfFn,
     logger,
   });
 
@@ -290,7 +293,9 @@ async function main(): Promise<void> {
     evaluationRepository,
     routingRepository,
     reviewRepository,
+    extractionRepository,
     pipeline: pipelineServices,
+    parserVersion: parsePdfFn.parserVersion,
     logger,
   });
 
@@ -303,6 +308,7 @@ async function main(): Promise<void> {
     evaluationRepository,
     routingRepository,
     reviewRepository,
+    parserVersion: parsePdfFn.parserVersion,
     logger,
   });
 

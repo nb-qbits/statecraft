@@ -92,6 +92,7 @@ function createStubs() {
     getVersion: vi.fn(async (id: DocumentVersionId) => versions.get(id) ?? null),
     listVersions: vi.fn(),
     getDocument: vi.fn(),
+    updateJurisdiction: vi.fn(),
   };
 
   const parsingRepository: ParsingRepository = {
