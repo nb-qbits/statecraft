@@ -42,6 +42,7 @@ export const ReviewAction = {
   reject: "reject",
   split: "split",
   manual_add: "manual_add",
+  edit_record: "edit_record",
 } as const;
 export type ReviewAction =
   (typeof ReviewAction)[keyof typeof ReviewAction];
@@ -217,4 +218,30 @@ export interface ManualRecordInput {
   readonly ruleIds?: readonly string[];
   readonly citations?: readonly string[];
   readonly packVersion?: string;
+}
+
+export const ConflictStatus = {
+  pending_review: "pending_review",
+} as const;
+export type ConflictStatus =
+  (typeof ConflictStatus)[keyof typeof ConflictStatus];
+
+export interface ResolutionConflict {
+  readonly conflictId: string;
+  readonly documentVersionId: string;
+  readonly anchorId: string;
+  readonly recordId: string;
+  readonly previousStatutoryDate: string;
+  readonly previousAdjustedDate: string;
+  readonly newStatutoryDate: string | null;
+  readonly newAdjustedDate: string | null;
+  readonly newResolved: boolean;
+  readonly previousGrammarVersion: string;
+  readonly newGrammarVersion: string;
+  readonly previousResolverVersion: string;
+  readonly newResolverVersion: string;
+  readonly status: ConflictStatus;
+  readonly createdAt: string;
+  readonly resolvedAt: string | null;
+  readonly resolvedBy: string | null;
 }

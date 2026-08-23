@@ -14,6 +14,8 @@ import { deriveProvisionLabel } from "../../../modules/shared/provision-label.js
 import { isResolvedRecurrence } from "../../../modules/resolver/types.js";
 import { computeConfigHash, currentStageVersions, staleStages } from "../../../modules/shared/engine-versions.js";
 import type { StageVersions } from "../../../modules/shared/engine-versions.js";
+import { GRAMMAR_VERSION } from "../../../modules/grammar/service.js";
+import { RESOLVER_VERSION } from "../../../modules/resolver/service.js";
 
 export interface FindingsDeps {
   ingestionRepository: IngestionRepository;
@@ -79,6 +81,13 @@ export function registerFindingsRoutes(
             : ["unknown"];
         }
 
+        const grammarStale = version.grammarVersion !== null && version.grammarVersion !== GRAMMAR_VERSION;
+        const resolverStale = version.resolverVersion !== null && version.resolverVersion !== RESOLVER_VERSION;
+        const findingStaleStages: string[] = [];
+        if (grammarStale) findingStaleStages.push("grammar");
+        if (resolverStale) findingStaleStages.push("resolver");
+        const findingStale = findingStaleStages.length > 0;
+
         const segmentMap = new Map(segments.map((s) => [s.segmentId, s]));
         const grammarMap = new Map(grammarResults.map((g) => [g.anchorId, g]));
         const resolutionMap = new Map(resolutions.map((r) => [r.anchorId, r]));
@@ -99,9 +108,22 @@ export function registerFindingsRoutes(
 
           let unresolvedReason: string | null = null;
           let missingInputs: string[] | null = null;
+          let refusalKind: string | null = null;
+          let bounded = false;
+          let upperBound: string | null = null;
+          let contingency: string | null = null;
+          let derivationDepth: number | null = null;
           if (resolution && !resolution.result.resolved) {
             unresolvedReason = resolution.result.reason;
             missingInputs = resolution.result.missingInputs as string[];
+            if ("bounded" in resolution.result && resolution.result.bounded) {
+              bounded = true;
+              upperBound = resolution.result.upperBound;
+              contingency = resolution.result.contingency ?? null;
+              derivationDepth = resolution.result.derivationDepth ?? null;
+            } else if ("refusalKind" in resolution.result) {
+              refusalKind = resolution.result.refusalKind;
+            }
           } else if (!resolution && grammarParsed) {
             unresolvedReason = "no resolution attempted";
             missingInputs = null;
@@ -170,15 +192,24 @@ export function registerFindingsRoutes(
             citations: p.citations,
             packVersion: p.packVersion,
             dateProvenance: p.resolved
-              ? (p.packVersion?.startsWith("default/") ? "generic_default" : "computed")
+              ? (p.packVersion?.startsWith("default/") && p.adjustedDate && p.statutoryDate && p.adjustedDate !== p.statutoryDate
+                  ? "generic_default"
+                  : "computed")
               : null,
             unresolvedReason,
+            refusalKind,
+            bounded,
+            upperBound,
+            contingency,
+            derivationDepth,
             missingInputs,
             lane: p.lane,
             laneReasons: p.laneReasons,
             supportLevel: p.supportLevel,
             deterministicChecks,
             status: p.status,
+            stale: findingStale,
+            staleStages: findingStaleStages,
           };
         });
 

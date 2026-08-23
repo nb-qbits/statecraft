@@ -27,7 +27,13 @@ describe("server", () => {
     it("returns 200 with status ok", async () => {
       const res = await app.inject({ method: "GET", url: "/health" });
       expect(res.statusCode).toBe(200);
-      expect(res.json()).toEqual({ status: "ok" });
+      const body = res.json();
+      expect(body.status).toBe("ok");
+      expect(body.versions).toBeDefined();
+      expect(body.versions.grammar).toBeTruthy();
+      expect(body.versions.resolver).toBeTruthy();
+      expect(body.versions.extractor).toBeTruthy();
+      expect(body.versions.anchorer).toBeTruthy();
     });
 
     it("returns a correlation ID header", async () => {

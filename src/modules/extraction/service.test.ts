@@ -112,8 +112,16 @@ function createMockLogger(): Logger {
   } as unknown as Logger;
 }
 
+function defaultProposals(segmentId = "seg_01"): unknown {
+  return {
+    proposals: [
+      { segmentId, quotedText: "within 30 days", kind: "duration" },
+    ],
+  };
+}
+
 function createMockModelGateway(
-  parsedContent: unknown = { proposals: [] },
+  parsedContent: unknown = defaultProposals(),
 ): ModelGateway {
   return {
     call: vi.fn(async (): Promise<ModelResponse> => ({
@@ -147,6 +155,8 @@ function createStubs() {
     listVersions: vi.fn(),
     getDocument: vi.fn(),
     updateJurisdiction: vi.fn(),
+    updateLegalIdentity: vi.fn(),
+    listAnalysedVersions: vi.fn().mockResolvedValue([]),
   };
 
   const parsingRepository: ParsingRepository = {
@@ -452,6 +462,29 @@ describe("extraction service", () => {
     await expect(service.extractDocument(dvId)).rejects.toThrow(
       "not been scanned",
     );
+  });
+
+  it("throws EXTRACTION_EMPTY when processable segments produce zero proposals", async () => {
+    stubs.versions.set(dvId, makeVersion());
+    stubs.segments.set(dvId, [
+      makeSegment("01", "Each agency shall, within 30 days, submit a report."),
+      makeSegment("02", "The Secretary shall promulgate regulations within 90 days."),
+    ]);
+    stubs.candidates.set(dvId, [
+      makeCandidate("seg_01", "duration", "within 30 days"),
+      makeCandidate("seg_02", "duration", "within 90 days"),
+    ]);
+
+    const gateway = createMockModelGateway({ proposals: [] });
+    const service = makeService(gateway);
+
+    await expect(service.extractDocument(dvId)).rejects.toThrow(
+      "0 proposals from 2 segments",
+    );
+
+    expect(
+      stubs.extractionRepository.updateExtractionStatus,
+    ).toHaveBeenCalledWith(dvId, "extraction_failed", expect.any(String));
   });
 
   it("persists model calls and updates extraction_status", async () => {

@@ -24,6 +24,7 @@ import type { LaneAssignment } from "../../../modules/routing/types.js";
 import { normalizeActors } from "../../../modules/extraction/actor-normalizer.js";
 import { computeConfigHash, currentStageVersions, stageVersionsToRecord } from "../../../modules/shared/engine-versions.js";
 import { inferJurisdictionFromText } from "../../../modules/ingestion/jurisdiction.js";
+import { extractTitleFromSegments, extractApprovalDate, looksLikeFilename } from "../../../modules/ingestion/title-extractor.js";
 
 export interface AnalyzeDeps {
   ingestionRepository: IngestionRepository;
@@ -121,6 +122,7 @@ export function registerAnalyzeRoutes(
         ? null
         : await reviewRepository.getAnalysisByConfig(dvId, configHash);
 
+      reply.hijack();
       reply.raw.writeHead(200, {
         "Content-Type": "text/event-stream",
         "Cache-Control": "no-cache",
@@ -155,6 +157,34 @@ export function registerAnalyzeRoutes(
         if (inferred && inferred !== version.legalIdentity.jurisdiction) {
           logger.info({ dvId, from: version.legalIdentity.jurisdiction, to: inferred }, "jurisdiction auto-corrected from document text");
           await ingestionRepository.updateJurisdiction(dvId, inferred);
+        }
+
+        const extracted = extractTitleFromSegments(segments);
+        const identityUpdates: Record<string, string> = {};
+        if (extracted.shortTitle && !version.legalIdentity.shortTitle) {
+          identityUpdates.shortTitle = extracted.shortTitle;
+        }
+        if (extracted.displayNumber && looksLikeFilename(version.legalIdentity.number)) {
+          identityUpdates.number = extracted.displayNumber;
+        }
+        if (extracted.chapter && !version.legalIdentity.chapter) {
+          identityUpdates.chapter = extracted.chapter;
+        }
+        if (extracted.session && (version.legalIdentity.session.length <= 4 || /^\d+$/.test(version.legalIdentity.session))) {
+          identityUpdates.session = extracted.session;
+        }
+        if (extracted.stage && version.legalIdentity.stage === "introduced") {
+          identityUpdates.stage = extracted.stage;
+        }
+
+        const approvalDate = extractApprovalDate(segments);
+        if (approvalDate && !version.asOfDate) {
+          identityUpdates.asOfDate = approvalDate;
+        }
+
+        if (Object.keys(identityUpdates).length > 0) {
+          await ingestionRepository.updateLegalIdentity(dvId, identityUpdates);
+          logger.info({ dvId, ...identityUpdates }, "identity extracted from document content");
         }
 
         reply.raw.write(sseEvent({

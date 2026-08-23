@@ -42,9 +42,16 @@ export function normalizeForEvidenceMatchV1(input: string): NormalizeResult {
     }
 
     // Step 3: line-break hyphenation rejoining (word-\nword → wordword)
-    if (ch === "-" && i + 1 < nfkcMapped.length && nfkcMapped[i + 1] === "\n") {
-      i += 2; // skip hyphen and newline
-      continue;
+    // Also handles PDF artifact: word- word → wordword (hyphen-space between word chars)
+    if (ch === "-" && i > 0 && /\w/.test(nfkcMapped[i - 1]!)) {
+      if (i + 1 < nfkcMapped.length && nfkcMapped[i + 1] === "\n") {
+        i += 2; // skip hyphen and newline
+        continue;
+      }
+      if (i + 1 < nfkcMapped.length && nfkcMapped[i + 1] === " " && i + 2 < nfkcMapped.length && /\w/.test(nfkcMapped[i + 2]!)) {
+        i += 2; // skip hyphen and space
+        continue;
+      }
     }
 
     // Step 4: smart quotes → ASCII

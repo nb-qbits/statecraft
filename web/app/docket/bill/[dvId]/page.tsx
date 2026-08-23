@@ -3,7 +3,8 @@
 import { use, useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { fetchFindings, supplyInput, streamAnalysis } from "@/lib/api";
+import { fetchFindings, supplyInput, streamAnalysis, editRecordDate, fetchCalendarSyncStatus, syncCalendar, fetchUserInfo } from "@/lib/api";
+import { formatActorDisplay } from "@/lib/format";
 import type { FindingsResponse } from "@/lib/api";
 import { findingToDocketTask, countStatuses, STATUS_META, daysUntilLabel, provenanceFor, provenanceSummary, getAgencyInitials } from "@/lib/docket-types";
 import type { DocketTask, TaskStatus } from "@/lib/docket-types";
@@ -101,8 +102,8 @@ function TaskPopover({
   caretOffset?: number;
 }) {
   const meta = STATUS_META[task.status];
-  const actor = task.actor || "Unassigned";
-  const initials = getAgencyInitials(actor);
+  const actorDisplay = formatActorDisplay(task.actor);
+  const initials = actorDisplay.isPlaceholder ? "?" : getAgencyInitials(actorDisplay.text);
   const relLabel = daysUntilLabel(task.due, task.status);
   const [provOpen, setProvOpen] = useState(false);
   const provRows = provenanceFor(task);
@@ -218,8 +219,21 @@ function TaskPopover({
             <span style={{ fontSize: "10px", fontWeight: 700, color: "#E7E3D6" }}>{initials}</span>
           </div>
           <div>
-            <div style={{ fontSize: "14px", fontWeight: 600, color: "#16233F" }}>{actor}</div>
-            <div style={{ fontSize: "13px", color: "#86868B" }}>Responsible agency</div>
+            <div
+              style={{
+                fontSize: "14px",
+                fontWeight: 600,
+                color: actorDisplay.isPlaceholder ? "#86868B" : "#16233F",
+                fontStyle: actorDisplay.isPlaceholder ? "italic" : undefined,
+                ...(task.actorQuotedText && !actorDisplay.isPlaceholder ? { borderBottom: "1px dotted #86868B", cursor: "help" } : {}),
+              }}
+              title={task.actorQuotedText && !actorDisplay.isPlaceholder ? `Source: "${task.actorQuotedText}"` : undefined}
+            >
+              {actorDisplay.text}
+            </div>
+            {!actorDisplay.isPlaceholder && (
+              <div style={{ fontSize: "13px", color: "#86868B" }}>Responsible agency</div>
+            )}
           </div>
         </div>
 
@@ -317,7 +331,7 @@ function TaskPopover({
           )}
         </div>
 
-        {/* Needs-input: add date action */}
+        {/* Needs-input section */}
         {task.determination === "unresolved" && (
           <div
             style={{
@@ -327,62 +341,77 @@ function TaskPopover({
               marginBottom: "12px",
             }}
           >
-            <div style={{ fontSize: "13px", color: STATUS_META.needs_input.color, fontWeight: 500, marginBottom: "6px" }}>
-              {task.inputAsk}
-            </div>
-            {!dateFormOpen ? (
-              <button
-                onClick={() => setDateFormOpen(true)}
-                style={{
-                  fontSize: "14px",
-                  fontWeight: 600,
-                  color: "#5B5B8C",
-                  background: "#FFFFFF",
-                  border: "1px solid #D4D0E6",
-                  borderRadius: "6px",
-                  padding: "5px 14px",
-                  cursor: "pointer",
-                }}
-              >
-                + Add date
-              </button>
+            {task.contingent ? (
+              <>
+                <div style={{ fontSize: "13px", color: STATUS_META.needs_input.color, fontWeight: 500, marginBottom: "4px" }}>
+                  Contingent, no date available
+                </div>
+                <div style={{ fontSize: "13px", color: "#86868B", fontStyle: "italic" }}>
+                  {task.referenceEventText
+                    ? `Depends on: ${task.referenceEventText}`
+                    : "This obligation depends on a future event whose date cannot be determined yet."}
+                </div>
+              </>
             ) : (
-              <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
-                <input
-                  type="date"
-                  value={dateValue}
-                  onChange={(e) => setDateValue(e.target.value)}
-                  style={{
-                    fontSize: "13px",
-                    border: "1px solid #D4D0E6",
-                    borderRadius: "6px",
-                    padding: "5px 8px",
-                  }}
-                />
-                <button
-                  onClick={handleSaveDate}
-                  disabled={saving || !dateValue}
-                  style={{
-                    fontSize: "14px",
-                    fontWeight: 600,
-                    backgroundColor: "#5B5B8C",
-                    color: "#FFFFFF",
-                    border: "none",
-                    borderRadius: "6px",
-                    padding: "5px 14px",
-                    cursor: saving || !dateValue ? "not-allowed" : "pointer",
-                    opacity: saving || !dateValue ? 0.5 : 1,
-                  }}
-                >
-                  {saving ? "Saving..." : "Save"}
-                </button>
-                <button
-                  onClick={() => { setDateFormOpen(false); setDateValue(""); }}
-                  style={{ fontSize: "13px", color: "#86868B", background: "none", border: "none", cursor: "pointer" }}
-                >
-                  Cancel
-                </button>
-              </div>
+              <>
+                <div style={{ fontSize: "13px", color: STATUS_META.needs_input.color, fontWeight: 500, marginBottom: "6px" }}>
+                  {task.inputAsk}
+                </div>
+                {!dateFormOpen ? (
+                  <button
+                    onClick={() => setDateFormOpen(true)}
+                    style={{
+                      fontSize: "14px",
+                      fontWeight: 600,
+                      color: "#5B5B8C",
+                      background: "#FFFFFF",
+                      border: "1px solid #D4D0E6",
+                      borderRadius: "6px",
+                      padding: "5px 14px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    + Add date
+                  </button>
+                ) : (
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+                    <input
+                      type="date"
+                      value={dateValue}
+                      onChange={(e) => setDateValue(e.target.value)}
+                      style={{
+                        fontSize: "13px",
+                        border: "1px solid #D4D0E6",
+                        borderRadius: "6px",
+                        padding: "5px 8px",
+                      }}
+                    />
+                    <button
+                      onClick={handleSaveDate}
+                      disabled={saving || !dateValue}
+                      style={{
+                        fontSize: "14px",
+                        fontWeight: 600,
+                        backgroundColor: "#5B5B8C",
+                        color: "#FFFFFF",
+                        border: "none",
+                        borderRadius: "6px",
+                        padding: "5px 14px",
+                        cursor: saving || !dateValue ? "not-allowed" : "pointer",
+                        opacity: saving || !dateValue ? 0.5 : 1,
+                      }}
+                    >
+                      {saving ? "Saving..." : "Save"}
+                    </button>
+                    <button
+                      onClick={() => { setDateFormOpen(false); setDateValue(""); }}
+                      style={{ fontSize: "13px", color: "#86868B", background: "none", border: "none", cursor: "pointer" }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}
@@ -676,10 +705,10 @@ function TimelineChart({
 
   const byAgency = new Map<string, DocketTask[]>();
   for (const t of datedTasks) {
-    const actor = t.actor || "Unassigned";
-    const list = byAgency.get(actor) ?? [];
+    const label = formatActorDisplay(t.actor).text;
+    const list = byAgency.get(label) ?? [];
     list.push(t);
-    byAgency.set(actor, list);
+    byAgency.set(label, list);
   }
   const agencies = Array.from(byAgency.entries()).sort((a, b) =>
     a[0].localeCompare(b[0]),
@@ -801,6 +830,7 @@ function TimelineChart({
 
           {/* Agency rows */}
           {agencies.map(([name, agTasks], rowIdx) => {
+            const isPlaceholderActor = agTasks[0] ? formatActorDisplay(agTasks[0].actor).isPlaceholder : false;
             const sortedTasks = [...agTasks].sort((a, b) => (a.due ?? "").localeCompare(b.due ?? ""));
             const markerLayouts = computeMarkerLayout(agTasks, toPercent);
             const rowTint = ROW_TINTS[rowIdx % ROW_TINTS.length];
@@ -843,7 +873,8 @@ function TimelineChart({
                       style={{
                         fontSize: "14px",
                         fontWeight: 600,
-                        color: "#16233F",
+                        color: isPlaceholderActor ? "#86868B" : "#16233F",
+                        fontStyle: isPlaceholderActor ? "italic" : undefined,
                         lineHeight: "1.3",
                       }}
                     >
@@ -957,6 +988,7 @@ function TimelineChart({
 }
 
 function UrgencyBanner({ tasks }: { tasks: DocketTask[] }) {
+  const resolvedCount = tasks.filter((t) => t.due !== null && t.due !== undefined).length;
   const overdueCount = tasks.filter((t) => t.status === "overdue").length;
   if (overdueCount > 0) {
     return (
@@ -980,6 +1012,31 @@ function UrgencyBanner({ tasks }: { tasks: DocketTask[] }) {
           <text x="10" y="14.5" textAnchor="middle" fontSize="10" fontWeight="800" fill="#A8442C">!</text>
         </svg>
         {overdueCount} deadline{overdueCount !== 1 ? "s" : ""} overdue &mdash; review immediately
+      </div>
+    );
+  }
+  if (resolvedCount === 0) {
+    return (
+      <div
+        style={{
+          backgroundColor: "#F5EFE0",
+          color: "#8B7355",
+          padding: "10px 18px",
+          borderRadius: "10px",
+          marginBottom: "16px",
+          display: "flex",
+          alignItems: "center",
+          gap: "10px",
+          fontSize: "15px",
+          fontWeight: 600,
+          fontFamily: "var(--font-body)",
+        }}
+      >
+        <svg width="16" height="16" viewBox="0 0 20 20">
+          <circle cx="10" cy="10" r="9" fill="none" stroke="#8B7355" strokeWidth="2" />
+          <text x="10" y="14" textAnchor="middle" fontSize="12" fontWeight="700" fill="#8B7355">?</text>
+        </svg>
+        No dates resolved &mdash; all obligations need trigger dates or additional context
       </div>
     );
   }
@@ -1012,7 +1069,7 @@ function BriefingSummaryLine({ tasks }: { tasks: DocketTask[] }) {
   const total = tasks.length;
   const overdueCount = tasks.filter((t) => t.status === "overdue").length;
   const needsInputCount = tasks.filter((t) => t.status === "needs_input").length;
-  const agencies = new Set(tasks.map((t) => t.actor || "Unassigned")).size;
+  const agencies = new Set(tasks.map((t) => formatActorDisplay(t.actor).text)).size;
   const datedTasks = tasks
     .filter((t) => t.due)
     .sort((a, b) => (a.due ?? "").localeCompare(b.due ?? ""));
@@ -1044,21 +1101,19 @@ function BriefingSummaryLine({ tasks }: { tasks: DocketTask[] }) {
 function CalendarSyncBar({
   dvId,
   onOpenModal,
+  syncStatus,
+  onSync,
+  syncing,
 }: {
   dvId: string;
   onOpenModal: () => void;
+  syncStatus: { connected: boolean; provider?: string; synced: boolean; eventCount: number } | null;
+  onSync: () => void;
+  syncing: boolean;
 }) {
-  const [syncProvider, setSyncProvider] = useState<string | null>(null);
-
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(`docket_calendar_sync_${dvId}`);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (parsed?.connected) setSyncProvider(parsed.provider);
-      }
-    } catch { /* ignore */ }
-  }, [dvId]);
+  const connected = syncStatus?.connected ?? false;
+  const provider = syncStatus?.provider ?? null;
+  const synced = syncStatus?.synced ?? false;
 
   return (
     <div
@@ -1081,9 +1136,11 @@ function CalendarSyncBar({
           <line x1="12.5" y1="1" x2="12.5" y2="4.5" stroke="#16233F" strokeWidth="1.5" strokeLinecap="round" />
         </svg>
         <span style={{ fontSize: "14px", color: "#1D1D1F", fontWeight: 500 }}>
-          {syncProvider ? `Synced to ${syncProvider}` : "Calendar not connected"}
+          {connected
+            ? (synced ? `Synced to ${provider ?? "calendar"}` : `Connected to ${provider ?? "calendar"}`)
+            : "Calendar not connected"}
         </span>
-        {syncProvider && (
+        {connected && synced && (
           <span
             style={{
               fontSize: "13px",
@@ -1098,22 +1155,44 @@ function CalendarSyncBar({
           </span>
         )}
       </div>
-      <button
-        onClick={onOpenModal}
-        style={{
-          fontSize: "14px",
-          fontWeight: 600,
-          color: syncProvider ? "#6E6E73" : "#16233F",
-          backgroundColor: syncProvider ? "transparent" : "#FFFFFF",
-          border: syncProvider ? "none" : "1px solid #E5E5EA",
-          borderRadius: "8px",
-          padding: "5px 14px",
-          cursor: "pointer",
-          fontFamily: "var(--font-body)",
-        }}
-      >
-        {syncProvider ? "Change" : "Connect calendar"}
-      </button>
+      <div style={{ display: "flex", gap: "8px" }}>
+        {connected && (
+          <button
+            onClick={onSync}
+            disabled={syncing}
+            style={{
+              fontSize: "14px",
+              fontWeight: 600,
+              color: "#16233F",
+              backgroundColor: "#FFFFFF",
+              border: "1px solid #E5E5EA",
+              borderRadius: "8px",
+              padding: "5px 14px",
+              cursor: syncing ? "not-allowed" : "pointer",
+              opacity: syncing ? 0.5 : 1,
+              fontFamily: "var(--font-body)",
+            }}
+          >
+            {syncing ? "Syncing..." : "Sync now"}
+          </button>
+        )}
+        <button
+          onClick={onOpenModal}
+          style={{
+            fontSize: "14px",
+            fontWeight: 600,
+            color: connected ? "#6E6E73" : "#16233F",
+            backgroundColor: connected ? "transparent" : "#FFFFFF",
+            border: connected ? "none" : "1px solid #E5E5EA",
+            borderRadius: "8px",
+            padding: "5px 14px",
+            cursor: "pointer",
+            fontFamily: "var(--font-body)",
+          }}
+        >
+          {connected ? "Change" : "Connect calendar"}
+        </button>
+      </div>
     </div>
   );
 }
@@ -1178,23 +1257,27 @@ function ProviderButton({
 function CalendarSyncModal({
   dvId,
   onClose,
+  userPlan,
 }: {
   dvId: string;
   onClose: () => void;
+  userPlan: string;
 }) {
-  const [step, setStep] = useState<"select" | "confirm">("select");
+  const [step, setStep] = useState<"select" | "confirm" | "waitlist">("select");
   const [provider, setProvider] = useState<string | null>(null);
+  const [waitlistEmail, setWaitlistEmail] = useState("");
+  const [waitlistSubmitted, setWaitlistSubmitted] = useState(false);
+  const [waitlistSubmitting, setWaitlistSubmitting] = useState(false);
 
   function handleSelect(p: string) {
     if (p === "apple") {
       window.location.href = `/api/v1/documents/${dvId}/export/ics`;
-      try {
-        localStorage.setItem(
-          `docket_calendar_sync_${dvId}`,
-          JSON.stringify({ provider: "Apple Calendar", connected: true }),
-        );
-      } catch { /* ignore */ }
       onClose();
+      return;
+    }
+    if (userPlan === "free") {
+      setProvider(p);
+      setStep("waitlist");
       return;
     }
     setProvider(p);
@@ -1202,15 +1285,20 @@ function CalendarSyncModal({
   }
 
   function handleConnect() {
-    const name =
-      provider === "google" ? "Google Calendar" : "Microsoft Outlook";
+    if (provider === "google") {
+      window.location.href = "/api/v1/calendar/google/auth";
+    }
+  }
+
+  async function handleWaitlistSubmit() {
+    if (!waitlistEmail) return;
+    setWaitlistSubmitting(true);
     try {
-      localStorage.setItem(
-        `docket_calendar_sync_${dvId}`,
-        JSON.stringify({ provider: name, connected: true }),
-      );
+      const { submitWaitlist: submit } = await import("@/lib/api");
+      await submit(waitlistEmail, "calendar_sync");
+      setWaitlistSubmitted(true);
     } catch { /* ignore */ }
-    onClose();
+    setWaitlistSubmitting(false);
   }
 
   return (
@@ -1255,14 +1343,14 @@ function CalendarSyncModal({
                 fontFamily: "var(--font-heading)",
               }}
             >
-              {step === "select"
-                ? "Connect Calendar"
-                : `Connect ${provider === "google" ? "Google Calendar" : "Microsoft Outlook"}`}
+              {step === "select" && "Connect Calendar"}
+              {step === "confirm" && `Connect ${provider === "google" ? "Google Calendar" : "Microsoft Outlook"}`}
+              {step === "waitlist" && "Calendar sync is a paid feature"}
             </div>
             <div style={{ fontSize: "14px", color: "#6E6E73", marginTop: "4px" }}>
-              {step === "select"
-                ? "Choose where to sync your deadlines"
-                : "Authorize access to add deadline events"}
+              {step === "select" && "Choose where to sync your deadlines"}
+              {step === "confirm" && "Authorize access to add deadline events"}
+              {step === "waitlist" && "We’re onboarding paid users individually right now"}
             </div>
           </div>
           <button
@@ -1281,11 +1369,11 @@ function CalendarSyncModal({
         </div>
 
         <div style={{ padding: "20px 24px 24px" }}>
-          {step === "select" ? (
+          {step === "select" && (
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
               <ProviderButton
                 label="Google Calendar"
-                subtitle="Sync via Google account"
+                subtitle={userPlan === "free" ? "Paid feature" : "Sync via Google account"}
                 initial="G"
                 initialBg="#E8F0FE"
                 initialColor="#4285F4"
@@ -1293,22 +1381,24 @@ function CalendarSyncModal({
               />
               <ProviderButton
                 label="Microsoft Outlook"
-                subtitle="Sync via Microsoft account"
+                subtitle="Coming soon"
                 initial="O"
                 initialBg="#E5F1FB"
                 initialColor="#0078D4"
-                onClick={() => handleSelect("outlook")}
+                onClick={() => {}}
               />
               <ProviderButton
                 label="Apple Calendar"
-                subtitle="Download .ics file"
+                subtitle="Download .ics file (free)"
                 initial="A"
                 initialBg="#F0F0F2"
                 initialColor="#1D1D1F"
                 onClick={() => handleSelect("apple")}
               />
             </div>
-          ) : (
+          )}
+
+          {step === "confirm" && (
             <div>
               <div
                 style={{
@@ -1322,18 +1412,11 @@ function CalendarSyncModal({
                   marginBottom: "20px",
                 }}
               >
-                You&apos;ll be redirected to{" "}
-                {provider === "google" ? "Google" : "Microsoft"} to authorize
-                access. Statecraft will add deadline events to your calendar and
-                keep them updated.
+                You&apos;ll be redirected to Google to authorize access.
+                PolicyAction will create a dedicated calendar and push all
+                dated deadlines as events, kept in sync on each re-analysis.
               </div>
-              <div
-                style={{
-                  display: "flex",
-                  gap: "10px",
-                  justifyContent: "flex-end",
-                }}
-              >
+              <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
                 <button
                   onClick={() => setStep("select")}
                   style={{
@@ -1365,6 +1448,56 @@ function CalendarSyncModal({
                   Connect
                 </button>
               </div>
+            </div>
+          )}
+
+          {step === "waitlist" && (
+            <div>
+              <div
+                style={{
+                  padding: "16px",
+                  backgroundColor: "#FBF8F0",
+                  borderRadius: "10px",
+                  border: "1px solid #E8DCC8",
+                  fontSize: "15px",
+                  color: "#1D1D1F",
+                  lineHeight: 1.5,
+                  marginBottom: "20px",
+                }}
+              >
+                Real-time calendar sync keeps your Google Calendar up to date
+                as deadlines are computed, edited, or re-analyzed. Leave your
+                email and we&apos;ll reach out when we&apos;re ready for you.
+              </div>
+              {waitlistSubmitted ? (
+                <div style={{ fontSize: "14px", color: "#3F6B54", fontWeight: 600 }}>
+                  Thanks! We&apos;ll be in touch.
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="email"
+                    placeholder="you@company.com"
+                    value={waitlistEmail}
+                    onChange={(e) => setWaitlistEmail(e.target.value)}
+                    className="flex-1 rounded-lg border px-3 py-2 text-[14px]"
+                    style={{ borderColor: "#E8DCC8" }}
+                  />
+                  <button
+                    onClick={handleWaitlistSubmit}
+                    disabled={waitlistSubmitting || !waitlistEmail}
+                    className="rounded-lg px-4 py-2 text-[14px] font-semibold"
+                    style={{
+                      background: "#16233F",
+                      color: "#F5F2E8",
+                      opacity: waitlistSubmitting || !waitlistEmail ? 0.5 : 1,
+                      cursor: waitlistSubmitting || !waitlistEmail ? "not-allowed" : "pointer",
+                    }}
+                  >
+                    {waitlistSubmitting ? "Submitting..." : "Join waitlist"}
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -1418,15 +1551,20 @@ function CitationSliver({ task }: { task: DocketTask }) {
 function TimelineTaskRow({
   task,
   onAddDate,
+  onEditDate,
 }: {
   task: DocketTask;
   onAddDate?: (anchorId: string, date: string) => Promise<void>;
+  onEditDate?: (anchorId: string, date: string) => Promise<void>;
 }) {
   const meta = STATUS_META[task.status];
   const isOverdue = task.status === "overdue";
   const relLabel = daysUntilLabel(task.due, task.status);
   const [dateFormOpen, setDateFormOpen] = useState(false);
   const [dateValue, setDateValue] = useState("");
+  const [editing, setEditing] = useState(false);
+  const [editValue, setEditValue] = useState(task.due ?? "");
+  const [editSaving, setEditSaving] = useState(false);
   const [saving, setSaving] = useState(false);
 
   async function handleSaveDate() {
@@ -1477,10 +1615,28 @@ function TimelineTaskRow({
           >
             {task.citation}
           </div>
-          <CitationSliver task={task} />
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <CitationSliver task={task} />
+            {task.determination === "reviewer" && onEditDate && !editing && (
+              <button
+                onClick={() => setEditing(true)}
+                style={{
+                  fontSize: "13px",
+                  color: "#A67326",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  padding: 0,
+                  fontWeight: 600,
+                }}
+              >
+                Edit
+              </button>
+            )}
+          </div>
         </div>
         <div style={{ textAlign: "right", flexShrink: 0 }}>
-          {task.due ? (
+          {task.due && !editing ? (
             <>
               <div
                 style={{ fontSize: "16px", fontWeight: 600, color: "#1D1D1F" }}
@@ -1499,6 +1655,61 @@ function TimelineTaskRow({
                 </div>
               )}
             </>
+          ) : editing ? (
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <input
+                type="date"
+                value={editValue}
+                onChange={(e) => setEditValue(e.target.value)}
+                style={{
+                  fontSize: "13px",
+                  border: "1px solid #E8DCC8",
+                  borderRadius: "6px",
+                  padding: "4px 8px",
+                }}
+              />
+              <button
+                onClick={async () => {
+                  if (!editValue || !onEditDate) return;
+                  setEditSaving(true);
+                  try {
+                    await onEditDate(task.anchorId, editValue);
+                  } finally {
+                    setEditSaving(false);
+                    setEditing(false);
+                  }
+                }}
+                disabled={editSaving || !editValue}
+                style={{
+                  fontSize: "14px",
+                  fontWeight: 600,
+                  backgroundColor: "#A67326",
+                  color: "#FFFFFF",
+                  border: "none",
+                  borderRadius: "6px",
+                  padding: "4px 12px",
+                  cursor: editSaving || !editValue ? "not-allowed" : "pointer",
+                  opacity: editSaving || !editValue ? 0.5 : 1,
+                }}
+              >
+                {editSaving ? "Saving..." : "Save"}
+              </button>
+              <button
+                onClick={() => {
+                  setEditing(false);
+                  setEditValue(task.due ?? "");
+                }}
+                style={{
+                  fontSize: "13px",
+                  color: "#86868B",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                }}
+              >
+                Cancel
+              </button>
+            </div>
           ) : (
             <span
               style={{
@@ -1517,7 +1728,13 @@ function TimelineTaskRow({
       </div>
       {task.determination === "unresolved" && (
         <div style={{ marginTop: "8px", paddingLeft: "20px" }}>
-          {!dateFormOpen ? (
+          {task.contingent ? (
+            <div style={{ fontSize: "13px", color: "#86868B", fontStyle: "italic" }}>
+              {task.referenceEventText
+                ? `Contingent on: ${task.referenceEventText}`
+                : "Contingent, no date available"}
+            </div>
+          ) : !dateFormOpen ? (
             <button
               onClick={() => setDateFormOpen(true)}
               style={{
@@ -1613,6 +1830,24 @@ export default function BillDetailPage({
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [agencyFilter, setAgencyFilter] = useState("all");
   const [syncModalOpen, setSyncModalOpen] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<{ connected: boolean; provider?: string; synced: boolean; eventCount: number } | null>(null);
+  const [syncing, setSyncing] = useState(false);
+  const [userPlan, setUserPlan] = useState("free");
+
+  useEffect(() => {
+    fetchCalendarSyncStatus(dvId).then(setSyncStatus).catch(() => {});
+    fetchUserInfo().then((u) => setUserPlan(u.plan)).catch(() => {});
+  }, [dvId]);
+
+  const handleSync = useCallback(async () => {
+    setSyncing(true);
+    try {
+      await syncCalendar(dvId);
+      const status = await fetchCalendarSyncStatus(dvId);
+      setSyncStatus(status);
+    } catch { /* ignore */ }
+    setSyncing(false);
+  }, [dvId]);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -1659,10 +1894,14 @@ export default function BillDetailPage({
         if (event.status === "failed") break;
       }
       await loadData();
+      // Re-sync calendar after re-analysis if connected
+      if (syncStatus?.connected) {
+        syncCalendar(dvId).then(() => fetchCalendarSyncStatus(dvId).then(setSyncStatus)).catch(() => {});
+      }
     } finally {
       setReanalyzing(false);
     }
-  }, [dvId, loadData]);
+  }, [dvId, loadData, syncStatus]);
 
   const handleAddDate = useCallback(
     async (anchorId: string, date: string) => {
@@ -1683,6 +1922,27 @@ export default function BillDetailPage({
     [dvId],
   );
 
+  const handleEditDate = useCallback(
+    async (anchorId: string, deadlineDate: string) => {
+      await editRecordDate(dvId, anchorId, "web-user", deadlineDate);
+      const data = await fetchFindings(dvId);
+      const identity = data.legalIdentity;
+      const num = identity.chapter
+        ? `Chapter ${identity.chapter}`
+        : `${identity.instrumentType} ${identity.number}`;
+      setTasks(
+        data.findings
+          .filter((f) => f.anchored)
+          .map((f) => findingToDocketTask(f, dvId, num)),
+      );
+      // Re-sync calendar after date edit if connected
+      if (syncStatus?.connected) {
+        syncCalendar(dvId).then(() => fetchCalendarSyncStatus(dvId).then(setSyncStatus)).catch(() => {});
+      }
+    },
+    [dvId, syncStatus],
+  );
+
   const today = new Date().toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
@@ -1692,23 +1952,23 @@ export default function BillDetailPage({
   // Filtering
   const filtered = tasks.filter((t) => {
     if (statusFilter !== "all" && t.status !== statusFilter) return false;
-    if (agencyFilter !== "all" && (t.actor || "Unassigned") !== agencyFilter)
+    if (agencyFilter !== "all" && formatActorDisplay(t.actor).text !== agencyFilter)
       return false;
     return true;
   });
 
   // Agency list for dropdown
   const uniqueAgencies = Array.from(
-    new Set(tasks.map((t) => t.actor || "Unassigned")),
+    new Set(tasks.map((t) => formatActorDisplay(t.actor).text)),
   ).sort();
 
   // Group by agency for list view
   const byAgency = new Map<string, DocketTask[]>();
   for (const t of filtered) {
-    const actor = t.actor || "Unassigned";
-    const list = byAgency.get(actor) ?? [];
+    const label = formatActorDisplay(t.actor).text;
+    const list = byAgency.get(label) ?? [];
     list.push(t);
-    byAgency.set(actor, list);
+    byAgency.set(label, list);
   }
   const agencyGroups = Array.from(byAgency.entries()).sort((a, b) =>
     a[0].localeCompare(b[0]),
@@ -1772,23 +2032,45 @@ export default function BillDetailPage({
                   {billTitle}
                 </div>
               </div>
-              <a
-                href={`/api/v1/documents/${dvId}/export/ics`}
-                className="inline-flex shrink-0 items-center justify-center no-underline transition-colors"
-                style={{
-                  backgroundColor: "#16233F",
-                  color: "#F5F2E8",
-                  fontSize: "15px",
-                  fontWeight: 600,
-                  fontFamily: "var(--font-body)",
-                  borderRadius: "10px",
-                  padding: "8px 18px",
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#C8983E"; e.currentTarget.style.color = "#16233F"; }}
-                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "#16233F"; e.currentTarget.style.color = "#F5F2E8"; }}
-              >
-                Download .ics
-              </a>
+              <div className="flex shrink-0 items-center gap-2">
+                <a
+                  href={`/api/v1/documents/${dvId}/source`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center no-underline transition-colors"
+                  style={{
+                    backgroundColor: "transparent",
+                    color: "#16233F",
+                    fontSize: "15px",
+                    fontWeight: 600,
+                    fontFamily: "var(--font-body)",
+                    borderRadius: "10px",
+                    padding: "8px 18px",
+                    border: "1px solid #D1D1D6",
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#F0F0F2"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; }}
+                >
+                  View source
+                </a>
+                <a
+                  href={`/api/v1/documents/${dvId}/export/ics`}
+                  className="inline-flex items-center justify-center no-underline transition-colors"
+                  style={{
+                    backgroundColor: "#16233F",
+                    color: "#F5F2E8",
+                    fontSize: "15px",
+                    fontWeight: 600,
+                    fontFamily: "var(--font-body)",
+                    borderRadius: "10px",
+                    padding: "8px 18px",
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#C8983E"; e.currentTarget.style.color = "#16233F"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "#16233F"; e.currentTarget.style.color = "#F5F2E8"; }}
+                >
+                  Download .ics
+                </a>
+              </div>
             </div>
 
             {/* View toggle */}
@@ -1945,11 +2227,18 @@ export default function BillDetailPage({
                     )}
                   </div>
                 ) : (
-                  agencyGroups.map(([agency, agTasks]) => (
+                  agencyGroups.map(([agency, agTasks]) => {
+                    const isPlaceholder = agTasks[0] ? formatActorDisplay(agTasks[0].actor).isPlaceholder : false;
+                    return (
                     <div key={agency} className="mb-6">
                       <div
-                        className="mb-2.5 text-[14px] uppercase tracking-wide"
-                        style={{ fontWeight: 600, color: "#16233F" }}
+                        className="mb-2.5 text-[14px] tracking-wide"
+                        style={{
+                          fontWeight: 600,
+                          color: isPlaceholder ? "#86868B" : "#16233F",
+                          fontStyle: isPlaceholder ? "italic" : undefined,
+                          textTransform: isPlaceholder ? undefined : "uppercase",
+                        }}
                       >
                         {agency}
                       </div>
@@ -1963,11 +2252,13 @@ export default function BillDetailPage({
                             id={`task-${t.anchorId}`}
                             task={t}
                             onAddDate={handleAddDate}
+                            onEditDate={handleEditDate}
                           />
                         ))}
                       </div>
                     </div>
-                  ))
+                  );
+                  })
                 )}
               </div>
             )}
@@ -1977,7 +2268,7 @@ export default function BillDetailPage({
               <div>
                 <UrgencyBanner tasks={filtered} />
                 <BriefingSummaryLine tasks={filtered} />
-                <CalendarSyncBar dvId={dvId} onOpenModal={() => setSyncModalOpen(true)} />
+                <CalendarSyncBar dvId={dvId} onOpenModal={() => setSyncModalOpen(true)} syncStatus={syncStatus} onSync={handleSync} syncing={syncing} />
 
                 <div
                   className="mb-6 overflow-hidden rounded-[12px] border bg-white"
@@ -2034,7 +2325,9 @@ export default function BillDetailPage({
                       boxShadow: "0 1px 4px rgba(0,0,0,0.07)",
                     }}
                   >
-                    {agencyGroups.map(([agency, agTasks]) => (
+                    {agencyGroups.map(([agency, agTasks]) => {
+                      const isPlaceholder = agTasks[0] ? formatActorDisplay(agTasks[0].actor).isPlaceholder : false;
+                      return (
                       <div key={agency}>
                         <div
                           style={{
@@ -2063,7 +2356,7 @@ export default function BillDetailPage({
                               }}
                             >
                               <span style={{ fontSize: "10px", fontWeight: 700, color: "#E7E3D6" }}>
-                                {getAgencyInitials(agency)}
+                                {isPlaceholder ? "?" : getAgencyInitials(agency)}
                               </span>
                             </div>
                             <span
@@ -2071,6 +2364,8 @@ export default function BillDetailPage({
                                 fontSize: "15px",
                                 fontWeight: 700,
                                 fontFamily: "var(--font-body)",
+                                fontStyle: isPlaceholder ? "italic" : undefined,
+                                opacity: isPlaceholder ? 0.7 : 1,
                               }}
                             >
                               {agency}
@@ -2092,16 +2387,18 @@ export default function BillDetailPage({
                               key={t.anchorId}
                               task={t}
                               onAddDate={handleAddDate}
+                              onEditDate={handleEditDate}
                             />
                           ))}
                         </div>
                       </div>
-                    ))}
+                    );
+                    })}
                   </div>
                 )}
 
                 {syncModalOpen && (
-                  <CalendarSyncModal dvId={dvId} onClose={() => setSyncModalOpen(false)} />
+                  <CalendarSyncModal dvId={dvId} onClose={() => { setSyncModalOpen(false); fetchCalendarSyncStatus(dvId).then(setSyncStatus).catch(() => {}); }} userPlan={userPlan} />
                 )}
               </div>
             )}

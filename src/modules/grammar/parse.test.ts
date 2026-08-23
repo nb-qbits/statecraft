@@ -13,7 +13,7 @@ function span(text: string): AnchoredSpan {
 
 describe("grammar version", () => {
   it("exports a version string", () => {
-    expect(GRAMMAR_VERSION).toBe("1.7.0");
+    expect(GRAMMAR_VERSION).toBe("2.0.0");
   });
 });
 
@@ -596,6 +596,47 @@ describe("trailing scope after reference event", () => {
     const r = parseTemporalExpression(span("within 30 days of the effective date of this random thing"));
     expect(r.result.parsed).toBe(false);
   });
+
+  it("parses 'Not later than 180 days after the date of the enactment of this Act'", () => {
+    const r = parseTemporalExpression(span("Not later than 180 days after the date of the enactment of this Act"));
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "relative_duration",
+      quantity: 180, unit: "days", dayKind: null,
+      preposition: null, referenceEvent: "enactment", referenceEventText: null,
+      boundKind: "no_longer_than",
+    });
+  });
+
+  it("parses 'Not later than 6 months after the date of the enactment of this Act'", () => {
+    const r = parseTemporalExpression(span("Not later than 6 months after the date of the enactment of this Act"));
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "relative_duration",
+      quantity: 6, unit: "months", dayKind: null,
+      preposition: null, referenceEvent: "enactment", referenceEventText: null,
+      boundKind: "no_longer_than",
+    });
+  });
+
+  it("parses 'Not later than 1 year after the date of the enactment'", () => {
+    const r = parseTemporalExpression(span("Not later than 1 year after the date of the enactment"));
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "relative_duration",
+      quantity: 1, unit: "years", dayKind: null,
+      preposition: null, referenceEvent: "enactment", referenceEventText: null,
+      boundKind: "no_longer_than",
+    });
+  });
+
+  it("rejects 'enactment of some other thing' (partial known event)", () => {
+    const r = parseTemporalExpression(span("within 30 days of the enactment of some other thing"));
+    expect(r.result.parsed).toBe(false);
+  });
 });
 
 describe("leading context before deadline keyword", () => {
@@ -633,6 +674,109 @@ describe("leading context before deadline keyword", () => {
     expect(r.result.expression).toEqual({
       kind: "fixed_date", month: 7, day: 1, year: 2025,
     });
+  });
+});
+
+describe("cap clause (whichever is sooner/later)", () => {
+  it("parses 'Not later than 90 days after enactment, or March 31, 2018, whichever is sooner'", () => {
+    const r = parseTemporalExpression(span("Not later than 90 days after enactment, or March 31, 2018, whichever is sooner"));
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression.kind).toBe("relative_duration");
+    if (r.result.expression.kind !== "relative_duration") return;
+    expect(r.result.expression.quantity).toBe(90);
+    expect(r.result.expression.unit).toBe("days");
+    expect(r.result.expression.referenceEvent).toBe("enactment");
+    expect(r.result.expression.capDate).toEqual({
+      month: 3, day: 31, year: 2018, capKind: "sooner",
+    });
+  });
+
+  it("parses cap clause with 'earlier' synonym", () => {
+    const r = parseTemporalExpression(span("within 60 days after passage, or June 1, 2025, whichever is earlier"));
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    if (r.result.expression.kind !== "relative_duration") return;
+    expect(r.result.expression.capDate).toEqual({
+      month: 6, day: 1, year: 2025, capKind: "sooner",
+    });
+  });
+
+  it("parses cap clause with 'later'", () => {
+    const r = parseTemporalExpression(span("within 30 days after passage, or January 15, 2026, whichever is later"));
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    if (r.result.expression.kind !== "relative_duration") return;
+    expect(r.result.expression.capDate).toEqual({
+      month: 1, day: 15, year: 2026, capKind: "later",
+    });
+  });
+
+  it("does not attach cap to non-relative expressions", () => {
+    const r = parseTemporalExpression(span("March 1, 2025, or June 30, 2025, whichever is sooner"));
+    expect(r.result.parsed).toBe(false);
+  });
+});
+
+describe("calendar year anchored date (1.9)", () => {
+  it("parses 'December 31 of the first calendar year beginning after the date of the enactment of this Act'", () => {
+    const r = parseTemporalExpression(
+      span("December 31 of the first calendar year beginning after the date of the enactment of this Act"),
+    );
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression.kind).toBe("calendar_year_anchored_date");
+    const expr = r.result.expression as { month: number; day: number; calendarYearOffset: number; referenceEvent: string | null };
+    expect(expr.month).toBe(12);
+    expect(expr.day).toBe(31);
+    expect(expr.calendarYearOffset).toBe(1);
+    expect(expr.referenceEvent).toBe("enactment");
+  });
+
+  it("parses with 'Not later than' prefix", () => {
+    const r = parseTemporalExpression(
+      span("Not later than December 31 of the first calendar year beginning after the date of the enactment of this Act"),
+    );
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression.kind).toBe("calendar_year_anchored_date");
+  });
+
+  it("parses 'January 1 of the second calendar year beginning after enactment'", () => {
+    const r = parseTemporalExpression(
+      span("January 1 of the second calendar year beginning after enactment"),
+    );
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    const expr = r.result.expression as { month: number; day: number; calendarYearOffset: number; referenceEvent: string | null };
+    expect(expr.month).toBe(1);
+    expect(expr.day).toBe(1);
+    expect(expr.calendarYearOffset).toBe(2);
+    expect(expr.referenceEvent).toBe("enactment");
+  });
+
+  it("parses with effective date reference", () => {
+    const r = parseTemporalExpression(
+      span("March 31 of the first calendar year beginning after the effective date of this Act"),
+    );
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    const expr = r.result.expression as { month: number; day: number; calendarYearOffset: number; referenceEvent: string | null };
+    expect(expr.month).toBe(3);
+    expect(expr.day).toBe(31);
+    expect(expr.calendarYearOffset).toBe(1);
+    expect(expr.referenceEvent).toBe("effective_date");
+  });
+
+  it("stores unknown event as referenceEventText", () => {
+    const r = parseTemporalExpression(
+      span("June 30 of the first calendar year beginning after the certification of the results"),
+    );
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    const expr = r.result.expression as { referenceEvent: string | null; referenceEventText: string | null };
+    expect(expr.referenceEvent).toBeNull();
+    expect(expr.referenceEventText).toBe("the certification of the results");
   });
 });
 
@@ -730,6 +874,97 @@ describe("parse failure details", () => {
     expect(r.result.parsed).toBe(false);
     if (r.result.parsed) return;
     expect(r.result.reason).toBeTruthy();
+  });
+});
+
+describe("dependency-ref cap clause (2.0)", () => {
+  it("parses '150 days after submission, or December 31 of the calendar year following the calendar year described in subsection (a)(1), whichever is sooner'", () => {
+    const r = parseTemporalExpression(
+      span("Not later than 150 days after the submission of the inventory under subsection (a), or December 31 of the calendar year following the calendar year described in subsection (a)(1), whichever is sooner"),
+    );
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression.kind).toBe("relative_duration");
+    const expr = r.result.expression as {
+      kind: string; quantity: number; capDate?: {
+        yearSource?: string; dependencyRef?: string; yearOffset?: number;
+        month?: number; day?: number; capKind?: string;
+      };
+    };
+    expect(expr.quantity).toBe(150);
+    expect(expr.capDate).toBeDefined();
+    expect(expr.capDate!.yearSource).toBe("dependency_ref");
+    expect(expr.capDate!.dependencyRef).toBe("(a)(1)");
+    expect(expr.capDate!.yearOffset).toBe(1);
+    expect(expr.capDate!.month).toBe(12);
+    expect(expr.capDate!.day).toBe(31);
+    expect(expr.capDate!.capKind).toBe("sooner");
+  });
+
+  it("parses §2(b)(2) production span: 90 days + dependency ref cap clause", () => {
+    const r = parseTemporalExpression(
+      span("Not later than 90 days after the date on which all of the notices required pursuant to paragraph (1) have been provided or March 31 of the calendar year following the calendar year described in subsection (a)(1), whichever is sooner"),
+    );
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression.kind).toBe("relative_duration");
+    const expr = r.result.expression as {
+      kind: string; quantity: number; capDate?: {
+        yearSource?: string; dependencyRef?: string; yearOffset?: number;
+        month?: number; day?: number;
+      };
+    };
+    expect(expr.quantity).toBe(90);
+    expect(expr.capDate).toBeDefined();
+    expect(expr.capDate!.yearSource).toBe("dependency_ref");
+    expect(expr.capDate!.dependencyRef).toBe("(a)(1)");
+    expect(expr.capDate!.yearOffset).toBe(1);
+    expect(expr.capDate!.month).toBe(3);
+    expect(expr.capDate!.day).toBe(31);
+  });
+
+  it("parses cap with same-year reference (no 'following')", () => {
+    const r = parseTemporalExpression(
+      span("Not later than 60 days after notification, or June 30 of the calendar year the calendar year described in subsection (b), whichever is sooner"),
+    );
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    const expr = r.result.expression as {
+      kind: string; capDate?: { yearSource?: string; yearOffset?: number; dependencyRef?: string };
+    };
+    expect(expr.capDate).toBeDefined();
+    expect(expr.capDate!.yearSource).toBe("dependency_ref");
+    expect(expr.capDate!.yearOffset).toBe(0);
+    expect(expr.capDate!.dependencyRef).toBe("(b)");
+  });
+
+  it("still parses literal-year cap clauses", () => {
+    const r = parseTemporalExpression(
+      span("Not later than 180 days after enactment, or March 31, 2016, whichever is sooner"),
+    );
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    const expr = r.result.expression as {
+      kind: string; capDate?: { year?: number; yearSource?: string };
+    };
+    expect(expr.capDate).toBeDefined();
+    expect(expr.capDate!.year).toBe(2016);
+    expect(expr.capDate!.yearSource).toBeUndefined();
+  });
+
+  it("no hardcoded year literals in grammar module for cap clause", () => {
+    // This is the grep verification — already confirmed at shell level
+    // grep -rn "2018" src/modules/grammar/ | grep -v test → empty
+    // Here we verify the grammar produces dependency refs, not literal years,
+    // for the GONE Act pattern
+    const r = parseTemporalExpression(
+      span("Not later than 150 days after submission, or December 31 of the calendar year following the calendar year described in subsection (a)(1), whichever is sooner"),
+    );
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    const expr = r.result.expression as { capDate?: { year?: number; yearSource?: string } };
+    expect(expr.capDate!.yearSource).toBe("dependency_ref");
+    expect(expr.capDate!.year).toBeUndefined();
   });
 });
 

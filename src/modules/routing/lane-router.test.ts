@@ -126,6 +126,7 @@ function makeResolutionUnresolved(): AnchoredResolution {
     expression: { kind: "relative_duration", quantity: 30, unit: "days", dayKind: "calendar", preposition: "within", referenceEvent: "effective_date", referenceEventText: null, boundKind: "within" as const },
     result: {
       resolved: false,
+      refusalKind: "missing_trigger",
       reason: "missing effective_date input",
       missingInputs: ["effective_date"],
       warnings: [],

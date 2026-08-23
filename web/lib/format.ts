@@ -4,6 +4,12 @@ export function formatUnresolvedReason(f: Finding): string {
   if (!f.grammarParsed) {
     return "This expression does not match a recognized date or duration pattern.";
   }
+  if (f.refusalKind === "broken_cross_reference") {
+    return f.unresolvedReason ?? "This deadline references a subsection whose content does not match the described trigger event.";
+  }
+  if (f.refusalKind === "nonexistent_trigger") {
+    return f.unresolvedReason ?? "This deadline references a trigger event that does not exist in the cited subsection.";
+  }
   if (f.unresolvedReason?.includes("hour-scale")) {
     return "This duration is measured in hours, not days — it cannot be resolved to a calendar date.";
   }
@@ -13,11 +19,25 @@ export function formatUnresolvedReason(f: Finding): string {
   if (f.unresolvedReason?.includes("legislative session")) {
     return "This recurrence is anchored to a legislative session — requires a session calendar to generate occurrences.";
   }
+  if (f.unresolvedReason?.includes("enactment date not available")) {
+    return "This deadline is measured from the date of enactment, which is not available for pending bills.";
+  }
+  if (f.unresolvedReason?.startsWith("runs from an event this document does not date:")) {
+    const eventDesc = f.unresolvedReason.slice("runs from an event this document does not date: ".length);
+    return `Runs from an undated event: ${eventDesc}.`;
+  }
   if (f.unresolvedReason?.startsWith("runs from an event this bill does not date:")) {
-    return `Runs from an event this bill does not date: ${f.unresolvedReason.slice("runs from an event this bill does not date: ".length)}.`;
+    const eventDesc = f.unresolvedReason.slice("runs from an event this bill does not date: ".length);
+    return `Runs from an undated event: ${eventDesc}.`;
+  }
+  if (f.unresolvedReason?.includes("bounded by")) {
+    return f.unresolvedReason.replace(/\s*—\s*bounded by/, ". Upper bound:");
+  }
+  if (f.missingInputs?.includes("enactmentDate")) {
+    return "This deadline runs from the date of enactment, which is not available for this document.";
   }
   if (f.missingInputs?.includes("triggerDate")) {
-    return "This deadline runs from an event this bill does not date.";
+    return "This deadline runs from an event this document does not date.";
   }
   if (f.unresolvedReason?.includes("No jurisdiction pack available")) {
     return "Statutory date computation is not yet supported for this jurisdiction.";
@@ -163,6 +183,35 @@ const KIND_LABELS: Record<string, string> = {
 
 export function formatKind(kind: string): string {
   return KIND_LABELS[kind] ?? kind.replace(/_/g, " ");
+}
+
+const GENERIC_ACTOR_NAMES = new Set([
+  "agency", "department", "office", "bureau", "commission",
+  "board", "authority", "entity", "body", "organization",
+  "person", "individual", "party", "applicant", "recipient",
+]);
+
+export function isGenericActor(actor: string): boolean {
+  return GENERIC_ACTOR_NAMES.has(actor.toLowerCase().trim());
+}
+
+export function formatActorDisplay(actor: string | null): {
+  text: string;
+  isPlaceholder: boolean;
+} {
+  if (!actor) {
+    return {
+      text: "Accountable party not identified in this provision",
+      isPlaceholder: true,
+    };
+  }
+  if (isGenericActor(actor)) {
+    return {
+      text: "Accountable party not identified in this provision",
+      isPlaceholder: true,
+    };
+  }
+  return { text: actor, isPlaceholder: false };
 }
 
 export function formatRejectionReason(reason: string): string {

@@ -306,6 +306,8 @@ class TemporalVisitor extends BaseCstVisitor {
 
   timeUnit(ctx: Record<string, IToken[]>): TimeUnit {
     if (ctx["Days"]) return "days";
+    if (ctx["Months"]) return "months";
+    if (ctx["Years"]) return "years";
     return "hours";
   }
 

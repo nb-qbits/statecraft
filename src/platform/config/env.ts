@@ -67,6 +67,30 @@ const envSchema = z.object({
   LOG_LEVEL: z
     .enum(["fatal", "error", "warn", "info", "debug", "trace"])
     .default("info"),
+
+  COOKIE_SECRET: z
+    .string()
+    .min(16)
+    .default("dev-cookie-secret-not-for-production")
+    .describe("Secret for signing session cookies"),
+
+  GOOGLE_CLIENT_ID: z
+    .string()
+    .min(1)
+    .optional()
+    .describe("Google OAuth client ID for Calendar sync"),
+
+  GOOGLE_CLIENT_SECRET: z
+    .string()
+    .min(1)
+    .optional()
+    .describe("Google OAuth client secret for Calendar sync"),
+
+  GOOGLE_REDIRECT_URI: z
+    .string()
+    .min(1)
+    .optional()
+    .describe("Google OAuth redirect URI"),
 });
 
 export type Env = z.infer<typeof envSchema>;
@@ -74,6 +98,7 @@ export type Env = z.infer<typeof envSchema>;
 const OPTIONAL_KEYS = [
   "OPENSTATES_API_KEY", "MODEL_ID", "EVALUATOR_MODEL_ID",
   "MODEL_PROVIDER", "MODEL_API_KEY", "MODEL_BASE_URL",
+  "GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "GOOGLE_REDIRECT_URI",
 ] as const;
 
 export function validateEnv(

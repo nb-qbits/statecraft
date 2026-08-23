@@ -216,6 +216,12 @@ export interface ReviewRepository {
     eventId: ReviewEventId,
   ): Promise<RegisterRecord[]>;
 
+  getActiveRecordByAnchor(
+    documentVersionId: DocumentVersionId,
+    anchorId: AnchorId,
+  ): Promise<RegisterRecord | null>;
+  supersedeRecord(recordId: RegisterRecordId): Promise<void>;
+
   // Occurrences
   insertOccurrences(
     recordVersionId: string,
@@ -654,6 +660,33 @@ export function createReviewRepository(
         .where(eq(registerRecords.reviewEventId, eventId))
         .orderBy(registerRecords.createdAt);
       return rows.map(rowToRegisterRecord);
+    },
+
+    async getActiveRecordByAnchor(
+      documentVersionId: DocumentVersionId,
+      anchorId: AnchorId,
+    ): Promise<RegisterRecord | null> {
+      const rows = await db
+        .select()
+        .from(registerRecords)
+        .where(
+          and(
+            eq(registerRecords.documentVersionId, documentVersionId),
+            eq(registerRecords.anchorId, anchorId as string),
+            eq(registerRecords.status, "active"),
+          ),
+        )
+        .orderBy(desc(registerRecords.createdAt))
+        .limit(1);
+      if (rows.length === 0) return null;
+      return rowToRegisterRecord(rows[0]!);
+    },
+
+    async supersedeRecord(recordId: RegisterRecordId): Promise<void> {
+      await db
+        .update(registerRecords)
+        .set({ status: "superseded" })
+        .where(eq(registerRecords.recordId, recordId));
     },
 
     async getEvaluatorPromptHash(

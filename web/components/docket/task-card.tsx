@@ -13,6 +13,7 @@ import { StatusBadge } from "./status-badge";
 export interface TaskCardProps {
   task: DocketTask;
   onAddDate?: (anchorId: string, date: string) => Promise<void>;
+  onEditDate?: (anchorId: string, date: string) => Promise<void>;
   showBillContext?: boolean;
   id?: string;
 }
@@ -98,32 +99,126 @@ function ComputedRight({ task }: { task: DocketTask }) {
   );
 }
 
-function ReviewerRight({ task }: { task: DocketTask }) {
+function PencilIcon() {
+  return (
+    <svg width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M7.5 1.5L8.5 2.5L3.5 7.5L1.5 8.5L2.5 6.5L7.5 1.5Z" stroke="#A67326" strokeWidth="1" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function ReviewerRight({
+  task,
+  onEditDate,
+}: {
+  task: DocketTask;
+  onEditDate?: (anchorId: string, date: string) => Promise<void>;
+}) {
   const meta = STATUS_META[task.status];
   const daysLabel = daysUntilLabel(task.due, task.status);
+  const [editing, setEditing] = useState(false);
+  const [editValue, setEditValue] = useState(task.due ?? "");
+  const [saving, setSaving] = useState(false);
+
+  async function handleSave() {
+    if (!editValue || !onEditDate) return;
+    setSaving(true);
+    try {
+      await onEditDate(task.anchorId, editValue);
+    } finally {
+      setSaving(false);
+      setEditing(false);
+    }
+  }
 
   return (
-    <div className="flex items-center gap-3 shrink-0">
-      <div className="text-right">
-        <div
-          className="flex items-center justify-end gap-1 mb-0.5"
-          style={{ fontSize: "12px", color: "#A67326", fontWeight: 600 }}
-        >
-          <PersonIcon />
-          <span>Entered by {task.reviewerName}</span>
+    <div className="shrink-0">
+      <div className="flex items-center gap-3">
+        <div className="text-right">
+          <div
+            className="flex items-center justify-end gap-1 mb-0.5"
+            style={{ fontSize: "12px", color: "#A67326", fontWeight: 600 }}
+          >
+            <PersonIcon />
+            <span>Entered by {task.reviewerName}</span>
+            {onEditDate && !editing && (
+              <button
+                onClick={() => setEditing(true)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  padding: "0 0 0 4px",
+                  display: "inline-flex",
+                  alignItems: "center",
+                }}
+                title="Edit date"
+              >
+                <PencilIcon />
+              </button>
+            )}
+          </div>
+          {task.due && !editing && (
+            <div style={{ fontSize: "16px", fontWeight: 600, color: "#1D1D1F" }}>
+              {formatDate(task.due)}
+            </div>
+          )}
+          {daysLabel && !editing && (
+            <div style={{ fontSize: "13px", fontWeight: 500, color: meta.color }}>
+              {daysLabel}
+            </div>
+          )}
         </div>
-        {task.due && (
-          <div style={{ fontSize: "16px", fontWeight: 600, color: "#1D1D1F" }}>
-            {formatDate(task.due)}
-          </div>
-        )}
-        {daysLabel && (
-          <div style={{ fontSize: "13px", fontWeight: 500, color: meta.color }}>
-            {daysLabel}
-          </div>
-        )}
+        {!editing && <StatusBadge status={task.status} />}
       </div>
-      <StatusBadge status={task.status} />
+      {editing && (
+        <div className="flex items-center gap-2" style={{ marginTop: "6px" }}>
+          <input
+            type="date"
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+            style={{
+              fontSize: "13px",
+              border: "1px solid #E8DCC8",
+              borderRadius: "6px",
+              padding: "4px 8px",
+            }}
+          />
+          <button
+            onClick={handleSave}
+            disabled={saving || !editValue}
+            style={{
+              fontSize: "14px",
+              fontWeight: 600,
+              backgroundColor: "#A67326",
+              color: "#FFFFFF",
+              border: "none",
+              borderRadius: "6px",
+              padding: "4px 12px",
+              cursor: saving || !editValue ? "not-allowed" : "pointer",
+              opacity: saving || !editValue ? 0.5 : 1,
+            }}
+          >
+            {saving ? "Saving..." : "Save"}
+          </button>
+          <button
+            onClick={() => {
+              setEditing(false);
+              setEditValue(task.due ?? "");
+            }}
+            style={{
+              fontSize: "13px",
+              color: "#86868B",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: 0,
+            }}
+          >
+            Cancel
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -168,7 +263,13 @@ function UnresolvedRight({
         <StatusBadge status="needs_input" />
       </div>
       <div style={{ paddingLeft: "24px", marginTop: "8px" }}>
-        {!formOpen ? (
+        {task.contingent ? (
+          <div style={{ fontSize: "13px", color: "#86868B", fontStyle: "italic" }}>
+            {task.referenceEventText
+              ? `Contingent on: ${task.referenceEventText}`
+              : "Contingent, no date available"}
+          </div>
+        ) : !formOpen ? (
           <button
             onClick={() => setFormOpen(true)}
             className="flex items-center gap-1"
@@ -302,7 +403,7 @@ function ProvenanceDrillDown({ task }: { task: DocketTask }) {
   );
 }
 
-export function TaskCard({ task, onAddDate, showBillContext, id }: TaskCardProps) {
+export function TaskCard({ task, onAddDate, onEditDate, showBillContext, id }: TaskCardProps) {
   const meta = STATUS_META[task.status];
 
   return (
@@ -339,7 +440,7 @@ export function TaskCard({ task, onAddDate, showBillContext, id }: TaskCardProps
 
         {/* Right side */}
         {task.determination === "computed" && <ComputedRight task={task} />}
-        {task.determination === "reviewer" && <ReviewerRight task={task} />}
+        {task.determination === "reviewer" && <ReviewerRight task={task} onEditDate={onEditDate} />}
         {task.determination === "unresolved" && (
           <UnresolvedRight task={task} onAddDate={onAddDate} />
         )}

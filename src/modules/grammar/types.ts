@@ -21,6 +21,7 @@ export const ExpressionKind = {
   fixed_date: "fixed_date",
   relative_duration: "relative_duration",
   recurrence: "recurrence",
+  calendar_year_anchored_date: "calendar_year_anchored_date",
 } as const;
 export type ExpressionKind =
   (typeof ExpressionKind)[keyof typeof ExpressionKind];
@@ -35,6 +36,8 @@ export type DayKind = (typeof DayKind)[keyof typeof DayKind];
 export const TimeUnit = {
   hours: "hours",
   days: "days",
+  months: "months",
+  years: "years",
 } as const;
 export type TimeUnit = (typeof TimeUnit)[keyof typeof TimeUnit];
 
@@ -53,6 +56,22 @@ export interface FixedDateExpression {
   readonly year: number | null;
 }
 
+export interface CapDate {
+  readonly month: number;
+  readonly day: number;
+  readonly year: number;
+  readonly capKind: "sooner" | "later";
+}
+
+export interface CapDateRef {
+  readonly month: number;
+  readonly day: number;
+  readonly yearSource: "dependency_ref";
+  readonly dependencyRef: string;
+  readonly yearOffset: number;
+  readonly capKind: "sooner" | "later";
+}
+
 export interface RelativeDurationExpression {
   readonly kind: "relative_duration";
   readonly quantity: number;
@@ -62,6 +81,7 @@ export interface RelativeDurationExpression {
   readonly referenceEvent: ReferenceEvent | null;
   readonly referenceEventText: string | null;
   readonly boundKind: "within" | "no_longer_than" | "at_least";
+  readonly capDate?: CapDate | CapDateRef;
 }
 
 export const RecurrenceFrequency = {
@@ -100,10 +120,20 @@ export interface RecurrenceExpression {
   readonly anchorYear?: number;
 }
 
+export interface CalendarYearAnchoredDateExpression {
+  readonly kind: "calendar_year_anchored_date";
+  readonly month: number;
+  readonly day: number;
+  readonly calendarYearOffset: number;
+  readonly referenceEvent: ReferenceEvent | null;
+  readonly referenceEventText: string | null;
+}
+
 export type TemporalExpression =
   | FixedDateExpression
   | RelativeDurationExpression
-  | RecurrenceExpression;
+  | RecurrenceExpression
+  | CalendarYearAnchoredDateExpression;
 
 export type ParseResult =
   | { readonly parsed: true; readonly expression: TemporalExpression }

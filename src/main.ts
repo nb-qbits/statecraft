@@ -1,7 +1,7 @@
 import { validateEnv } from "./platform/config/env.js";
 import { createLogger } from "./platform/logger/logger.js";
 import { createServer } from "./platform/server/server.js";
-import { createDbPool, createDb, checkDbConnection } from "./platform/db/client.js";
+import { createDbPool, createDb, checkDbConnection, validateSchema } from "./platform/db/client.js";
 import { createS3Client, checkS3Connection } from "./platform/storage/check.js";
 import { createObjectStorage } from "./platform/storage/storage.js";
 import { createIngestionRepository } from "./platform/db/ingestion-repository.js";
@@ -43,10 +43,18 @@ import { registerReviewRoutes } from "./platform/server/routes/review.js";
 import { registerAnalyzeRoutes } from "./platform/server/routes/analyze.js";
 import { registerFindingsRoutes } from "./platform/server/routes/findings.js";
 import { registerExportRoutes } from "./platform/server/routes/export.js";
+import { registerSourceRoutes } from "./platform/server/routes/source.js";
 import { createPlainTextParser } from "./platform/parsers/plain-text-parser.js";
 import { parseDocxAsync } from "./platform/parsers/docx-parser.js";
 import { createSidecarClient, createPdfParser } from "./platform/parsers/pdf-parser.js";
 import multipart from "@fastify/multipart";
+import cookie from "@fastify/cookie";
+import { createUserRepository } from "./platform/db/user-repository.js";
+import { registerSessionMiddleware } from "./platform/server/middleware/session.js";
+import { registerUserRoutes } from "./platform/server/routes/user.js";
+import { registerCalendarSyncRoutes } from "./platform/server/routes/calendar-sync.js";
+import { createConflictRepository } from "./platform/db/conflict-repository.js";
+import { registerReResolveRoutes } from "./platform/server/routes/re-resolve.js";
 
 async function main(): Promise<void> {
   const env = validateEnv();
@@ -55,6 +63,7 @@ async function main(): Promise<void> {
   logger.info("starting policyaction");
 
   const dbPool = createDbPool(env.DATABASE_URL);
+  await validateSchema(dbPool);
   const db = createDb(dbPool);
 
   const s3Opts = {
@@ -95,11 +104,15 @@ async function main(): Promise<void> {
     ],
   });
 
+  await app.register(cookie);
   await app.register(multipart, {
     limits: { fileSize: 50 * 1024 * 1024 },
   });
 
-  registerUploadRoutes(app, ingestionService, logger);
+  const userRepository = createUserRepository(db);
+  registerSessionMiddleware(app, userRepository, env.COOKIE_SECRET, logger);
+
+  registerUploadRoutes(app, ingestionService, logger, userRepository);
 
   const parsingRepository = createParsingRepository(db);
   const sidecarClient = createSidecarClient(env.SIDECAR_URL);
@@ -197,6 +210,7 @@ async function main(): Promise<void> {
     ingestionRepository: repository,
     grammarRepository,
     resolverRepository,
+    parsingRepository,
     logger,
   });
 
@@ -299,6 +313,23 @@ async function main(): Promise<void> {
     logger,
   });
 
+  const conflictRepository = createConflictRepository(db);
+
+  registerReResolveRoutes(app, {
+    ingestionRepository: repository,
+    parsingRepository,
+    anchoringRepository,
+    grammarRepository,
+    resolverRepository,
+    evaluationRepository,
+    routingRepository,
+    reviewRepository,
+    conflictRepository,
+    pipeline: pipelineServices,
+    parserVersion: parsePdfFn.parserVersion,
+    logger,
+  });
+
   registerFindingsRoutes(app, {
     ingestionRepository: repository,
     parsingRepository,
@@ -316,6 +347,29 @@ async function main(): Promise<void> {
     reviewRepository,
     logger,
   });
+
+  registerSourceRoutes(app, {
+    ingestionRepository: repository,
+    storage,
+    logger,
+  });
+
+  registerUserRoutes(app, { userRepository, logger });
+
+  if (env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET) {
+    registerCalendarSyncRoutes(app, {
+      userRepository,
+      reviewRepository,
+      ingestionRepository: repository,
+      googleClientId: env.GOOGLE_CLIENT_ID,
+      googleClientSecret: env.GOOGLE_CLIENT_SECRET,
+      googleRedirectUri: env.GOOGLE_REDIRECT_URI ?? "http://localhost:3000/api/v1/calendar/google/callback",
+      logger,
+    });
+    logger.info("Google Calendar sync routes registered");
+  } else {
+    logger.warn("GOOGLE_CLIENT_ID/SECRET not configured — calendar sync disabled");
+  }
 
   await app.listen({ host: env.HOST, port: env.PORT });
   logger.info({ host: env.HOST, port: env.PORT }, "server listening");

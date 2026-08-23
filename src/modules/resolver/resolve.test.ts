@@ -624,9 +624,90 @@ describe("reproducibility — same inputs produce same output", () => {
   });
 });
 
+describe("resolver — calendar_year_anchored_date", () => {
+  it("resolves 'December 31 of the first calendar year' after Jan 28, 2016 → Dec 31, 2017", () => {
+    const expr = makeExpr({
+      kind: "calendar_year_anchored_date",
+      month: 12,
+      day: 31,
+      calendarYearOffset: 1,
+      referenceEvent: "enactment",
+      referenceEventText: null,
+    });
+    const enactment: ResolutionInput = {
+      name: "enactmentDate",
+      value: "2016-01-28",
+      source: "document_text",
+      authority: "act_text",
+      citation: "Approved January 28, 2016",
+    };
+    const r = resolve(expr, [enactment], testPack);
+    expect(r.resolved).toBe(true);
+    if (!r.resolved || !("statutoryDate" in r)) return;
+    expect(r.statutoryDate).toBe("2017-12-31");
+    expect(r.ruleIds).toContain("calendar-year-offset");
+  });
+
+  it("resolves second calendar year after 2016 → 2018", () => {
+    const expr = makeExpr({
+      kind: "calendar_year_anchored_date",
+      month: 3,
+      day: 31,
+      calendarYearOffset: 2,
+      referenceEvent: "enactment",
+      referenceEventText: null,
+    });
+    const enactment: ResolutionInput = {
+      name: "enactmentDate",
+      value: "2016-01-28",
+      source: "document_text",
+      authority: "act_text",
+      citation: "Approved January 28, 2016",
+    };
+    const r = resolve(expr, [enactment], testPack);
+    expect(r.resolved).toBe(true);
+    if (!r.resolved || !("statutoryDate" in r)) return;
+    expect(r.statutoryDate).toBe("2018-03-31");
+  });
+
+  it("refuses when enactment date is unavailable", () => {
+    const expr = makeExpr({
+      kind: "calendar_year_anchored_date",
+      month: 12,
+      day: 31,
+      calendarYearOffset: 1,
+      referenceEvent: "enactment",
+      referenceEventText: null,
+    });
+    const r = resolve(expr, [], testPack);
+    expect(r.resolved).toBe(false);
+    if (r.resolved) return;
+    if ("bounded" in r && r.bounded) throw new Error("expected non-bounded");
+    expect(r.refusalKind).toBe("undated_event");
+    expect(r.missingInputs).toContain("enactmentDate");
+  });
+
+  it("refuses with referenceEventText for unknown events", () => {
+    const expr = makeExpr({
+      kind: "calendar_year_anchored_date",
+      month: 6,
+      day: 30,
+      calendarYearOffset: 1,
+      referenceEvent: null,
+      referenceEventText: "the certification of results",
+    });
+    const r = resolve(expr, [], testPack);
+    expect(r.resolved).toBe(false);
+    if (r.resolved) return;
+    if ("bounded" in r && r.bounded) throw new Error("expected non-bounded");
+    expect(r.refusalKind).toBe("undated_event");
+    expect(r.reason).toContain("certification of results");
+  });
+});
+
 describe("resolver version", () => {
   it("exports RESOLVER_VERSION", () => {
-    expect(RESOLVER_VERSION).toBe("1.2.0");
+    expect(RESOLVER_VERSION).toBe("1.6.0");
   });
 });
 
@@ -778,7 +859,7 @@ describe("derived effective date — auto-trigger for effective_date references"
     const result = resolve(expr, [], testPack, derivedED);
     expect(result.resolved).toBe(false);
     if (result.resolved) return;
-    expect(result.missingInputs).toContain("triggerDate");
+    expect(result.missingInputs).toContain("enactmentDate");
   });
 
   it("remains unresolved when derivedEffectiveDate not provided", () => {
@@ -799,6 +880,196 @@ describe("derived effective date — auto-trigger for effective_date references"
     expect(result.resolved).toBe(false);
     if (result.resolved) return;
     expect(result.missingInputs).toContain("triggerDate");
+  });
+});
+
+describe("enactment date resolution", () => {
+  it("resolves 180 days after enactment when enactmentDate is supplied", () => {
+    const expr = makeExpr(
+      {
+        kind: "relative_duration",
+        quantity: 180,
+        unit: "days",
+        dayKind: null,
+        preposition: null,
+        referenceEvent: "enactment",
+        referenceEventText: null,
+        boundKind: "no_longer_than",
+      },
+      "Not later than 180 days after the date of the enactment of this Act",
+    );
+    const enactmentInput: ResolutionInput = {
+      name: "enactmentDate",
+      value: "2016-01-28",
+      source: "document_text",
+      authority: "act_text",
+      citation: "Approved January 28, 2016",
+    };
+    const result = resolve(expr, [enactmentInput], testPack);
+    expect(result.resolved).toBe(true);
+    if (!isResolvedDate(result)) return;
+    expect(result.statutoryDate).toBe("2016-07-26");
+  });
+
+  it("resolves 6 months after enactment", () => {
+    const expr = makeExpr(
+      {
+        kind: "relative_duration",
+        quantity: 6,
+        unit: "months",
+        dayKind: null,
+        preposition: null,
+        referenceEvent: "enactment",
+        referenceEventText: null,
+        boundKind: "no_longer_than",
+      },
+      "6 months after the date of the enactment of this Act",
+    );
+    const enactmentInput: ResolutionInput = {
+      name: "enactmentDate",
+      value: "2016-01-28",
+      source: "document_text",
+      authority: "act_text",
+      citation: "Approved January 28, 2016",
+    };
+    const result = resolve(expr, [enactmentInput], testPack);
+    expect(result.resolved).toBe(true);
+    if (!isResolvedDate(result)) return;
+    expect(result.statutoryDate).toBe("2016-07-28");
+  });
+
+  it("resolves 1 year after enactment", () => {
+    const expr = makeExpr(
+      {
+        kind: "relative_duration",
+        quantity: 1,
+        unit: "years",
+        dayKind: null,
+        preposition: null,
+        referenceEvent: "enactment",
+        referenceEventText: null,
+        boundKind: "no_longer_than",
+      },
+      "1 year after the date of the enactment of this Act",
+    );
+    const enactmentInput: ResolutionInput = {
+      name: "enactmentDate",
+      value: "2016-01-28",
+      source: "document_text",
+      authority: "act_text",
+      citation: "Approved January 28, 2016",
+    };
+    const result = resolve(expr, [enactmentInput], testPack);
+    expect(result.resolved).toBe(true);
+    if (!isResolvedDate(result)) return;
+    expect(result.statutoryDate).toBe("2017-01-28");
+  });
+
+  it("fails with undated_event when no enactmentDate supplied", () => {
+    const expr = makeExpr(
+      {
+        kind: "relative_duration",
+        quantity: 180,
+        unit: "days",
+        dayKind: null,
+        preposition: null,
+        referenceEvent: "enactment",
+        referenceEventText: null,
+        boundKind: "no_longer_than",
+      },
+      "Not later than 180 days after enactment",
+    );
+    const result = resolve(expr, [], testPack);
+    expect(result.resolved).toBe(false);
+    if (result.resolved) return;
+    if ("bounded" in result && result.bounded) throw new Error("expected non-bounded");
+    expect(result.refusalKind).toBe("undated_event");
+    expect(result.reason).toContain("enactment date not available");
+    expect(result.missingInputs).toContain("enactmentDate");
+  });
+});
+
+describe("bounded dates (cap clause)", () => {
+  it("produces bounded unresolved when trigger is missing but cap exists", () => {
+    const expr = makeExpr(
+      {
+        kind: "relative_duration",
+        quantity: 90,
+        unit: "days",
+        dayKind: null,
+        preposition: null,
+        referenceEvent: null,
+        referenceEventText: "the date on which all notices have been submitted",
+        boundKind: "no_longer_than",
+        capDate: { month: 3, day: 31, year: 2018, capKind: "sooner" },
+      },
+      "90 days after notices, or March 31, 2018, whichever is sooner",
+    );
+    const result = resolve(expr, [], testPack);
+    expect(result.resolved).toBe(false);
+    if (result.resolved) return;
+    expect("bounded" in result && result.bounded).toBe(true);
+    if (!("bounded" in result) || !result.bounded) return;
+    expect(result.upperBound).toBe("2018-03-31");
+    expect(result.reason).toContain("on or before");
+  });
+
+  it("applies cap when resolved date exceeds cap (sooner)", () => {
+    const expr = makeExpr(
+      {
+        kind: "relative_duration",
+        quantity: 180,
+        unit: "days",
+        dayKind: null,
+        preposition: null,
+        referenceEvent: "enactment",
+        referenceEventText: null,
+        boundKind: "no_longer_than",
+        capDate: { month: 3, day: 31, year: 2016, capKind: "sooner" },
+      },
+      "180 days after enactment or March 31, 2016, whichever is sooner",
+    );
+    const enactmentInput: ResolutionInput = {
+      name: "enactmentDate",
+      value: "2016-01-28",
+      source: "document_text",
+      authority: "act_text",
+      citation: "Approved January 28, 2016",
+    };
+    const result = resolve(expr, [enactmentInput], testPack);
+    expect(result.resolved).toBe(true);
+    if (!isResolvedDate(result)) return;
+    expect(result.statutoryDate).toBe("2016-03-31");
+    expect(result.ruleIds).toContain("cap-date-applied");
+  });
+
+  it("does not apply cap when resolved date is before cap (sooner)", () => {
+    const expr = makeExpr(
+      {
+        kind: "relative_duration",
+        quantity: 30,
+        unit: "days",
+        dayKind: null,
+        preposition: null,
+        referenceEvent: "enactment",
+        referenceEventText: null,
+        boundKind: "no_longer_than",
+        capDate: { month: 12, day: 31, year: 2016, capKind: "sooner" },
+      },
+      "30 days after enactment or December 31, 2016, whichever is sooner",
+    );
+    const enactmentInput: ResolutionInput = {
+      name: "enactmentDate",
+      value: "2016-01-28",
+      source: "document_text",
+      authority: "act_text",
+      citation: "Approved January 28, 2016",
+    };
+    const result = resolve(expr, [enactmentInput], testPack);
+    expect(result.resolved).toBe(true);
+    if (!isResolvedDate(result)) return;
+    expect(result.statutoryDate).toBe("2016-02-27");
+    expect(result.ruleIds).not.toContain("cap-date-applied");
   });
 });
 
@@ -888,6 +1159,191 @@ describe("real pack integration", () => {
     expect(result.missingInputs).toContain("triggerDate");
     expect(result.warnings.length).toBeGreaterThan(0);
     expect(result.warnings[0]).toContain("effective_date");
+  });
+});
+
+describe("PLAW-114publ117 (GONE Act) — 6 findings from production spans: 2 computed, 1 bounded, 3 refused", () => {
+  const enactmentInput: ResolutionInput = {
+    name: "enactmentDate",
+    value: "2016-01-28",
+    source: "document_text",
+    authority: "act_text",
+    citation: "Approved January 28, 2016",
+  };
+
+  const defaultPack: JurisdictionPack = {
+    jurisdiction: "default",
+    packVersion: "default/v1",
+    rules: {
+      jurisdiction: "default",
+      packVersion: "default/v1",
+      effectiveDateRules: [],
+      timeComputationRules: [],
+    },
+    holidays: {},
+    getSessionMetadata: () => null,
+    deriveEffectiveDate: () => ({ resolved: false, reason: "no default", missingInputs: [] }),
+    adjustForNonBusinessDay: (date: string) => ({
+      statutoryDate: date,
+      adjustedDate: date,
+      wasAdjusted: false,
+      ruleIds: [],
+      citations: [],
+      packVersion: "default/v1",
+    }),
+    computeDeadline: (triggerDate: string, days: number) => {
+      const d = new Date(triggerDate + "T00:00:00Z");
+      d.setUTCDate(d.getUTCDate() + days);
+      const iso = d.toISOString().slice(0, 10);
+      return { statutoryDate: iso, adjustedDate: iso, wasAdjusted: false, ruleIds: [], citations: [], packVersion: "default/v1" };
+    },
+    isHoliday: () => false,
+    isBusinessDay: () => true,
+  };
+
+  it("§2(a)(1) COMPUTED: Dec 31 of the first calendar year after enactment → 2017-12-31", () => {
+    const expr = makeExpr({
+      kind: "calendar_year_anchored_date",
+      month: 12,
+      day: 31,
+      calendarYearOffset: 1,
+      referenceEvent: "enactment",
+      referenceEventText: null,
+    }, "not later than December 31 of the first calendar year beginning after the date of the enactment of this Act");
+    const r = resolve(expr, [enactmentInput], defaultPack);
+    expect(r.resolved).toBe(true);
+    if (!isResolvedDate(r)) return;
+    expect(r.statutoryDate).toBe("2017-12-31");
+    expect(r.adjustedDate).toBe("2017-12-31");
+    expect(r.ruleIds).toContain("calendar-year-offset");
+  });
+
+  it("§2(a) COMPUTED: 180 days after enactment → 2016-07-26", () => {
+    const expr = makeExpr({
+      kind: "relative_duration",
+      quantity: 180,
+      unit: "days",
+      dayKind: null,
+      preposition: null,
+      referenceEvent: "enactment",
+      referenceEventText: null,
+      boundKind: "no_longer_than",
+    }, "Not later than 180 days after the date of the enactment of this Act");
+    const r = resolve(expr, [enactmentInput], defaultPack);
+    expect(r.resolved).toBe(true);
+    if (!isResolvedDate(r)) return;
+    expect(r.statutoryDate).toBe("2016-07-26");
+  });
+
+  it("§2(b)(1) REFUSED: 1 year after report submission → undated_event (no cap clause in extracted span)", () => {
+    const expr = makeExpr({
+      kind: "relative_duration",
+      quantity: 1,
+      unit: "years",
+      dayKind: null,
+      preposition: null,
+      referenceEvent: null,
+      referenceEventText: "the date on which the head of an agency submits the report required under subsection (a)",
+      boundKind: "no_longer_than",
+    }, "Not later than 1 year after the date on which the head of an agency submits the report required under subsection (a)");
+    const r = resolve(expr, [enactmentInput], defaultPack);
+    expect(r.resolved).toBe(false);
+    if (r.resolved) return;
+    expect("bounded" in r && r.bounded).toBeFalsy();
+    if ("bounded" in r && r.bounded) return;
+    expect(r.refusalKind).toBe("undated_event");
+    expect(r.reason).toContain("head of an agency submits the report");
+  });
+
+  it("§2(b)(2) BOUNDED: 90 days after notices, cap Mar 31 2018 (service-resolved CapDateRef) → bounded at 2018-03-31", () => {
+    const expr = makeExpr({
+      kind: "relative_duration",
+      quantity: 90,
+      unit: "days",
+      dayKind: null,
+      preposition: null,
+      referenceEvent: null,
+      referenceEventText: "the date on which all of the notices required pursuant to paragraph (1) have been provided",
+      boundKind: "no_longer_than",
+      capDate: { month: 3, day: 31, year: 2018, capKind: "sooner" as const },
+    }, "Not later than 90 days after the date on which all of the notices required pursuant to paragraph (1) have been provided or March 31 of the calendar year following the calendar year described in subsection (a)(1), whichever is sooner");
+    const r = resolve(expr, [enactmentInput], defaultPack);
+    expect(r.resolved).toBe(false);
+    if (r.resolved) return;
+    expect("bounded" in r && r.bounded).toBe(true);
+    if (!("bounded" in r) || !r.bounded) return;
+    expect(r.upperBound).toBe("2018-03-31");
+    expect(r.reason).toContain("on or before");
+    expect(r.reason).toContain("2018-03-31");
+  });
+
+  it("§2(c) REFUSED: 1 year after notice to Congress → undated_event", () => {
+    const expr = makeExpr({
+      kind: "relative_duration",
+      quantity: 1,
+      unit: "years",
+      dayKind: null,
+      preposition: null,
+      referenceEvent: null,
+      referenceEventText: "the date on which the head of an agency provides notice to Congress under subsection (b)(2)",
+      boundKind: "no_longer_than",
+    }, "Not later than 1 year after the date on which the head of an agency provides notice to Congress under subsection (b)(2)");
+    const r = resolve(expr, [enactmentInput], defaultPack);
+    expect(r.resolved).toBe(false);
+    if (r.resolved) return;
+    expect("bounded" in r && r.bounded).toBeFalsy();
+    if ("bounded" in r && r.bounded) return;
+    expect(r.refusalKind).toBe("undated_event");
+    expect(r.reason).toContain("notice to Congress");
+  });
+
+  it("§2(d) REFUSED: 6 months after second report → undated_event", () => {
+    const expr = makeExpr({
+      kind: "relative_duration",
+      quantity: 6,
+      unit: "months",
+      dayKind: null,
+      preposition: null,
+      referenceEvent: null,
+      referenceEventText: "the date on which the second report is submitted pursuant to subsection (b)(2)",
+      boundKind: "no_longer_than",
+    }, "Not later than 6 months after the date on which the second report is sub- mitted pursuant to subsection (b)(2)");
+    const r = resolve(expr, [enactmentInput], defaultPack);
+    expect(r.resolved).toBe(false);
+    if (r.resolved) return;
+    expect("bounded" in r && r.bounded).toBeFalsy();
+    if ("bounded" in r && r.bounded) return;
+    expect(r.refusalKind).toBe("undated_event");
+    expect(r.reason).toContain("second report is submitted");
+  });
+});
+
+describe("CapDateRef — dependency reference cap clause", () => {
+  it("CapDateRef without resolved dependency → unresolved_dependency refusal", () => {
+    const expr = makeExpr({
+      kind: "relative_duration",
+      quantity: 150,
+      unit: "days",
+      dayKind: null,
+      preposition: null,
+      referenceEvent: null,
+      referenceEventText: "submission of inventory",
+      boundKind: "no_longer_than",
+      capDate: {
+        month: 12,
+        day: 31,
+        yearSource: "dependency_ref" as const,
+        dependencyRef: "(a)(1)",
+        yearOffset: 1,
+        capKind: "sooner" as const,
+      },
+    }, "150 days after submission, or December 31 of the calendar year following subsection (a)(1)");
+    const r = resolve(expr, [], testPack);
+    expect(r.resolved).toBe(false);
+    if (r.resolved) return;
+    if ("bounded" in r && r.bounded) throw new Error("expected non-bounded");
+    expect(r.refusalKind).toBe("unresolved_dependency");
+    expect(r.reason).toContain("(a)(1)");
   });
 });
 

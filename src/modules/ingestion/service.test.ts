@@ -127,6 +127,8 @@ function createMemoryRepository(): IngestionRepository & {
       return documents.get(documentId) ?? null;
     },
     async updateJurisdiction(): Promise<void> {},
+    async updateLegalIdentity(): Promise<void> {},
+    async listAnalysedVersions(): Promise<DocumentVersion[]> { return []; },
   };
 }
 

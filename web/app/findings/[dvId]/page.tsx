@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, use } from "react";
-import { fetchFindings, streamAnalysis } from "@/lib/api";
+import { fetchFindings, streamAnalysis, reResolve } from "@/lib/api";
 import type { Finding, FindingsResponse, SuppressedSpan, FindingOccurrence, EngineVersions, LegalIdentity } from "@/lib/api";
 import {
   formatUnresolvedReason,
@@ -13,6 +13,7 @@ import {
 } from "@/lib/format";
 
 const JURISDICTION_NAMES: Record<string, string> = {
+  "us-fed": "Federal",
   "us-va": "Virginia", "us-ca": "California", "us-ny": "New York",
   "us-tx": "Texas", "us-fl": "Florida", "us-il": "Illinois",
   "us-pa": "Pennsylvania", "us-oh": "Ohio", "us-ga": "Georgia",
@@ -59,6 +60,7 @@ function RecurrenceCard({ finding }: { finding: Finding }) {
   const [expanded, setExpanded] = useState(false);
   const schedule = finding.rrule ? formatRruleSchedule(finding.rrule) : "";
   const isEstimated = finding.dateProvenance === "generic_default";
+  const isStale = finding.stale;
 
   const now = new Date().toISOString().slice(0, 10);
   const upcoming = finding.occurrences.filter((o) => o.adjustedDate >= now);
@@ -66,14 +68,18 @@ function RecurrenceCard({ finding }: { finding: Finding }) {
 
   return (
     <div className={`rounded-lg border px-5 py-4 ${
-      isEstimated
-        ? "border-amber-200 bg-amber-50/30"
-        : "border-indigo-200 bg-white"
+      isStale
+        ? "border-amber-300 bg-amber-50/40"
+        : isEstimated
+          ? "border-amber-200 bg-amber-50/30"
+          : "border-indigo-200 bg-white"
     }`}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1 space-y-3">
+          {isStale && <StaleIndicator finding={finding} />}
+
           <div className="flex items-baseline gap-2">
-            <span className="text-sm font-medium text-gray-900">
+            <span className={`text-sm font-medium ${isStale ? "text-gray-500" : "text-gray-900"}`}>
               {finding.provisionLabel || finding.structuralPath}
             </span>
             <span className="text-xs text-gray-400">
@@ -144,13 +150,30 @@ function RecurrenceCard({ finding }: { finding: Finding }) {
         </div>
 
         <span className={`mt-0.5 flex-shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
-          isEstimated
-            ? "bg-amber-100 text-amber-800"
-            : "bg-indigo-100 text-indigo-700"
+          isStale
+            ? "bg-amber-200 text-amber-900"
+            : isEstimated
+              ? "bg-amber-100 text-amber-800"
+              : "bg-indigo-100 text-indigo-700"
         }`}>
-          {isEstimated ? "estimated recurring" : "recurring"}
+          {isStale ? "stale" : isEstimated ? "estimated recurring" : "recurring"}
         </span>
       </div>
+    </div>
+  );
+}
+
+function StaleIndicator({ finding }: { finding: Finding }) {
+  if (!finding.stale) return null;
+  const stageNames = finding.staleStages
+    .map((s) => STAGE_DISPLAY[s] ?? s)
+    .join(", ");
+  return (
+    <div className="flex items-center gap-1.5 rounded bg-amber-100 px-2 py-1 text-xs text-amber-800">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="h-3.5 w-3.5 flex-shrink-0">
+        <path fillRule="evenodd" d="M6.701 2.25c.577-1 2.02-1 2.598 0l5.196 9a1.5 1.5 0 0 1-1.299 2.25H2.804a1.5 1.5 0 0 1-1.3-2.25l5.197-9ZM8 5a.75.75 0 0 1 .75.75v2.5a.75.75 0 0 1-1.5 0v-2.5A.75.75 0 0 1 8 5Zm0 6.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z" clipRule="evenodd" />
+      </svg>
+      <span>Stale — updated since last analysis: {stageNames}</span>
     </div>
   );
 }
@@ -161,17 +184,25 @@ function FindingCard({ finding }: { finding: Finding }) {
   }
 
   const isEstimated = finding.dateProvenance === "generic_default";
+  const isStale = finding.stale;
+  const isBounded = finding.bounded && !!finding.upperBound;
 
   return (
     <div className={`rounded-lg border px-5 py-4 ${
-      isEstimated
-        ? "border-amber-200 bg-amber-50/30"
-        : "border-gray-200 bg-white"
+      isStale
+        ? "border-amber-300 bg-amber-50/40"
+        : isBounded
+          ? "border-purple-200 bg-purple-50/30"
+          : isEstimated
+            ? "border-amber-200 bg-amber-50/30"
+            : "border-gray-200 bg-white"
     }`}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1 space-y-3">
+          {isStale && <StaleIndicator finding={finding} />}
+
           <div className="flex items-baseline gap-2">
-            <span className="text-sm font-medium text-gray-900">
+            <span className={`text-sm font-medium ${isStale ? "text-gray-500" : "text-gray-900"}`}>
               {finding.provisionLabel || finding.structuralPath}
             </span>
             <span className="text-xs text-gray-400">
@@ -187,7 +218,7 @@ function FindingCard({ finding }: { finding: Finding }) {
 
           {finding.resolved && finding.statutoryDate ? (
             <div className="space-y-1">
-              <p className="text-base font-semibold text-gray-900">
+              <p className={`text-base font-semibold ${isStale ? "text-gray-500 line-through" : "text-gray-900"}`}>
                 {formatDate(finding.statutoryDate)}
                 {finding.adjustedDate &&
                   finding.adjustedDate !== finding.statutoryDate && (
@@ -205,6 +236,41 @@ function FindingCard({ finding }: { finding: Finding }) {
                 {finding.citations.join(" · ")}
               </p>
             </div>
+          ) : finding.bounded && finding.upperBound ? (
+            <div className="space-y-1">
+              <p className="text-base font-semibold text-purple-900">
+                On or before {formatDate(finding.upperBound)}
+              </p>
+              {finding.contingency ? (
+                <p className="text-xs font-medium text-purple-700">
+                  {finding.contingency}
+                </p>
+              ) : (
+                <p className="text-xs font-medium text-purple-700">
+                  Contingent — the exact date depends on an event this document does not date.
+                  This is the latest possible date, not the computed date.
+                </p>
+              )}
+              {finding.derivationDepth != null && finding.derivationDepth > 0 && (
+                <p className="text-xs text-purple-500">
+                  Derived through {finding.derivationDepth} {finding.derivationDepth === 1 ? "dependency" : "dependencies"}
+                </p>
+              )}
+              <p className="text-xs text-gray-500">
+                {formatUnresolvedReason(finding)}
+              </p>
+            </div>
+          ) : finding.refusalKind === "broken_cross_reference" || finding.refusalKind === "nonexistent_trigger" ? (
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-red-800">
+                {finding.refusalKind === "broken_cross_reference"
+                  ? "Cross-reference mismatch"
+                  : "Nonexistent trigger"}
+              </p>
+              <p className="text-sm text-red-700">
+                {formatUnresolvedReason(finding)}
+              </p>
+            </div>
           ) : (
             <div className="space-y-1">
               <p className="text-sm text-gray-700">
@@ -216,14 +282,18 @@ function FindingCard({ finding }: { finding: Finding }) {
 
         <span
           className={`mt-0.5 flex-shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
-            isEstimated
-              ? "bg-amber-100 text-amber-800"
-              : finding.resolved
-                ? "bg-gray-100 text-gray-700"
-                : "bg-gray-100 text-gray-600"
+            isStale
+              ? "bg-amber-200 text-amber-900"
+              : isBounded
+                ? "bg-purple-100 text-purple-800"
+                : isEstimated
+                  ? "bg-amber-100 text-amber-800"
+                  : finding.resolved
+                    ? "bg-gray-100 text-gray-700"
+                    : "bg-gray-100 text-gray-600"
           }`}
         >
-          {isEstimated ? "estimated" : finding.resolved ? "resolved" : "unresolved"}
+          {isStale ? "stale" : isBounded ? "bounded" : isEstimated ? "estimated" : finding.resolved ? "resolved" : "unresolved"}
         </span>
       </div>
     </div>
@@ -384,7 +454,8 @@ function SuppressedSpansSection({
 
 function SummaryBar({ data, dvId }: { data: FindingsResponse; dvId: string }) {
   const resolved = data.findings.filter((f) => f.resolved).length;
-  const unresolved = data.findings.length - resolved;
+  const bounded = data.findings.filter((f) => !f.resolved && f.bounded && f.upperBound).length;
+  const unresolved = data.findings.length - resolved - bounded;
   const hasRecords = data.findings.some((f) => f.resolved);
 
   return (
@@ -403,6 +474,14 @@ function SummaryBar({ data, dvId }: { data: FindingsResponse; dvId: string }) {
         </span>{" "}
         <span className="text-gray-500">resolved</span>
       </div>
+      {bounded > 0 && (
+        <div>
+          <span className="text-2xl font-semibold text-purple-800">
+            {bounded}
+          </span>{" "}
+          <span className="text-gray-500">bounded</span>
+        </div>
+      )}
       <div>
         <span className="text-2xl font-semibold text-gray-900">
           {unresolved}
@@ -468,6 +547,7 @@ function StaleBanner({
 }) {
   const [reanalysing, setReanalysing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [conflictMessage, setConflictMessage] = useState<string | null>(null);
 
   if (engineVersions.staleStages.length === 0) return null;
 
@@ -479,10 +559,14 @@ function StaleBanner({
     : null;
 
   const parserIsStale = engineVersions.staleStages.includes("parser");
+  const extractorIsStale = engineVersions.staleStages.includes("extractor");
+  const anchorerIsStale = engineVersions.staleStages.includes("anchorer");
+  const onlyGrammarResolverStale = !parserIsStale && !extractorIsStale && !anchorerIsStale;
 
   const handleReanalyse = async (forceReparse = false) => {
     setReanalysing(true);
     setError(null);
+    setConflictMessage(null);
     try {
       for await (const event of streamAnalysis(dvId, undefined, { forceReparse })) {
         if (event.stage === "complete") break;
@@ -505,6 +589,25 @@ function StaleBanner({
     }
   };
 
+  const handleReResolve = async () => {
+    setReanalysing(true);
+    setError(null);
+    setConflictMessage(null);
+    try {
+      const result = await reResolve(dvId);
+      if (result.conflicts.length > 0) {
+        setConflictMessage(
+          `${result.conflicts.length} accepted finding${result.conflicts.length > 1 ? "s" : ""} produced different dates — review required.`,
+        );
+      }
+      setReanalysing(false);
+      onReanalysed();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Re-resolve failed");
+      setReanalysing(false);
+    }
+  };
+
   return (
     <div className="rounded-lg border border-amber-300 bg-amber-50 px-5 py-4">
       <div className="flex items-start justify-between gap-4">
@@ -520,22 +623,43 @@ function StaleBanner({
               : "The engine has been updated since this analysis was run."}{" "}
             {parserIsStale
               ? "Re-extract from source to apply parser improvements."
-              : "Re-analyse to get results from the current engine."}
+              : onlyGrammarResolverStale
+                ? "Re-resolve to recompute dates without re-extracting."
+                : "Re-analyse to get results from the current engine."}
           </p>
           {error && (
             <p className="mt-1 text-xs text-red-700">{error}</p>
           )}
+          {conflictMessage && (
+            <p className="mt-1 text-xs text-amber-900 font-medium">{conflictMessage}</p>
+          )}
         </div>
-        <button
-          type="button"
-          onClick={() => handleReanalyse(parserIsStale)}
-          disabled={reanalysing}
-          className="flex-shrink-0 rounded bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700 disabled:opacity-50"
-        >
-          {reanalysing
-            ? (parserIsStale ? "Re-extracting…" : "Re-analysing…")
-            : (parserIsStale ? "Re-extract from source" : "Re-analyse")}
-        </button>
+        <div className="flex flex-shrink-0 gap-2">
+          {onlyGrammarResolverStale && (
+            <button
+              type="button"
+              onClick={handleReResolve}
+              disabled={reanalysing}
+              className="rounded bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700 disabled:opacity-50"
+            >
+              {reanalysing ? "Re-resolving…" : "Re-resolve"}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => handleReanalyse(parserIsStale)}
+            disabled={reanalysing}
+            className={`rounded px-4 py-2 text-sm font-medium disabled:opacity-50 ${
+              onlyGrammarResolverStale
+                ? "border border-amber-400 bg-white text-amber-800 hover:bg-amber-50"
+                : "bg-amber-600 text-white hover:bg-amber-700"
+            }`}
+          >
+            {reanalysing
+              ? (parserIsStale ? "Re-extracting…" : "Re-analysing…")
+              : (parserIsStale ? "Re-extract from source" : "Full re-analyse")}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -596,7 +720,20 @@ export default function FindingsPage({
   return (
     <div className="space-y-10">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Findings</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-semibold tracking-tight">Findings</h1>
+          <a
+            href={`/api/v1/documents/${dvId}/source`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+            </svg>
+            View source document
+          </a>
+        </div>
         <p className="mt-1 text-sm text-gray-500">
           {formatDocumentTitle(data.legalIdentity)}
         </p>

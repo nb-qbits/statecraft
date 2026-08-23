@@ -23,6 +23,10 @@ services:
       MODEL_ID: "${MODEL_ID:-}"
       EVALUATOR_MODEL_ID: "${EVALUATOR_MODEL_ID:-}"
       LOG_LEVEL: "info"
+      COOKIE_SECRET: "${COOKIE_SECRET:-dev-cookie-secret-not-for-production}"
+      GOOGLE_CLIENT_ID: "${GOOGLE_CLIENT_ID:-}"
+      GOOGLE_CLIENT_SECRET: "${GOOGLE_CLIENT_SECRET:-}"
+      GOOGLE_REDIRECT_URI: "${GOOGLE_REDIRECT_URI:-http://localhost:3000/api/v1/calendar/google/callback}"
     depends_on:
       postgres:
         condition: service_healthy

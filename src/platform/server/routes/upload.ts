@@ -70,6 +70,9 @@ import { invalidInput } from "../../../modules/ingestion/errors.js";
 import type { Logger } from "../../logger/logger.js";
 import type { LegalIdentity } from "../../../modules/ingestion/types.js";
 import type { LegislativeStatus, DocumentId } from "../../../modules/shared/types.js";
+import type { UserRepository } from "../../db/user-repository.js";
+
+const FREE_BILL_LIMIT = 3;
 
 const LegalIdentitySchema = z.object({
   jurisdiction: z.string().min(1, "jurisdiction is required"),
@@ -101,6 +104,7 @@ export function registerUploadRoutes(
   app: FastifyInstance,
   uploadService: UploadService,
   logger: Logger,
+  userRepository?: UserRepository,
 ): void {
   app.post("/api/v1/documents/upload", async (req, reply) => {
     const contentType = req.headers["content-type"] ?? "";
@@ -127,6 +131,21 @@ export function registerUploadRoutes(
 
       const bytes = await data.toBuffer();
       const mimeType = data.mimetype;
+
+      // Enforce server-side bill limit
+      if (userRepository && req.userId) {
+        const count = await userRepository.getTrackedBillCount(req.userId);
+        if (count >= FREE_BILL_LIMIT) {
+          return reply.status(403).send({
+            error: {
+              code: "BILL_LIMIT_REACHED",
+              message: `Free plan limit reached (${count} of ${FREE_BILL_LIMIT} bills tracked). Archive or remove a bill to free a slot.`,
+              trackedBills: count,
+              limit: FREE_BILL_LIMIT,
+            },
+          });
+        }
+      }
 
       const fields = data.fields;
 
@@ -158,11 +177,25 @@ export function registerUploadRoutes(
         legislativeStatus = statusResult.data;
       }
 
+      // Derive legislativeStatus from legalIdentity.stage when not explicitly provided
+      if (!legislativeStatus) {
+        const stageAsStatus = LegislativeStatusSchema.safeParse(legalIdentity.stage);
+        if (stageAsStatus.success && stageAsStatus.data !== "unknown") {
+          legislativeStatus = stageAsStatus.data;
+        }
+      }
+
       const documentId = getStringField(fields, "documentId") as
         | DocumentId
         | undefined;
-      const authoritativeSource = getStringField(fields, "authoritativeSource");
-      const asOfDate = getStringField(fields, "asOfDate");
+      let authoritativeSource = getStringField(fields, "authoritativeSource");
+      let asOfDate = getStringField(fields, "asOfDate");
+
+      // Stage-derived status needs provenance for the ingestion service
+      if (legislativeStatus && legislativeStatus !== "unknown" && !authoritativeSource) {
+        authoritativeSource = "upload_stage_assertion";
+        asOfDate = asOfDate ?? new Date().toISOString().slice(0, 10);
+      }
 
       const uploadInput: Parameters<typeof uploadService.upload>[0] = {
         bytes,
@@ -175,6 +208,12 @@ export function registerUploadRoutes(
       if (asOfDate) uploadInput.asOfDate = asOfDate;
 
       const version = await uploadService.upload(uploadInput);
+
+      // Track bill against user for limit enforcement
+      if (userRepository && req.userId) {
+        const versionObj = version as { documentVersionId: string };
+        await userRepository.trackBill(req.userId, versionObj.documentVersionId);
+      }
 
       return reply.status(201).send(version);
     } catch (err) {

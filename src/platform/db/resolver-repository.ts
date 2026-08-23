@@ -14,6 +14,7 @@ import {
 import type {
   AnchoredResolution,
   Occurrence,
+  RefusalKind,
   ResolutionResult,
   ResolutionInput,
   ResolutionStatus,
@@ -54,9 +55,22 @@ function rowToAnchoredResolution(
       warnings,
       inputs,
     };
+  } else if (!row.resolved && row.bounded) {
+    result = {
+      resolved: false,
+      bounded: true,
+      upperBound: row.upperBound!,
+      reason: row.reason ?? "unknown",
+      ...(row.contingency ? { contingency: row.contingency } : {}),
+      ...(row.derivationDepth != null ? { derivationDepth: row.derivationDepth } : {}),
+      missingInputs: (row.missingInputs as string[]) ?? [],
+      warnings,
+      inputs,
+    };
   } else {
     result = {
       resolved: false,
+      refusalKind: (row.refusalKind as RefusalKind) ?? "missing_trigger",
       reason: row.reason ?? "unknown",
       missingInputs: (row.missingInputs as string[]) ?? [],
       warnings,
@@ -112,6 +126,11 @@ export function createResolverRepository(
           expressionKind: r.expression.kind,
           expression: r.expression as unknown as Record<string, unknown>,
           resolved: r.result.resolved,
+          refusalKind: !r.result.resolved && "refusalKind" in r.result ? r.result.refusalKind : null,
+          bounded: !r.result.resolved && "bounded" in r.result ? r.result.bounded : null,
+          upperBound: !r.result.resolved && "bounded" in r.result && r.result.bounded ? r.result.upperBound : null,
+          contingency: !r.result.resolved && "bounded" in r.result && r.result.bounded && r.result.contingency ? r.result.contingency : null,
+          derivationDepth: !r.result.resolved && "bounded" in r.result && r.result.bounded && r.result.derivationDepth != null ? r.result.derivationDepth : null,
           statutoryDate: isResolvedDate(r.result) ? r.result.statutoryDate : null,
           adjustedDate: isResolvedDate(r.result) ? r.result.adjustedDate : null,
           rrule: isResolvedRecurrence(r.result) ? r.result.rrule : null,

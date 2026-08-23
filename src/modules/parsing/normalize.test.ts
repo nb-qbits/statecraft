@@ -70,7 +70,13 @@ describe("normalizeForEvidenceMatchV1", () => {
       expect(result.normalized).toBe("legislation");
     });
 
-    it("does not rejoin hyphen without newline", () => {
+    it("rejoins word- word → wordword (PDF hyphenation artifact)", () => {
+      const input = "sub- mitted";
+      const result = normalizeForEvidenceMatchV1(input);
+      expect(result.normalized).toBe("submitted");
+    });
+
+    it("does not rejoin hyphen without newline or word-space-word pattern", () => {
       const input = "well-known";
       const result = normalizeForEvidenceMatchV1(input);
       expect(result.normalized).toBe("well-known");

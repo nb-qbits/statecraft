@@ -165,6 +165,32 @@ export function createIngestionRepository(
         .where(eq(documentVersions.documentVersionId, documentVersionId));
     },
 
+    async updateLegalIdentity(
+      documentVersionId: DocumentVersionId,
+      updates: Partial<LegalIdentity>,
+    ): Promise<void> {
+      const patch: Record<string, unknown> = {};
+      for (const [key, value] of Object.entries(updates)) {
+        if (value !== undefined) patch[key] = value;
+      }
+      if (Object.keys(patch).length === 0) return;
+
+      await db
+        .update(documentVersions)
+        .set({
+          legalIdentity: sql`legal_identity || ${JSON.stringify(patch)}::jsonb`,
+        })
+        .where(eq(documentVersions.documentVersionId, documentVersionId));
+    },
+
+    async listAnalysedVersions(): Promise<DocumentVersion[]> {
+      const rows = await db
+        .select()
+        .from(documentVersions)
+        .where(eq(documentVersions.grammarStatus, "parsed_grammar"));
+      return rows.map(rowToDocumentVersion);
+    },
+
     async getDocument(
       documentId: DocumentId,
     ): Promise<SourceDocument | null> {

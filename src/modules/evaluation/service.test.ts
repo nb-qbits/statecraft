@@ -149,6 +149,7 @@ function makeResolution(): AnchoredResolution {
     },
     result: {
       resolved: false,
+      refusalKind: "missing_trigger",
       reason: "triggerDate is required",
       missingInputs: ["triggerDate"],
       warnings: [],
@@ -190,6 +191,8 @@ function createMockRepos() {
     listVersions: vi.fn(),
     getDocument: vi.fn(),
     updateJurisdiction: vi.fn(),
+    updateLegalIdentity: vi.fn(),
+    listAnalysedVersions: vi.fn().mockResolvedValue([]),
   };
 
   const parsingRepository: ParsingRepository = {

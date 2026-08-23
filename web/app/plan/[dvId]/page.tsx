@@ -2,13 +2,14 @@
 
 import { useEffect, useState, use } from "react";
 import { useSearchParams } from "next/navigation";
-import { fetchFindings, supplyInput, streamAnalysis } from "@/lib/api";
+import { fetchFindings, supplyInput, streamAnalysis, editRecordDate } from "@/lib/api";
 import type { Finding, FindingsResponse, LegalIdentity, EngineVersions } from "@/lib/api";
 import {
   formatDate,
   formatKind,
   formatUnresolvedReason,
   formatRruleSchedule,
+  formatActorDisplay,
 } from "@/lib/format";
 
 type Tab = "timeline" | "owner" | "calendar" | "summary";
@@ -208,6 +209,7 @@ function addDays(iso: string, days: number): string {
 }
 
 const JURISDICTION_NAMES: Record<string, string> = {
+  "us-fed": "Federal",
   "us-va": "Virginia",
   "us-ca": "California",
   "us-ny": "New York",
@@ -513,10 +515,16 @@ function SupplyForm({
 function FindingCard({
   finding,
   onSupply,
+  onEditDate,
 }: {
   finding: Finding;
   onSupply: (anchorId: string, deadlineDate: string) => Promise<void>;
+  onEditDate: (anchorId: string, deadlineDate: string) => Promise<void>;
 }) {
+  const [editing, setEditing] = useState(false);
+  const [editDate, setEditDate] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
+
   const isRecurring = !!finding.rrule;
   const schedule = finding.rrule ? formatRruleSchedule(finding.rrule) : null;
 
@@ -582,9 +590,18 @@ function FindingCard({
               </span>
             )}
             {isReviewerAsserted && (
-              <span className="rounded-full bg-violet-100 px-2 py-0.5 text-xs font-medium text-violet-700">
-                reviewer supplied
-              </span>
+              <>
+                <span className="rounded-full bg-violet-100 px-2 py-0.5 text-xs font-medium text-violet-700">
+                  reviewer supplied
+                </span>
+                <button
+                  type="button"
+                  onClick={() => { setEditing(true); setEditDate(finding.adjustedDate ?? finding.statutoryDate ?? ""); }}
+                  className="text-xs font-medium text-violet-600 hover:text-violet-800"
+                >
+                  Edit date
+                </button>
+              </>
             )}
           </div>
 
@@ -593,11 +610,24 @@ function FindingCard({
           </blockquote>
 
           <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500">
-            {finding.actor && (
-              <span className="font-medium text-gray-700">
-                {finding.actor}
-              </span>
-            )}
+            {(() => {
+              const actorDisplay = formatActorDisplay(finding.actor);
+              if (actorDisplay.isPlaceholder) {
+                return (
+                  <span className="italic text-gray-400">
+                    {actorDisplay.text}
+                  </span>
+                );
+              }
+              return (
+                <span
+                  className="font-medium text-gray-700 border-b border-dotted border-gray-400 cursor-help"
+                  title={finding.actorQuotedText ? `Source: "${finding.actorQuotedText}"` : undefined}
+                >
+                  {actorDisplay.text}
+                </span>
+              );
+            })()}
             <span>
               {finding.provisionLabel || finding.structuralPath}
             </span>
@@ -641,6 +671,41 @@ function FindingCard({
         />
       )}
 
+      {editing && (
+        <div className="mt-3 flex items-center gap-2 rounded border border-violet-200 bg-violet-50 p-3">
+          <label className="text-xs font-medium text-gray-700">Corrected date:</label>
+          <input
+            type="date"
+            value={editDate}
+            onChange={(e) => setEditDate(e.target.value)}
+            className="rounded border border-gray-300 px-2 py-1 text-sm"
+          />
+          <button
+            type="button"
+            disabled={editSaving || !editDate}
+            onClick={async () => {
+              setEditSaving(true);
+              try {
+                await onEditDate(finding.anchorId, editDate);
+                setEditing(false);
+              } finally {
+                setEditSaving(false);
+              }
+            }}
+            className="rounded bg-violet-600 px-3 py-1 text-xs font-medium text-white hover:bg-violet-700 disabled:opacity-50"
+          >
+            {editSaving ? "Saving..." : "Save"}
+          </button>
+          <button
+            type="button"
+            onClick={() => setEditing(false)}
+            className="text-xs text-gray-500 hover:text-gray-700"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
+
       <ProvenancePanel finding={finding} />
     </div>
   );
@@ -652,10 +717,12 @@ function TimelineBucket({
   label,
   findings,
   onSupply,
+  onEditDate,
 }: {
   label: string;
   findings: Finding[];
   onSupply: (anchorId: string, deadlineDate: string) => Promise<void>;
+  onEditDate: (anchorId: string, deadlineDate: string) => Promise<void>;
 }) {
   if (findings.length === 0) {
     return (
@@ -681,7 +748,7 @@ function TimelineBucket({
       </div>
       <div className="space-y-2 py-2">
         {findings.map((f) => (
-          <FindingCard key={f.anchorId} finding={f} onSupply={onSupply} />
+          <FindingCard key={f.anchorId} finding={f} onSupply={onSupply} onEditDate={onEditDate} />
         ))}
       </div>
     </div>
@@ -693,11 +760,13 @@ function UnresolvedSection({
   description,
   findings,
   onSupply,
+  onEditDate,
 }: {
   label: string;
   description: string;
   findings: Finding[];
   onSupply: (anchorId: string, deadlineDate: string) => Promise<void>;
+  onEditDate: (anchorId: string, deadlineDate: string) => Promise<void>;
 }) {
   if (findings.length === 0) return null;
 
@@ -711,7 +780,7 @@ function UnresolvedSection({
       </div>
       <div className="space-y-2">
         {findings.map((f) => (
-          <FindingCard key={f.anchorId} finding={f} onSupply={onSupply} />
+          <FindingCard key={f.anchorId} finding={f} onSupply={onSupply} onEditDate={onEditDate} />
         ))}
       </div>
     </div>
@@ -721,9 +790,11 @@ function UnresolvedSection({
 function TimelineView({
   findings,
   onSupply,
+  onEditDate,
 }: {
   findings: Finding[];
   onSupply: (anchorId: string, deadlineDate: string) => Promise<void>;
+  onEditDate: (anchorId: string, deadlineDate: string) => Promise<void>;
 }) {
   const now = new Date().toISOString().slice(0, 10);
   const in30 = addDays(now, 30);
@@ -770,26 +841,31 @@ function TimelineView({
         label="Overdue"
         findings={overdue}
         onSupply={onSupply}
+        onEditDate={onEditDate}
       />
       <TimelineBucket
         label="Next 30 days"
         findings={next30}
         onSupply={onSupply}
+        onEditDate={onEditDate}
       />
       <TimelineBucket
         label="Next 90 days"
         findings={next90}
         onSupply={onSupply}
+        onEditDate={onEditDate}
       />
       <TimelineBucket
         label="This year"
         findings={thisYear}
         onSupply={onSupply}
+        onEditDate={onEditDate}
       />
       <TimelineBucket
         label="Later"
         findings={later}
         onSupply={onSupply}
+        onEditDate={onEditDate}
       />
 
       {(supplyable.length > 0 ||
@@ -801,18 +877,21 @@ function TimelineView({
             description="These obligations have a recognized date pattern but need one input to compute a deadline."
             findings={supplyable}
             onSupply={onSupply}
+            onEditDate={onEditDate}
           />
           <UnresolvedSection
             label="Recurring — needs anchor date"
             description="These recurring obligations cannot generate occurrences without a fixed anchor date."
             findings={needsAnchor}
             onSupply={onSupply}
+            onEditDate={onEditDate}
           />
           <UnresolvedSection
             label="Timing contingent"
             description="These obligations exist and are cited, but their timing depends on information this document does not contain."
             findings={contingent}
             onSupply={onSupply}
+            onEditDate={onEditDate}
           />
         </div>
       )}
@@ -825,21 +904,26 @@ function TimelineView({
 function OwnerView({
   findings,
   onSupply,
+  onEditDate,
 }: {
   findings: Finding[];
   onSupply: (anchorId: string, deadlineDate: string) => Promise<void>;
+  onEditDate: (anchorId: string, deadlineDate: string) => Promise<void>;
 }) {
   const byActor = new Map<string, Finding[]>();
   for (const f of findings) {
-    const actor = f.actor ?? "Owner not specified in document";
-    const list = byActor.get(actor) ?? [];
+    const display = formatActorDisplay(f.actor);
+    const key = display.isPlaceholder
+      ? "Accountable party not identified in this provision"
+      : display.text;
+    const list = byActor.get(key) ?? [];
     list.push(f);
-    byActor.set(actor, list);
+    byActor.set(key, list);
   }
 
   const actors = [...byActor.keys()].sort((a, b) => {
-    if (a === "Owner not specified in document") return 1;
-    if (b === "Owner not specified in document") return -1;
+    if (a === "Accountable party not identified in this provision") return 1;
+    if (b === "Accountable party not identified in this provision") return -1;
     return (byActor.get(b)?.length ?? 0) - (byActor.get(a)?.length ?? 0);
   });
 
@@ -862,6 +946,7 @@ function OwnerView({
                 key={f.anchorId}
                 finding={f}
                 onSupply={onSupply}
+                onEditDate={onEditDate}
               />
             ))}
           </div>
@@ -993,7 +1078,7 @@ function CalendarView({ findings }: { findings: Finding[] }) {
                       className="mt-0.5 truncate rounded bg-indigo-50 px-1 py-0.5 text-xs text-indigo-800"
                       title={f.quotedText}
                     >
-                      {f.actor ?? formatKind(f.kind)}
+                      {(() => { const d = formatActorDisplay(f.actor); return d.isPlaceholder ? formatKind(f.kind) : d.text; })()}
                     </div>
                   ))}
                 </>
@@ -1063,7 +1148,12 @@ function SummaryView({
   }
 
   const actors = new Set(
-    findings.map((f) => f.actor).filter(Boolean),
+    findings
+      .map((f) => {
+        const d = formatActorDisplay(f.actor);
+        return d.isPlaceholder ? null : d.text;
+      })
+      .filter(Boolean),
   );
 
   return (
@@ -1276,6 +1366,14 @@ export default function PlanPage({
     await refreshData();
   };
 
+  const handleEditDate = async (
+    anchorId: string,
+    deadlineDate: string,
+  ) => {
+    await editRecordDate(dvId, anchorId, "demo-user", deadlineDate);
+    await refreshData();
+  };
+
   if (error) {
     return (
       <div className="rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
@@ -1294,9 +1392,22 @@ export default function PlanPage({
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">
-          Compliance Plan
-        </h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-semibold tracking-tight">
+            Compliance Plan
+          </h1>
+          <a
+            href={`/api/v1/documents/${dvId}/source`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+            </svg>
+            View source document
+          </a>
+        </div>
         <p className="mt-1 text-sm text-gray-500">
           {findings.length} obligations &middot; {title}
         </p>
@@ -1333,10 +1444,10 @@ export default function PlanPage({
       </div>
 
       {tab === "timeline" && (
-        <TimelineView findings={findings} onSupply={handleSupply} />
+        <TimelineView findings={findings} onSupply={handleSupply} onEditDate={handleEditDate} />
       )}
       {tab === "owner" && (
-        <OwnerView findings={findings} onSupply={handleSupply} />
+        <OwnerView findings={findings} onSupply={handleSupply} onEditDate={handleEditDate} />
       )}
       {tab === "calendar" && <CalendarView findings={findings} />}
       {tab === "summary" && (

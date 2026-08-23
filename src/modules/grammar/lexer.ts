@@ -36,6 +36,7 @@ export const Annual = createToken({ name: "Annual", pattern: /annual(?:ly)?/i })
 export const Workday = createToken({ name: "Workday", pattern: /workdays?/i });
 export const Days = createToken({ name: "Days", pattern: /days?/i });
 export const Hours = createToken({ name: "Hours", pattern: /hours?/i });
+export const Months = createToken({ name: "Months", pattern: /months?/i });
 export const Years = createToken({ name: "Years", pattern: /years?/i });
 
 export const First = createToken({ name: "First", pattern: /first/i });
@@ -98,6 +99,7 @@ export const allTokens = [
   Workday,
   Working,
   First,
+  Months,
   Days,
   Hours,
   Years,

@@ -15,6 +15,7 @@ import type {
   RegisterRecordId,
   SegmentId,
   AnalysisId,
+  AnchorId,
 } from "../shared/types.js";
 import { AppError } from "../shared/errors.js";
 import type { DocumentVersion } from "../ingestion/types.js";
@@ -33,6 +34,7 @@ import type {
   ManualRecordInput,
   ReviewDiff,
   Project,
+  ReviewAction,
 } from "./types.js";
 
 import { computeConfigHash, currentStageVersions, stageVersionsToRecord } from "../shared/engine-versions.js";
@@ -567,6 +569,115 @@ export function createReviewService(deps: ReviewServiceDeps) {
           reviewerId: input.reviewerId,
         },
         "manual record added",
+      );
+
+      return { event, record };
+    },
+
+    async editRecordDate(
+      documentVersionId: DocumentVersionId,
+      anchorId: AnchorId,
+      input: {
+        reviewerId: string;
+        deadlineDate: string;
+        idempotencyKey: string;
+      },
+    ): Promise<{
+      event: ReviewEvent;
+      record: RegisterRecord;
+    }> {
+      const existingEvent =
+        await reviewRepository.getReviewEventByIdempotencyKey(
+          input.idempotencyKey,
+        );
+      if (existingEvent) {
+        const records = await reviewRepository.getRecordsByReviewEvent(
+          existingEvent.eventId,
+        );
+        return { event: existingEvent, record: records[0]! };
+      }
+
+      const activeRecord = await reviewRepository.getActiveRecordByAnchor(
+        documentVersionId,
+        anchorId,
+      );
+      if (!activeRecord) {
+        throw new AppError({
+          code: "NO_ACTIVE_RECORD",
+          category: "user_input",
+          message: `No active register record for anchor ${anchorId}`,
+          retryable: false,
+          context: { documentVersionId, anchorId },
+        });
+      }
+
+      const dateFields = buildReviewerAssertedDateFields(
+        input.reviewerId,
+        input.deadlineDate,
+        input.deadlineDate,
+        `edit_record — corrected from ${activeRecord.deadlineDate}`,
+        activeRecord.citations,
+      );
+
+      const beforeValues: Record<string, unknown> = {
+        deadlineDate: activeRecord.deadlineDate,
+        adjustedDate: activeRecord.adjustedDate,
+        dateProvenance: activeRecord.dateProvenance,
+      };
+
+      const afterValues: Record<string, unknown> = {
+        deadlineDate: dateFields.deadlineDate,
+        adjustedDate: dateFields.adjustedDate,
+        dateProvenance: dateFields.dateProvenance,
+      };
+
+      const diff = Object.keys(afterValues)
+        .filter((k) => beforeValues[k] !== afterValues[k])
+        .map((k) => ({ field: k, before: beforeValues[k], after: afterValues[k] }));
+
+      const event = await reviewRepository.insertReviewEvent({
+        proposalId: activeRecord.proposalId,
+        action: "edit_record" as ReviewAction,
+        reviewerId: input.reviewerId,
+        beforeValues,
+        afterValues,
+        diff,
+        idempotencyKey: input.idempotencyKey,
+      });
+
+      await reviewRepository.supersedeRecord(activeRecord.recordId);
+
+      const record = await reviewRepository.insertRegisterRecord({
+        recordVersionId: randomUUID(),
+        proposalId: activeRecord.proposalId,
+        reviewEventId: event.eventId,
+        documentVersionId,
+        anchorId: activeRecord.anchorId,
+        segmentId: activeRecord.segmentId,
+        quotedText: activeRecord.quotedText,
+        kind: activeRecord.kind,
+        deadlineDate: dateFields.deadlineDate,
+        adjustedDate: dateFields.adjustedDate,
+        ruleIds: activeRecord.ruleIds,
+        citations: dateFields.citations,
+        packVersion: activeRecord.packVersion,
+        rrule: activeRecord.rrule,
+        deliverable: activeRecord.deliverable,
+        actor: activeRecord.actor,
+        conditions: activeRecord.conditions,
+        dateProvenance: dateFields.dateProvenance,
+        splitFromRecordId: null,
+      });
+
+      logger.info(
+        {
+          documentVersionId,
+          anchorId,
+          oldRecordId: activeRecord.recordId,
+          newRecordId: record.recordId,
+          reviewerId: input.reviewerId,
+        },
+        "register record date edited",
       );
 
       return { event, record };

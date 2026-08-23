@@ -348,6 +348,65 @@ export function registerReviewRoutes(
     },
   );
 
+  // ── PUT /api/v1/documents/:dvId/anchors/:anchorId/record ──
+
+  app.put<{
+    Params: { documentVersionId: string; anchorId: string };
+    Body: {
+      reviewerId: string;
+      deadlineDate: string;
+    };
+  }>(
+    "/api/v1/documents/:documentVersionId/anchors/:anchorId/record",
+    async (req, reply) => {
+      const dvId = req.params.documentVersionId as DocumentVersionId;
+      const anchorId = req.params.anchorId as AnchorId;
+      const idempotencyKey = req.headers["idempotency-key"] as string | undefined;
+
+      if (!idempotencyKey) {
+        return reply.status(400).send({
+          error: {
+            code: "IDEMPOTENCY_KEY_REQUIRED",
+            message: "Idempotency-Key header is required",
+          },
+        });
+      }
+
+      const cached = await reviewRepository.getIdempotencyResponse(idempotencyKey);
+      if (cached) {
+        return reply.status(cached.status).send(cached.body);
+      }
+
+      try {
+        const { reviewerId, deadlineDate } = req.body ?? {};
+        if (!reviewerId || !deadlineDate) {
+          return reply.status(400).send({
+            error: { code: "INVALID_INPUT", message: "reviewerId and deadlineDate are required" },
+          });
+        }
+
+        const result = await reviewService.editRecordDate(dvId, anchorId, {
+          reviewerId,
+          deadlineDate,
+          idempotencyKey,
+        });
+
+        const body = { event: result.event, record: result.record };
+
+        await reviewRepository.setIdempotencyResponse(
+          idempotencyKey,
+          `PUT /api/v1/documents/${dvId}/anchors/${anchorId}/record`,
+          200,
+          body,
+        );
+
+        return reply.status(200).send(body);
+      } catch (err) {
+        return handleError(err, reply, logger);
+      }
+    },
+  );
+
   // ── POST /api/v1/documents/:dvId/records ─────────────────
 
   app.post<{

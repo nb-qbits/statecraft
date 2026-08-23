@@ -110,6 +110,7 @@ function makeResolution(
     },
     result: {
       resolved: false,
+      refusalKind: "missing_trigger",
       reason: "triggerDate is required to resolve a relative duration",
       missingInputs: ["triggerDate"],
       warnings: [],

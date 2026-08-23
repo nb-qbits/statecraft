@@ -125,7 +125,7 @@ export const reviewEvents = pgTable(
     index("idx_review_events_proposal").on(table.proposalId),
     check(
       "chk_review_action",
-      sql`${table.action} IN ('accept','edit_and_accept','reject','split','manual_add')`,
+      sql`${table.action} IN ('accept','edit_and_accept','reject','split','manual_add','edit_record')`,
     ),
   ],
 );

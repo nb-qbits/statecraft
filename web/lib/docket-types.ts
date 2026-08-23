@@ -1,4 +1,5 @@
 import type { Finding, FindingsResponse, LegalIdentity } from "./api";
+import { isGenericActor } from "./format";
 
 export type Determination = "computed" | "reviewer" | "unresolved";
 
@@ -16,6 +17,8 @@ export interface DocketTask {
   obligation: string;
   citation: string;
   actor: string | null;
+  actorQuotedText: string | null;
+  contingent: boolean;
   due: string | null;
   statutoryDate: string | null;
   adjustedDate: string | null;
@@ -148,7 +151,9 @@ export function findingToDocketTask(
     determination,
     obligation: f.quotedText.length > 120 ? f.quotedText.slice(0, 117) + "..." : f.quotedText,
     citation: f.provisionLabel || f.structuralPath || "",
-    actor: f.actor,
+    actor: f.actor && !isGenericActor(f.actor) ? f.actor : null,
+    actorQuotedText: f.actorQuotedText ?? null,
+    contingent: !!(f.referenceEventText && f.missingInputs?.includes("triggerDate")),
     due,
     statutoryDate: f.statutoryDate,
     adjustedDate: f.adjustedDate,

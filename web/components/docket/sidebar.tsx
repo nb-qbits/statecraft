@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { getStoredBills } from "@/lib/docket-data";
+import { fetchUserInfo, syncBillTracking } from "@/lib/api";
 
 /* ------------------------------------------------------------------ */
 /*  Route config                                                       */
@@ -133,8 +134,7 @@ const NAV_ITEMS: NavItem[] = [
 /*  Desktop sidebar                                                    */
 /* ------------------------------------------------------------------ */
 
-function DesktopSidebar({ pathname, billCount }: { pathname: string; billCount: number }) {
-  const billLimit = 10;
+function DesktopSidebar({ pathname, billCount, billLimit, plan }: { pathname: string; billCount: number; billLimit: number; plan: string }) {
   const meterPct = Math.min(100, (billCount / billLimit) * 100);
 
   return (
@@ -185,7 +185,7 @@ function DesktopSidebar({ pathname, billCount }: { pathname: string; billCount: 
         {/* Plan meter */}
         <div className="rounded-lg bg-white/[0.06] p-3">
           <div className="flex items-center justify-between text-[13px]">
-            <span className="text-[#B7BECF]">Free plan</span>
+            <span className="text-[#B7BECF]">{plan === "waitlisted" ? "Waitlisted" : "Free plan"}</span>
             <span className="text-[#B7BECF]">{billCount}/{billLimit} bills</span>
           </div>
           <div className="mt-2 h-1.5 w-full rounded-full bg-white/[0.1]">
@@ -251,14 +251,25 @@ function MobileBottomBar({ pathname }: { pathname: string }) {
 export function Sidebar() {
   const pathname = usePathname();
   const [billCount, setBillCount] = useState(0);
+  const [billLimit, setBillLimit] = useState(3);
+  const [plan, setPlan] = useState("free");
 
   useEffect(() => {
-    setBillCount(getStoredBills().length);
+    const storedIds = getStoredBills();
+    setBillCount(storedIds.length);
+    syncBillTracking(storedIds)
+      .then(() => fetchUserInfo())
+      .then((u) => {
+        setBillCount(u.trackedBills);
+        setBillLimit(u.billLimit);
+        setPlan(u.plan);
+      })
+      .catch(() => {});
   }, [pathname]);
 
   return (
     <>
-      <DesktopSidebar pathname={pathname} billCount={billCount} />
+      <DesktopSidebar pathname={pathname} billCount={billCount} billLimit={billLimit} plan={plan} />
       <MobileBottomBar pathname={pathname} />
     </>
   );

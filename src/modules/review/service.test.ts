@@ -243,6 +243,8 @@ function createMockReviewRepository(): ReviewRepository {
     getOccurrencesByRecord: vi.fn(async () => []),
     getLatestCompletedAnalysis: vi.fn(async () => null),
     getLatestProposalByAnchor: vi.fn(async () => null),
+    getActiveRecordByAnchor: vi.fn(async () => null),
+    supersedeRecord: vi.fn(),
   };
 }
 
@@ -272,6 +274,7 @@ function createDeps() {
       listVersions: vi.fn(),
       getDocument: vi.fn(),
       updateJurisdiction: vi.fn(),
+    updateLegalIdentity: vi.fn(),
     } as unknown as IngestionRepository,
     parsingRepository: {
       getSegmentsByVersion: vi.fn(async () => []),

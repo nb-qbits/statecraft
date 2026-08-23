@@ -1,11 +1,11 @@
-import { CstParser } from "chevrotain";
+import { CstParser, EOF } from "chevrotain";
 import {
   Within, AtLeast, NoLongerThan, NoLaterThan, NotLaterThan, OnOrBefore, BecomesEffective,
   Every, Each, After, Of, From, The, This, In, Any, On, By, Before, First,
   EffectiveDate, Enactment, Passage,
   Calendar, Business, Working, Workday,
   Quarterly, Annual, Thereafter,
-  Days, Hours, Years, Month, HavePassed,
+  Days, Hours, Months, Years, Month, HavePassed,
   EvenNumbered, OddNumbered, RegularSession,
   Act, Chapter, Section,
   NumberWord, NumberLiteral, Comma,
@@ -70,20 +70,25 @@ export class TemporalParser extends CstParser {
     this.CONSUME(RegularSession);
   });
 
-  // "every N [calendar|business|working] days/hours" OR "every N years [thereafter]"
+  // "every N years [thereafter]" OR "every N [calendar|business|working] days/hours/months/years"
   recurrenceExpression = this.RULE("recurrenceExpression", () => {
     this.CONSUME(Every);
     this.SUBRULE(this.quantity);
     this.OR([
+      { GATE: () => {
+        const next = this.LA(1);
+        if (next.tokenType !== Years) return false;
+        const after = this.LA(2);
+        return after.tokenType === Thereafter || after.tokenType === EOF;
+      }, ALT: () => {
+        this.CONSUME(Years);
+        this.OPTION4(() => this.CONSUME(Thereafter));
+      }},
       { ALT: () => {
         this.OPTION(() => this.SUBRULE(this.dayKind));
         this.SUBRULE(this.timeUnit);
         this.OPTION2(() => this.SUBRULE(this.referenceClause));
         this.OPTION3(() => this.SUBRULE(this.trailingScope));
-      }},
-      { ALT: () => {
-        this.CONSUME(Years);
-        this.OPTION4(() => this.CONSUME(Thereafter));
       }},
     ]);
   });
@@ -203,6 +208,8 @@ export class TemporalParser extends CstParser {
     this.OR([
       { ALT: () => this.CONSUME(Days) },
       { ALT: () => this.CONSUME(Hours) },
+      { ALT: () => this.CONSUME(Months) },
+      { ALT: () => this.CONSUME(Years) },
     ]);
   });
 

@@ -96,13 +96,18 @@ export function registerExportRoutes(
               `Adjustment: statutory date adjusted per ${record.citations.find((c) => c.includes("§ 1-210")) ?? record.ruleIds.join(", ")}`,
             );
           }
+          if (record.conditions) descParts.push(`Contingency: ${record.conditions}`);
           if (record.deliverable) descParts.push(`Deliverable: ${record.deliverable}`);
           if (record.actor) descParts.push(`Actor: ${record.actor}`);
           descParts.push(`Rules: ${record.ruleIds.join(", ")}`);
           descParts.push(`Citations: ${record.citations.join(", ")}`);
           const description = descParts.join("\n");
 
-          const summaryText = isEstimated ? `[ESTIMATED] ${summary}` : summary;
+          const summaryText = record.conditions
+            ? `[CONTINGENT] ${summary}`
+            : isEstimated
+              ? `[ESTIMATED] ${summary}`
+              : summary;
 
           lines.push("BEGIN:VEVENT");
           lines.push(`UID:${record.recordVersionId}@policyaction`);
@@ -158,7 +163,7 @@ export function registerExportRoutes(
         }
 
         const csvLines: string[] = [
-          "record_version_id,kind,quoted_text,statutory_date,adjusted_date,rrule,occurrence_seq,rule_ids,citations,deliverable,actor,date_provenance",
+          "record_version_id,kind,quoted_text,statutory_date,adjusted_date,rrule,occurrence_seq,rule_ids,citations,deliverable,actor,conditions,date_provenance",
         ];
 
         for (const record of records) {
@@ -174,6 +179,7 @@ export function registerExportRoutes(
             record.citations.join("; "),
             record.deliverable ?? "",
             record.actor ?? "",
+            record.conditions ?? "",
             record.dateProvenance,
           ]));
 
@@ -194,6 +200,7 @@ export function registerExportRoutes(
                 occ.citations.join("; "),
                 record.deliverable ?? "",
                 record.actor ?? "",
+                record.conditions ?? "",
                 record.dateProvenance,
               ]));
             }

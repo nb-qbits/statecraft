@@ -63,6 +63,11 @@ export function assignLane(input: LaneInput): LaneAssignment {
     return result(evaluation, "exception_review", reasons);
   }
 
+  if (expression.kind === "calendar_year_anchored_date") {
+    reasons.push({ rule: "EXCEPTION_CALENDAR_YEAR_OFFSET", detail: `calendar year offset: ${expression.calendarYearOffset} from ${expression.referenceEvent ?? "unknown event"}` });
+    return result(evaluation, "exception_review", reasons);
+  }
+
   // At this point: fixed_date, supported, deterministic passed, resolved
   // Check straight_through criteria
   const straightThroughReasons: LaneReason[] = [];

@@ -120,7 +120,7 @@ function generateOccurrences(
   });
 }
 
-export const RESOLVER_VERSION = "1.2.0";
+export const RESOLVER_VERSION = "1.6.0";
 
 export function resolve(
   expr: ParsedAnchoredExpression,
@@ -137,6 +137,8 @@ export function resolve(
       return resolveRelativeDuration(expression, suppliedInputs, pack, derivedEffectiveDate);
     case "recurrence":
       return resolveRecurrence(expression, suppliedInputs, pack);
+    case "calendar_year_anchored_date":
+      return resolveCalendarYearAnchoredDate(expression, suppliedInputs, pack);
   }
 }
 
@@ -148,6 +150,7 @@ function resolveFixedDate(
   if (expression.year === null) {
     return {
       resolved: false,
+      refusalKind: "missing_year",
       reason: "year not specified in expression",
       missingInputs: ["year"],
       warnings: [],
@@ -197,6 +200,8 @@ function resolveRelativeDuration(
     preposition: string | null;
     referenceEvent: string | null;
     referenceEventText?: string | null;
+    capDate?: { month: number; day: number; year: number; capKind: "sooner" | "later" }
+      | { month: number; day: number; yearSource: "dependency_ref"; dependencyRef: string; yearOffset: number; capKind: "sooner" | "later" };
   },
   suppliedInputs: readonly ResolutionInput[],
   pack: JurisdictionPack,
@@ -204,10 +209,11 @@ function resolveRelativeDuration(
 ): ResolutionResult {
   let triggerInput = suppliedInputs.find((i) => i.name === "triggerDate");
 
-  const effectiveDateRefs = ["effective_date"];
   const referencesEffectiveDate =
-    expression.referenceEvent !== null &&
-    effectiveDateRefs.includes(expression.referenceEvent);
+    expression.referenceEvent === "effective_date";
+  const referencesEnactment =
+    expression.referenceEvent === "enactment" ||
+    expression.referenceEvent === "passage";
 
   let derivedInput: ResolutionInput | undefined;
 
@@ -222,6 +228,14 @@ function resolveRelativeDuration(
     triggerInput = { ...derivedInput, name: "triggerDate" };
   }
 
+  if (!triggerInput && referencesEnactment) {
+    const enactmentInput = suppliedInputs.find((i) => i.name === "enactmentDate");
+    if (enactmentInput) {
+      derivedInput = enactmentInput;
+      triggerInput = { ...enactmentInput, name: "triggerDate" };
+    }
+  }
+
   if (!triggerInput) {
     const warnings: string[] = [];
 
@@ -231,14 +245,45 @@ function resolveRelativeDuration(
       );
     }
 
-    const reason = expression.referenceEventText
-      ? `runs from an event this bill does not date: ${expression.referenceEventText}`
-      : "triggerDate is required to resolve a relative duration";
+    const hasEventRef = referencesEnactment || expression.referenceEventText;
+    const refusalKind = hasEventRef ? "undated_event" as const : "missing_trigger" as const;
+    const reason = referencesEnactment
+      ? "enactment date not available for this document"
+      : expression.referenceEventText
+        ? `runs from an event this document does not date: ${expression.referenceEventText}`
+        : "triggerDate is required to resolve a relative duration";
+
+    if (expression.capDate) {
+      if ("yearSource" in expression.capDate) {
+        return {
+          resolved: false,
+          refusalKind: "unresolved_dependency" as const,
+          reason: `cap date depends on ${expression.capDate.dependencyRef} which has not been resolved`,
+          missingInputs: [`dependencyRef:${expression.capDate.dependencyRef}`],
+          warnings,
+          inputs: [...suppliedInputs],
+        };
+      }
+      const { month, day, year, capKind } = expression.capDate;
+      const mm = String(month).padStart(2, "0");
+      const dd = String(day).padStart(2, "0");
+      const upperBound = `${year}-${mm}-${dd}`;
+      return {
+        resolved: false,
+        bounded: true,
+        upperBound,
+        reason: `${reason} — bounded by ${capKind === "sooner" ? "on or before" : "on or after"} ${upperBound}`,
+        missingInputs: referencesEnactment ? ["enactmentDate"] : ["triggerDate"],
+        warnings,
+        inputs: [...suppliedInputs],
+      };
+    }
 
     return {
       resolved: false,
+      refusalKind,
       reason,
-      missingInputs: ["triggerDate"],
+      missingInputs: referencesEnactment ? ["enactmentDate"] : ["triggerDate"],
       warnings,
       inputs: [...suppliedInputs],
     };
@@ -247,6 +292,7 @@ function resolveRelativeDuration(
   if (expression.unit === "hours") {
     return {
       resolved: false,
+      refusalKind: "hour_scale",
       reason:
         "hour-scale durations cannot be resolved to a civil date — they require time-of-day computation",
       missingInputs: [],
@@ -255,15 +301,37 @@ function resolveRelativeDuration(
     };
   }
 
-  const dayKind = (expression.dayKind ?? "calendar") as
-    | "calendar"
-    | "business"
-    | "working";
-  const deadline = pack.computeDeadline(
-    triggerInput.value,
-    expression.quantity,
-    dayKind,
-  );
+  let deadline: { statutoryDate: string; adjustedDate: string; ruleIds: readonly string[]; citations: readonly string[] };
+
+  if (expression.unit === "months" || expression.unit === "years") {
+    const trigger = new Date(triggerInput.value + "T00:00:00Z");
+    const monthsToAdd = expression.unit === "years"
+      ? expression.quantity * 12
+      : expression.quantity;
+    const target = new Date(Date.UTC(
+      trigger.getUTCFullYear(),
+      trigger.getUTCMonth() + monthsToAdd,
+      trigger.getUTCDate(),
+    ));
+    const statutoryDate = target.toISOString().slice(0, 10);
+    const adjustment = pack.adjustForNonBusinessDay(statutoryDate);
+    deadline = {
+      statutoryDate,
+      adjustedDate: adjustment.adjustedDate,
+      ruleIds: [`${expression.quantity}-${expression.unit}-from-trigger`, ...adjustment.ruleIds],
+      citations: [`${expression.quantity} ${expression.unit} after ${triggerInput.value}`, ...adjustment.citations],
+    };
+  } else {
+    const dayKind = (expression.dayKind ?? "calendar") as
+      | "calendar"
+      | "business"
+      | "working";
+    deadline = pack.computeDeadline(
+      triggerInput.value,
+      expression.quantity,
+      dayKind,
+    );
+  }
 
   const ruleIds: string[] = [];
   const citations: string[] = [];
@@ -280,15 +348,127 @@ function resolveRelativeDuration(
     ? [derivedInput]
     : [triggerInput];
 
+  let finalStatutory = deadline.statutoryDate;
+  let finalAdjusted = deadline.adjustedDate;
+
+  if (expression.capDate && !("yearSource" in expression.capDate)) {
+    const { month, day, year, capKind } = expression.capDate;
+    const mm = String(month).padStart(2, "0");
+    const dd = String(day).padStart(2, "0");
+    const capIso = `${year}-${mm}-${dd}`;
+
+    const useCap = capKind === "sooner"
+      ? capIso < finalStatutory
+      : capIso > finalStatutory;
+
+    if (useCap) {
+      finalStatutory = capIso;
+      const capAdj = pack.adjustForNonBusinessDay(capIso);
+      finalAdjusted = capAdj.adjustedDate;
+      ruleIds.push("cap-date-applied");
+      citations.push(`capped at ${capIso} (whichever is ${capKind})`);
+      ruleIds.push(...capAdj.ruleIds);
+      citations.push(...capAdj.citations);
+    }
+  }
+
   return {
     resolved: true,
-    statutoryDate: deadline.statutoryDate,
-    adjustedDate: deadline.adjustedDate,
+    statutoryDate: finalStatutory,
+    adjustedDate: finalAdjusted,
     ruleIds,
     citations,
     packVersion: pack.packVersion,
     warnings: [],
     inputs,
+  };
+}
+
+function resolveCalendarYearAnchoredDate(
+  expression: {
+    kind: "calendar_year_anchored_date";
+    month: number;
+    day: number;
+    calendarYearOffset: number;
+    referenceEvent: string | null;
+    referenceEventText: string | null;
+  },
+  suppliedInputs: readonly ResolutionInput[],
+  pack: JurisdictionPack,
+): ResolutionResult {
+  const referencesEnactment =
+    expression.referenceEvent === "enactment" ||
+    expression.referenceEvent === "passage";
+
+  let triggerInput = suppliedInputs.find((i) => i.name === "triggerDate");
+
+  if (!triggerInput && referencesEnactment) {
+    const enactmentInput = suppliedInputs.find((i) => i.name === "enactmentDate");
+    if (enactmentInput) {
+      triggerInput = { ...enactmentInput, name: "triggerDate" };
+    }
+  }
+
+  if (!triggerInput && expression.referenceEvent === "effective_date") {
+    const effectiveInput = suppliedInputs.find((i) => i.name === "effectiveDate");
+    if (effectiveInput) {
+      triggerInput = { ...effectiveInput, name: "triggerDate" };
+    }
+  }
+
+  if (!triggerInput) {
+    const hasEventRef = referencesEnactment || expression.referenceEventText;
+    return {
+      resolved: false,
+      refusalKind: hasEventRef ? "undated_event" as const : "missing_trigger" as const,
+      reason: referencesEnactment
+        ? "enactment date not available for this document"
+        : expression.referenceEventText
+          ? `runs from an event this document does not date: ${expression.referenceEventText}`
+          : "reference date is required to resolve calendar year offset",
+      missingInputs: referencesEnactment ? ["enactmentDate"] : ["triggerDate"],
+      warnings: [],
+      inputs: [...suppliedInputs],
+    };
+  }
+
+  const refDate = new Date(triggerInput.value + "T00:00:00Z");
+  const refYear = refDate.getUTCFullYear();
+  const targetYear = refYear + expression.calendarYearOffset;
+
+  const maxDays = new Date(targetYear, expression.month, 0).getDate();
+  if (expression.day > maxDays) {
+    return {
+      resolved: false,
+      refusalKind: "missing_trigger" as const,
+      reason: `day ${expression.day} invalid for month ${expression.month} in year ${targetYear}`,
+      missingInputs: [],
+      warnings: [],
+      inputs: [triggerInput],
+    };
+  }
+
+  const mm = String(expression.month).padStart(2, "0");
+  const dd = String(expression.day).padStart(2, "0");
+  const statutoryDate = `${targetYear}-${mm}-${dd}`;
+
+  const adjustment = pack.adjustForNonBusinessDay(statutoryDate);
+
+  const ordinals = ["", "first", "second", "third", "fourth", "fifth"];
+  const ordinalWord = ordinals[expression.calendarYearOffset] ?? `${expression.calendarYearOffset}th`;
+
+  return {
+    resolved: true,
+    statutoryDate,
+    adjustedDate: adjustment.adjustedDate,
+    ruleIds: ["calendar-year-offset", ...adjustment.ruleIds],
+    citations: [
+      `${ordinalWord} calendar year after ${triggerInput.value} = ${targetYear}`,
+      ...adjustment.citations,
+    ],
+    packVersion: pack.packVersion,
+    warnings: [],
+    inputs: [triggerInput],
   };
 }
 
@@ -312,6 +492,7 @@ function resolveRecurrenceExpression(
   if (needsAnchor && expression.anchorEvent !== "regular_session") {
     return {
       resolved: false,
+      refusalKind: "missing_anchor",
       reason: "recurrence has no date anchor — cannot generate occurrences without a start date",
       missingInputs: ["anchorDate"],
       warnings: [],
@@ -322,6 +503,7 @@ function resolveRecurrenceExpression(
   if (expression.anchorEvent === "regular_session") {
     return {
       resolved: false,
+      refusalKind: "missing_anchor",
       reason: "recurrence anchored to legislative session — requires session calendar to generate occurrences",
       missingInputs: ["sessionDate"],
       warnings: [],

@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { uploadDocument, streamAnalysis } from "@/lib/api";
+import { uploadDocument, streamAnalysis, submitWaitlist } from "@/lib/api";
 import type { LegalIdentity, StageEvent } from "@/lib/api";
 import { addStoredBill } from "@/lib/docket-data";
 
@@ -153,6 +153,47 @@ function StageRow({
   );
 }
 
+const PLAW_RE = /^PLAW-(\d+)publ(\d+)$/i;
+
+function ordinalCongress(n: number): string {
+  const mod100 = n % 100;
+  if (mod100 >= 11 && mod100 <= 13) return `${n}th`;
+  const mod10 = n % 10;
+  if (mod10 === 1) return `${n}st`;
+  if (mod10 === 2) return `${n}nd`;
+  if (mod10 === 3) return `${n}rd`;
+  return `${n}th`;
+}
+
+function parseBillIdentifier(filename: string): {
+  congress: string;
+  stage: string;
+  jurisdiction: string;
+  billNumber: string;
+} | null {
+  const name = filename.replace(/\.[^.]+$/, "");
+  const m = PLAW_RE.exec(name);
+  if (!m) return null;
+  const num = parseInt(m[1]!, 10);
+  return {
+    congress: `${ordinalCongress(num)} Congress`,
+    stage: "enacted",
+    jurisdiction: "us-fed",
+    billNumber: name,
+  };
+}
+
+const UPLOAD_ERROR_MESSAGES: Record<string, string> = {
+  BILL_LIMIT_REACHED: "You've reached the free plan limit of 3 bills.",
+  UNSUPPORTED_MIME_TYPE: "This file type isn't supported. Upload a PDF, DOCX, or plain text file.",
+  FILE_TOO_LARGE: "This file is too large. Maximum size is 50 MB.",
+  CORRUPT_FILE: "This file appears to be corrupt or unreadable.",
+  INVALID_INPUT: "Some required fields are missing or invalid.",
+  MISSING_FILE: "No file was included in the upload.",
+  DUPLICATE_VERSION: "This document has already been uploaded.",
+  INTERNAL_ERROR: "Something went wrong on our end. Please try again.",
+};
+
 export default function AddBillPage() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -163,6 +204,10 @@ export default function AddBillPage() {
   const [currentStep, setCurrentStep] = useState(-1);
   const [stageDetails, setStageDetails] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
+  const [billLimitHit, setBillLimitHit] = useState(false);
+  const [waitlistEmail, setWaitlistEmail] = useState("");
+  const [waitlistSubmitted, setWaitlistSubmitted] = useState(false);
+  const [waitlistSubmitting, setWaitlistSubmitting] = useState(false);
   const [lastDvId, setLastDvId] = useState<string | null>(null);
   const elapsed = useElapsed(processing);
 
@@ -171,6 +216,7 @@ export default function AddBillPage() {
   const [instrumentType, setInstrumentType] = useState("bill");
   const [billNumber, setBillNumber] = useState("");
   const [stage, setStage] = useState("introduced");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   const today = new Date().toLocaleDateString("en-US", {
     month: "short",
@@ -181,8 +227,16 @@ export default function AddBillPage() {
   const handleFile = (f: File) => {
     setFile(f);
     setError(null);
-    const name = f.name.replace(/\.[^.]+$/, "");
-    if (!billNumber) setBillNumber(name);
+    setFieldErrors({});
+    const derived = parseBillIdentifier(f.name);
+    if (derived) {
+      setBillNumber(derived.billNumber);
+      setSession(derived.congress);
+      setStage(derived.stage);
+      setJurisdiction(derived.jurisdiction);
+    } else if (!billNumber) {
+      setBillNumber(f.name.replace(/\.[^.]+$/, ""));
+    }
   };
 
   const handleDrop = useCallback(
@@ -206,31 +260,56 @@ export default function AddBillPage() {
       routed: 4,
     };
 
-    for await (const event of streamAnalysis(dvId)) {
-      const step = stageMap[event.stage];
-      if (step !== undefined) {
-        const stageKey = PROCESSING_STAGES[step]?.key ?? event.stage;
-        const detail = formatStageDetail(stageKey, event.counts);
-        if (detail) {
-          setStageDetails((prev) => ({ ...prev, [stageKey]: detail }));
+    const TIMEOUT_MS = 120_000;
+    const timer = setTimeout(() => {
+      setError("Analysis is taking longer than expected. Check the bill page — it may have completed.");
+      setProcessing(false);
+    }, TIMEOUT_MS);
+
+    try {
+      for await (const event of streamAnalysis(dvId)) {
+        const step = stageMap[event.stage];
+        if (step !== undefined) {
+          const stageKey = PROCESSING_STAGES[step]?.key ?? event.stage;
+          const detail = formatStageDetail(stageKey, event.counts);
+          if (detail) {
+            setStageDetails((prev) => ({ ...prev, [stageKey]: detail }));
+          }
+          setCurrentStep(step + 1);
         }
-        setCurrentStep(step + 1);
+        if (event.stage === "complete") {
+          setCurrentStep(5);
+          setTimeout(() => router.push(`/docket/bill/${dvId}`), 800);
+          return;
+        }
+        if (event.status === "failed") {
+          setError(event.error ?? "Analysis failed. Please try again.");
+          setProcessing(false);
+          return;
+        }
       }
-      if (event.stage === "complete") {
-        setCurrentStep(5);
-        setTimeout(() => router.push(`/docket/bill/${dvId}`), 800);
-        return;
-      }
-      if (event.status === "failed") {
-        setError(event.error ?? "Analysis failed. Please try again.");
-        setProcessing(false);
-        return;
-      }
+
+      setError("Lost connection to the server. The analysis may still be running — try refreshing.");
+      setProcessing(false);
+    } finally {
+      clearTimeout(timer);
     }
   };
 
   const handleAnalyze = async () => {
-    if (!file) return;
+    const errors: Record<string, string> = {};
+    if (!file) errors.file = "Select a file to analyze";
+    if (!billNumber.trim()) errors.billNumber = "Bill number is required";
+    if (!session.trim()) {
+      errors.session = jurisdiction === "us-fed"
+        ? "Congress is required (e.g. 114th Congress)"
+        : "Session is required (e.g. 2026 Regular Session)";
+    }
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+    setFieldErrors({});
     setError(null);
     setProcessing(true);
     setCurrentStep(0);
@@ -239,22 +318,42 @@ export default function AddBillPage() {
     try {
       const identity: LegalIdentity = {
         jurisdiction,
-        session: session || "2026",
+        session,
         instrumentType,
-        number: billNumber || file.name,
+        number: billNumber || file!.name,
         stage,
         chapter: null,
       };
 
-      const result = await uploadDocument(file, identity);
+      const result = await uploadDocument(file!, identity);
       const dvId = result.documentVersionId;
       setLastDvId(dvId);
       addStoredBill(dvId);
 
       await runAnalysis(dvId);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Upload failed");
+      const code = (err as Error & { code?: string }).code;
+      if (code === "BILL_LIMIT_REACHED") {
+        setBillLimitHit(true);
+      }
+      setError(
+        UPLOAD_ERROR_MESSAGES[code ?? ""] ??
+          (err instanceof Error ? err.message : "Upload failed"),
+      );
       setProcessing(false);
+    }
+  };
+
+  const handleWaitlistSubmit = async () => {
+    if (!waitlistEmail) return;
+    setWaitlistSubmitting(true);
+    try {
+      await submitWaitlist(waitlistEmail, "bill_limit");
+      setWaitlistSubmitted(true);
+    } catch {
+      setError("Failed to submit — please try again.");
+    } finally {
+      setWaitlistSubmitting(false);
     }
   };
 
@@ -577,7 +676,13 @@ export default function AddBillPage() {
             </label>
             <select
               value={jurisdiction}
-              onChange={(e) => setJurisdiction(e.target.value)}
+              onChange={(e) => {
+                setJurisdiction(e.target.value);
+                setFieldErrors((prev) => {
+                  const { session: _, ...rest } = prev;
+                  return rest;
+                });
+              }}
               className="w-full rounded-lg border px-3 py-2.5 text-[15px]"
               style={{ borderColor: "#E5E5EA" }}
             >
@@ -591,15 +696,30 @@ export default function AddBillPage() {
           </div>
           <div>
             <label className="mb-1.5 block text-[13px] font-medium" style={{ color: "#86868B" }}>
-              Session / Congress
+              {jurisdiction === "us-fed" ? "Congress" : "Session"}
             </label>
             <input
               value={session}
-              onChange={(e) => setSession(e.target.value)}
-              placeholder="e.g. 2026 Regular Session"
+              onChange={(e) => {
+                setSession(e.target.value);
+                setFieldErrors((prev) => {
+                  const { session: _, ...rest } = prev;
+                  return rest;
+                });
+              }}
+              placeholder={
+                jurisdiction === "us-fed"
+                  ? "e.g. 114th Congress"
+                  : "e.g. 2026 Regular Session"
+              }
               className="w-full rounded-lg border px-3 py-2.5 text-[15px]"
-              style={{ borderColor: "#E5E5EA" }}
+              style={{ borderColor: fieldErrors.session ? "#E5C5BF" : "#E5E5EA" }}
             />
+            {fieldErrors.session && (
+              <div style={{ fontSize: "13px", color: "#B8452F", marginTop: "4px" }}>
+                {fieldErrors.session}
+              </div>
+            )}
           </div>
           <div>
             <label className="mb-1.5 block text-[13px] font-medium" style={{ color: "#86868B" }}>
@@ -607,11 +727,22 @@ export default function AddBillPage() {
             </label>
             <input
               value={billNumber}
-              onChange={(e) => setBillNumber(e.target.value)}
+              onChange={(e) => {
+                setBillNumber(e.target.value);
+                setFieldErrors((prev) => {
+                  const { billNumber: _, ...rest } = prev;
+                  return rest;
+                });
+              }}
               placeholder="e.g. HB 35"
               className="w-full rounded-lg border px-3 py-2.5 text-[15px]"
-              style={{ borderColor: "#E5E5EA" }}
+              style={{ borderColor: fieldErrors.billNumber ? "#E5C5BF" : "#E5E5EA" }}
             />
+            {fieldErrors.billNumber && (
+              <div style={{ fontSize: "13px", color: "#B8452F", marginTop: "4px" }}>
+                {fieldErrors.billNumber}
+              </div>
+            )}
           </div>
           <div>
             <label className="mb-1.5 block text-[13px] font-medium" style={{ color: "#86868B" }}>
@@ -630,7 +761,7 @@ export default function AddBillPage() {
           </div>
         </div>
 
-        {error && (
+        {error && !billLimitHit && (
           <div
             className="mb-4 rounded-lg border px-4 py-3 text-[15px]"
             style={{
@@ -640,6 +771,51 @@ export default function AddBillPage() {
             }}
           >
             {error}
+          </div>
+        )}
+
+        {billLimitHit && (
+          <div
+            className="mb-4 rounded-lg border px-5 py-4"
+            style={{ borderColor: "#E8DCC8", background: "#FBF8F0" }}
+          >
+            <div style={{ fontSize: "16px", fontWeight: 700, color: "#16233F", marginBottom: "6px" }}>
+              Free plan limit reached
+            </div>
+            <div style={{ fontSize: "14px", color: "#6E6E73", marginBottom: "14px", lineHeight: 1.5 }}>
+              You&apos;re tracking 3 of 3 bills on the free plan. Archive or remove a bill from your
+              dashboard to free a slot, or leave your email and we&apos;ll reach out when paid plans
+              are available.
+            </div>
+            {waitlistSubmitted ? (
+              <div style={{ fontSize: "14px", color: "#3F6B54", fontWeight: 600 }}>
+                Thanks! We&apos;ll be in touch.
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <input
+                  type="email"
+                  placeholder="you@company.com"
+                  value={waitlistEmail}
+                  onChange={(e) => setWaitlistEmail(e.target.value)}
+                  className="flex-1 rounded-lg border px-3 py-2 text-[14px]"
+                  style={{ borderColor: "#E8DCC8" }}
+                />
+                <button
+                  onClick={handleWaitlistSubmit}
+                  disabled={waitlistSubmitting || !waitlistEmail}
+                  className="rounded-lg px-4 py-2 text-[14px] font-semibold"
+                  style={{
+                    background: "#16233F",
+                    color: "#F5F2E8",
+                    opacity: waitlistSubmitting || !waitlistEmail ? 0.5 : 1,
+                    cursor: waitlistSubmitting || !waitlistEmail ? "not-allowed" : "pointer",
+                  }}
+                >
+                  {waitlistSubmitting ? "Submitting..." : "Join waitlist"}
+                </button>
+              </div>
+            )}
           </div>
         )}
 

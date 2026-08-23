@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { loadAllBills, removeStoredBill } from "@/lib/docket-data";
+import { fetchUserInfo } from "@/lib/api";
 import type { DocketBill, DocketTask, StatusCounts } from "@/lib/docket-types";
 import {
   countStatuses,
@@ -315,7 +316,13 @@ export default function DashboardPage() {
   const counts = countStatuses(allTasks);
   const agencies = buildAgencyCards(allTasks);
   const billCount = bills.length;
-  const billLimit = 10;
+  const [billLimit, setBillLimit] = useState(3);
+
+  useEffect(() => {
+    fetchUserInfo()
+      .then((u) => setBillLimit(u.billLimit))
+      .catch(() => {});
+  }, []);
 
   const handleRemoveBill = (dvId: string) => {
     removeStoredBill(dvId);

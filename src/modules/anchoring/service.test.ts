@@ -134,6 +134,8 @@ function createStubs() {
     listVersions: vi.fn(),
     getDocument: vi.fn(),
     updateJurisdiction: vi.fn(),
+    updateLegalIdentity: vi.fn(),
+    listAnalysedVersions: vi.fn().mockResolvedValue([]),
   };
 
   const parsingRepository: ParsingRepository = {

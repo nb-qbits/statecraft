@@ -210,7 +210,17 @@
       "Bash(AWS_ACCESS_KEY_ID=minioadmin AWS_SECRET_ACCESS_KEY=minioadmin aws --endpoint-url http://localhost:9000 s3 cp s3://policyaction/documents/cc28611c84b515a1fb700c2908e804ddabd329cb442765a1e17346b691ad845c /tmp/va_bill.pdf)",
       "Bash(AWS_ACCESS_KEY_ID=minioadmin AWS_SECRET_ACCESS_KEY=minioadmin aws --endpoint-url http://localhost:9000 s3 cp s3://policyaction/documents/639b10b5236e418ebd3adbe9ae9c233c56238247162b887bc455150e8b24f7a1 /tmp/hr5749.pdf)",
       "Bash(DOCKER_HOST=unix:///var/run/docker.sock docker ps)",
-      "Bash(open -a Docker)"
+      "Bash(open -a Docker)",
+      "Bash(mkdir -p /Users/vgrover/Downloads/software/statecraft/web/app/api/v1/documents/\\\\[documentVersionId\\\\]/source)",
+      "Bash(mkdir -p \"/Users/vgrover/Downloads/software/statecraft/web/app/api/v1/documents/[documentVersionId]/anchors/[anchorId]/record\")",
+      "Bash(DATABASE_URL=postgres://policyaction:policyaction@localhost:5432/policyaction npm run db:migrate)",
+      "Bash(node -e \"console.log\\('\\\\\\\\u201c', '\\\\\\\\u201d', '\\\\\\\\u2018', '\\\\\\\\u2019'\\)\")",
+      "Bash(node -e \"const fs = require\\('fs'\\); const s = fs.readFileSync\\('/Users/vgrover/Downloads/software/statecraft/src/modules/ingestion/title-extractor.ts', 'utf8'\\); const line = s.split\\('\\\\n'\\).find\\(l => l.includes\\('QUOTE_CHARS'\\)\\); console.log\\('QUOTE_CHARS line:', JSON.stringify\\(line\\)\\);\")",
+      "Bash(node --input-type=module -e ' *)",
+      "Bash(psql -h localhost -U statecraft -d statecraft -c \"SELECT id, document_version_id, kind, actor, resolved_date, status, reference_event_text FROM findings WHERE document_version_id = '5f9aa80f-d8e6-49d1-8977-9a55f7c50978' ORDER BY resolved_date;\")",
+      "Bash(pg_isready)",
+      "Bash(brew services *)",
+      "Bash(DATABASE_URL=postgresql://policyaction:policyaction@localhost:5432/policyaction S3_ENDPOINT=http://localhost:9000 S3_ACCESS_KEY=minioadmin S3_SECRET_KEY=minioadmin S3_BUCKET=policyaction S3_FORCE_PATH_STYLE=true SIDECAR_URL=http://localhost:8000 LOG_LEVEL=info npm run dev)"
     ],
     "deny": [
       "Read(./.env)",

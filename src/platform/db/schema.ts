@@ -16,3 +16,11 @@ export {
   idempotencyKeys,
 } from "./review-schema.js";
 export { deadlineOccurrences } from "./occurrence-schema.js";
+export { resolutionConflicts } from "./conflict-schema.js";
+export {
+  users,
+  userBills,
+  waitlistEntries,
+  calendarConnections,
+  syncedEvents,
+} from "./user-schema.js";

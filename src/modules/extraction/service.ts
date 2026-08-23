@@ -204,6 +204,31 @@ export function createExtractionService(deps: ExtractionServiceDeps) {
         });
       }
 
+      const totalProposals = segmentResults.reduce(
+        (sum, s) => sum + s.proposals.length,
+        0,
+      );
+
+      if (processableSegments > 0 && totalProposals === 0) {
+        await extractionRepository.updateExtractionStatus(
+          documentVersionId,
+          "extraction_failed",
+          EXTRACTOR_VERSION,
+        );
+        throw new AppError({
+          code: "EXTRACTION_EMPTY",
+          category: "verification_failure",
+          message: `Extraction produced 0 proposals from ${processableSegments} segments with candidates — this indicates a model or configuration failure, not an empty document`,
+          retryable: true,
+          context: {
+            documentVersionId,
+            processableSegments,
+            segmentsSkipped: totalSkipped,
+            gatewayErrors,
+          },
+        });
+      }
+
       await extractionRepository.insertCalls(callRecords);
       await extractionRepository.updateExtractionStatus(
         documentVersionId,
@@ -211,10 +236,6 @@ export function createExtractionService(deps: ExtractionServiceDeps) {
         EXTRACTOR_VERSION,
       );
 
-      const totalProposals = segmentResults.reduce(
-        (sum, s) => sum + s.proposals.length,
-        0,
-      );
       const totalRepaired = segmentResults.filter((s) => s.repaired).length;
 
       logger.info(

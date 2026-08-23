@@ -50,15 +50,42 @@ export interface ResolvedRecurrence {
   readonly inputs: readonly ResolutionInput[];
 }
 
+export const RefusalKind = {
+  undated_event: "undated_event",
+  missing_trigger: "missing_trigger",
+  missing_year: "missing_year",
+  hour_scale: "hour_scale",
+  missing_anchor: "missing_anchor",
+  cycle_detected: "cycle_detected",
+  unresolved_dependency: "unresolved_dependency",
+  broken_cross_reference: "broken_cross_reference",
+  nonexistent_trigger: "nonexistent_trigger",
+} as const;
+export type RefusalKind = (typeof RefusalKind)[keyof typeof RefusalKind];
+
+export interface BoundedUnresolvedDate {
+  readonly resolved: false;
+  readonly bounded: true;
+  readonly upperBound: string;
+  readonly reason: string;
+  readonly contingency?: string;
+  readonly derivationDepth?: number;
+  readonly missingInputs: readonly string[];
+  readonly warnings: readonly string[];
+  readonly inputs: readonly ResolutionInput[];
+}
+
 export interface UnresolvedDate {
   readonly resolved: false;
+  readonly bounded?: false;
+  readonly refusalKind: RefusalKind;
   readonly reason: string;
   readonly missingInputs: readonly string[];
   readonly warnings: readonly string[];
   readonly inputs: readonly ResolutionInput[];
 }
 
-export type ResolutionResult = ResolvedDate | ResolvedRecurrence | UnresolvedDate;
+export type ResolutionResult = ResolvedDate | ResolvedRecurrence | BoundedUnresolvedDate | UnresolvedDate;
 
 export function isResolvedDate(r: ResolutionResult): r is ResolvedDate {
   return r.resolved === true && !("recurrence" in r && r.recurrence === true);

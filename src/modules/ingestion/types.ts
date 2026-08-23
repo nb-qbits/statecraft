@@ -21,6 +21,7 @@ export interface LegalIdentity {
   readonly number: string;
   readonly stage: string;
   readonly chapter: string | null;
+  readonly shortTitle?: string | undefined;
 }
 
 export interface DocumentVersion {

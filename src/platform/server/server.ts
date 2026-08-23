@@ -1,4 +1,4 @@
-import Fastify, { type FastifyInstance } from "fastify";
+import Fastify, { type FastifyInstance, type FastifyError } from "fastify";
 import type { Logger } from "../logger/logger.js";
 import { newCorrelationId, runWithCorrelation } from "../logger/correlation.js";
 import { registerHealthRoute } from "./health.js";
@@ -11,6 +11,8 @@ export interface ServerOptions {
   logger: Logger;
   readinessChecks: ReadinessCheck[];
 }
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function createServer(
   opts: ServerOptions,
@@ -49,6 +51,44 @@ export async function createServer(
         },
         "request completed",
       );
+    });
+  });
+
+  app.addHook("preHandler", async (req, reply) => {
+    const params = req.params as Record<string, string> | undefined;
+    if (params?.documentVersionId && !UUID_RE.test(params.documentVersionId)) {
+      return reply.status(400).send({
+        error: {
+          code: "INVALID_DOCUMENT_VERSION_ID",
+          message: `Invalid document version ID: "${params.documentVersionId}" is not a valid UUID`,
+        },
+      });
+    }
+  });
+
+  app.setErrorHandler((error: FastifyError, req, reply) => {
+    const correlationId = correlationMap.get(req) ?? "unknown";
+    const statusCode = error.statusCode ?? 500;
+
+    runWithCorrelation(correlationId, () => {
+      opts.logger.error(
+        {
+          err: error,
+          method: req.method,
+          url: req.url,
+          statusCode,
+          correlationId,
+        },
+        error.message ?? "unhandled error",
+      );
+    });
+
+    void reply.status(statusCode).send({
+      error: {
+        code: statusCode >= 500 ? "INTERNAL_ERROR" : "REQUEST_ERROR",
+        message: statusCode >= 500 ? "Internal server error" : error.message,
+        correlationId,
+      },
     });
   });
 

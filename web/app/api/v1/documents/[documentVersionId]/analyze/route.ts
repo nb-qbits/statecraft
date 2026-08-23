@@ -4,13 +4,14 @@ export const maxDuration = 300;
 export const dynamic = "force-dynamic";
 
 export async function POST(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ documentVersionId: string }> },
 ) {
   const { documentVersionId } = await params;
+  const qs = new URL(request.url).search;
 
   const upstream = await fetch(
-    `${BACKEND}/api/v1/documents/${documentVersionId}/analyze`,
+    `${BACKEND}/api/v1/documents/${documentVersionId}/analyze${qs}`,
     { method: "POST" },
   );
 
