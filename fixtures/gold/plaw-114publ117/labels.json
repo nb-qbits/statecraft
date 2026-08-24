@@ -1,0 +1,79 @@
+{
+  "document": {
+    "filename": "PLAW-114publ117.pdf",
+    "jurisdiction": "us-fed",
+    "session": "114",
+    "instrumentType": "PLAW",
+    "number": "PLAW-114publ117",
+    "billNumber": "S. 1115",
+    "shortTitle": "Grants Oversight and New Efficiency Act",
+    "stage": "enacted",
+    "enactmentDate": "2016-01-28",
+    "chapter": null
+  },
+  "documentVersionId": "b99e763d-28ea-4277-9184-e70208fa0617",
+  "verified": true,
+  "labelNotes": "Labelled by hand against the statute text. This Act contains SECTION 1 (short title) and SEC. 2 only — there is no section 3. All obligations are in § 2. § 2(a)(2) (use of data systems) is permissive ('may use') and is not an obligation. § 2(a)(3) states a content requirement for the report under § 2(a)(1) and is not a separate dated obligation. § 2(e) is definitions.",
+  "obligations": [
+    {
+      "id": "plaw117-01",
+      "actor": "Director of the Office of Management and Budget",
+      "duty": "Instruct the head of each agency, in coordination with the Secretary, to submit the expired grant award report",
+      "citation": "§ 2(a)(1)",
+      "expected_outcome": "date",
+      "expected_date": "2016-07-26",
+      "refusal_reason": null,
+      "notes": "180 days after enactment (2016-01-28). July 26 2016 is a Tuesday. No federal weekend-rollover statute applies; report the statutory date as written."
+    },
+    {
+      "id": "plaw117-02",
+      "actor": "head of each agency",
+      "duty": "Submit to Congress and the Secretary a report listing each federal grant award, totals by expiration period and balance, closeout delay challenges, and why the 30 oldest awards remain open",
+      "citation": "§ 2(a)(1)",
+      "expected_outcome": "date",
+      "expected_date": "2017-12-31",
+      "refusal_reason": null,
+      "notes": "Same sentence as plaw117-01, different actor and different clock: 'not later than December 31 of the first calendar year beginning after the date of the enactment'. First calendar year beginning after 2016-01-28 is 2017. Dec 31 2017 is a Sunday; no federal rollover applies, so the statutory date stands."
+    },
+    {
+      "id": "plaw117-03",
+      "actor": "head of such agency",
+      "duty": "Provide notice to the Secretary specifying whether the agency has closed out the grant awards listed in the report",
+      "citation": "§ 2(b)(1)",
+      "expected_outcome": "bounded",
+      "expected_date": "2018-12-31",
+      "refusal_reason": null,
+      "notes": "1 year after the agency's actual submission under § 2(a). That submission is itself due on or before 2017-12-31, so this is bounded at 2018-12-31. The bound holds only if the predicate report was filed on time; if filed later, this date moves with it."
+    },
+    {
+      "id": "plaw117-04",
+      "actor": "Secretary of Health and Human Services",
+      "duty": "Compile the notices submitted under § 2(b)(1) and submit a report on those notices to Congress",
+      "citation": "§ 2(b)(2)",
+      "expected_outcome": "bounded",
+      "expected_date": "2018-03-31",
+      "refusal_reason": null,
+      "notes": "Two prongs, whichever is sooner: 90 days after all § 2(b)(1) notices have been provided (undated), or March 31 of the calendar year following the calendar year described in § 2(a)(1). That calendar year is 2017, so the cap is 2018-03-31. Which prong controls cannot be determined, but the cap computes, so the correct output is a bound. Mar 31 2018 is a Saturday; no federal rollover applies."
+    },
+    {
+      "id": "plaw117-05",
+      "actor": "Inspector General of an agency with more than $500,000,000 in annual grant funding",
+      "duty": "Conduct a risk assessment to determine whether an audit or review of the agency's grant closeout process is warranted",
+      "citation": "§ 2(c)",
+      "expected_outcome": "refuse",
+      "expected_date": null,
+      "refusal_reason": "broken_cross_reference",
+      "notes": "Triggers on 'the date on which the head of an agency provides notice to Congress under subsection (b)(2)'. Under § 2(b)(2) it is the Secretary who reports to Congress; the agency head's notice is § 2(b)(1) and it goes to the Secretary, not Congress. The referenced event does not exist as described. Also conditionally applicable only to IGs at agencies above the $500m threshold."
+    },
+    {
+      "id": "plaw117-06",
+      "actor": "Director of the Office of Management and Budget",
+      "duty": "Submit to Congress, in consultation with the Secretary, a report on recommendations for legislation to improve accountability and oversight in grants management",
+      "citation": "§ 2(d)",
+      "expected_outcome": "refuse",
+      "expected_date": null,
+      "refusal_reason": "nonexistent_trigger",
+      "notes": "Triggers on 'the date on which the second report is submitted pursuant to subsection (b)(2)'. Section 2(b)(2) requires one report, not two. There is no second report, so the trigger event does not exist in the statute. This is a drafting defect, not an undated event."
+    }
+  ]
+}

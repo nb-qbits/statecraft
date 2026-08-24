@@ -1,0 +1,135 @@
+{
+  "document": {
+    "filename": "chapter-1126.pdf",
+    "jurisdiction": "us-va",
+    "session": "2026",
+    "instrumentType": "chapter",
+    "number": "1126",
+    "stage": "enacted",
+    "chapter": "1126"
+  },
+  "documentVersionId": "b2ed9422-59c8-4fcf-b9eb-4e90d1161a06",
+  "verified": false,
+  "obligations": [
+    {
+      "id": "ch1126-01",
+      "actor": "Bank",
+      "duty": "Adopt long-term investment strategy",
+      "citation": "§ 45.2-118",
+      "expected_outcome": "date",
+      "expected_date": "2026-12-15",
+      "refusal_reason": null,
+      "notes": "UNVERIFIED — generated from pipeline. Pipeline found but grammar failed. Recurrence: every 4 years thereafter."
+    },
+    {
+      "id": "ch1126-02",
+      "actor": "Bank",
+      "duty": "Accept written comments on draft strategy for at least 30 days",
+      "citation": "§ 45.2-118",
+      "expected_outcome": "refuse",
+      "expected_date": null,
+      "refusal_reason": "duration floor, not a deadline — 'at least 30 days' sets a minimum period",
+      "notes": "UNVERIFIED — generated from pipeline. May not be a deadline obligation at all."
+    },
+    {
+      "id": "ch1126-03",
+      "actor": "Bank",
+      "duty": "Consider written comments in preparing final investment strategy",
+      "citation": "§ 45.2-118",
+      "expected_outcome": "refuse",
+      "expected_date": null,
+      "refusal_reason": "no temporal expression — procedural requirement with no date",
+      "notes": "UNVERIFIED — generated from pipeline. May not be a temporal obligation."
+    },
+    {
+      "id": "ch1126-04",
+      "actor": "Bank",
+      "duty": "Develop and adopt a strategic plan",
+      "citation": "§ 45.2-119",
+      "expected_outcome": "date",
+      "expected_date": "2026-12-15",
+      "refusal_reason": null,
+      "notes": "UNVERIFIED — generated from pipeline. Recurrence: each December 15 in even-numbered years."
+    },
+    {
+      "id": "ch1126-05",
+      "actor": "Bank",
+      "duty": "Establish annual targets in strategic plan for each financing program",
+      "citation": "§ 45.2-119",
+      "expected_outcome": "refuse",
+      "expected_date": null,
+      "refusal_reason": "recurrence without fixed calendar date — 'annual' targets tied to strategic plan cycle",
+      "notes": "UNVERIFIED — generated from pipeline."
+    },
+    {
+      "id": "ch1126-06",
+      "actor": "Bank",
+      "duty": "Submit draft strategic plan to Bank Advisory Board",
+      "citation": "§ 45.2-119",
+      "expected_outcome": "date",
+      "expected_date": null,
+      "refusal_reason": null,
+      "notes": "UNVERIFIED — generated from pipeline. 'no later than August 1 ... in any even-numbered year'. Pipeline grammar failed."
+    },
+    {
+      "id": "ch1126-07",
+      "actor": "Bank",
+      "duty": "Submit draft strategic plan to General Assembly",
+      "citation": "§ 45.2-119",
+      "expected_outcome": "date",
+      "expected_date": null,
+      "refusal_reason": null,
+      "notes": "UNVERIFIED — generated from pipeline. 'no later than October 15 in any even-numbered year'. Pipeline grammar failed."
+    },
+    {
+      "id": "ch1126-08",
+      "actor": "Bank",
+      "duty": "Hold quarterly public meetings accessible online",
+      "citation": "§ 45.2-120",
+      "expected_outcome": "refuse",
+      "expected_date": null,
+      "refusal_reason": "recurrence without fixed start — 'quarterly' with no anchor date",
+      "notes": "UNVERIFIED — generated from pipeline."
+    },
+    {
+      "id": "ch1126-09",
+      "actor": "Bank Advisory Board",
+      "duty": "Elect chair and vice-chair annually",
+      "citation": "§ 45.2-114",
+      "expected_outcome": "refuse",
+      "expected_date": null,
+      "refusal_reason": "recurrence without fixed date — 'annually' with no anchor",
+      "notes": "UNVERIFIED — generated from pipeline."
+    },
+    {
+      "id": "ch1126-10",
+      "actor": "Auditor of Public Accounts",
+      "duty": "Report annual audit results to Bank Advisory Board and legislative chairs",
+      "citation": "§ 45.2-121",
+      "expected_outcome": "refuse",
+      "expected_date": null,
+      "refusal_reason": "recurrence without fixed date — 'annual audit' with no anchor",
+      "notes": "UNVERIFIED — generated from pipeline."
+    },
+    {
+      "id": "ch1126-11",
+      "actor": "Bank",
+      "duty": "Submit annual executive summary to Governor and General Assembly",
+      "citation": "§ 45.2-122",
+      "expected_outcome": "date",
+      "expected_date": null,
+      "refusal_reason": null,
+      "notes": "UNVERIFIED — generated from pipeline. 'no later than the first day of each regular session of the General Assembly'. Recurrence."
+    },
+    {
+      "id": "ch1126-12",
+      "actor": "Bank",
+      "duty": "Submit executive summary per DLAS procedures and post on GA website",
+      "citation": "§ 45.2-122",
+      "expected_outcome": "refuse",
+      "expected_date": null,
+      "refusal_reason": "procedural requirement with no independent temporal expression",
+      "notes": "UNVERIFIED — generated from pipeline. May be same obligation as ch1126-11, not separate."
+    }
+  ]
+}
