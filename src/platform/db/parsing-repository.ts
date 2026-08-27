@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { sourceSegments } from "./parsing-schema.js";
 import { documentVersions } from "./ingestion-schema.js";
-import type { SourceSegment } from "../../modules/parsing/types.js";
+import type { SourceSegment, NonBodyRun } from "../../modules/parsing/types.js";
 import type { ParseStatus } from "../../modules/shared/types.js";
 import type {
   SegmentId,
@@ -38,6 +38,8 @@ export interface ParsingRepository {
   getSegmentsByVersion(documentVersionId: DocumentVersionId): Promise<SourceSegment[]>;
   deleteSegmentsByVersion(documentVersionId: DocumentVersionId): Promise<void>;
   updateParseStatus(documentVersionId: DocumentVersionId, status: ParseStatus): Promise<void>;
+  storeNonBodyContent(documentVersionId: DocumentVersionId, content: readonly NonBodyRun[]): Promise<void>;
+  getNonBodyContent(documentVersionId: DocumentVersionId): Promise<readonly NonBodyRun[]>;
 }
 
 export function createParsingRepository(
@@ -92,6 +94,27 @@ export function createParsingRepository(
         .update(documentVersions)
         .set({ parseStatus: status })
         .where(eq(documentVersions.documentVersionId, documentVersionId));
+    },
+
+    async storeNonBodyContent(
+      documentVersionId: DocumentVersionId,
+      content: readonly NonBodyRun[],
+    ): Promise<void> {
+      await db
+        .update(documentVersions)
+        .set({ nonBodyContent: content as unknown as Record<string, unknown> })
+        .where(eq(documentVersions.documentVersionId, documentVersionId));
+    },
+
+    async getNonBodyContent(
+      documentVersionId: DocumentVersionId,
+    ): Promise<readonly NonBodyRun[]> {
+      const rows = await db
+        .select({ nonBodyContent: documentVersions.nonBodyContent })
+        .from(documentVersions)
+        .where(eq(documentVersions.documentVersionId, documentVersionId));
+      if (rows.length === 0 || !rows[0]!.nonBodyContent) return [];
+      return rows[0]!.nonBodyContent as unknown as NonBodyRun[];
     },
   };
 }

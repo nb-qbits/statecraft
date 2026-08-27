@@ -38,6 +38,8 @@ import type {
 } from "./types.js";
 
 import { computeConfigHash, currentStageVersions, stageVersionsToRecord } from "../shared/engine-versions.js";
+import { buildSectionIndex } from "../section-index/build-index.js";
+import type { Jurisdiction } from "../section-index/types.js";
 import type { ProposalInsert } from "../../platform/db/review-repository.js";
 
 export interface PipelineServices {
@@ -259,6 +261,7 @@ export function createReviewService(deps: ReviewServiceDeps) {
   const {
     reviewRepository,
     ingestionRepository,
+    parsingRepository,
     anchoringRepository,
     grammarRepository,
     resolverRepository,
@@ -822,13 +825,20 @@ export function createReviewService(deps: ReviewServiceDeps) {
       grammarResults,
       resolutionResults,
       assignments,
+      segments,
+      version2,
     ] = await Promise.all([
       anchoringRepository.getResultsByVersion(documentVersionId),
       evaluationRepository.getResultsByVersion(documentVersionId),
       grammarRepository.getResultsByVersion(documentVersionId),
       resolverRepository.getResultsByVersion(documentVersionId),
       routingRepository.getAssignmentsByVersion(documentVersionId),
+      parsingRepository.getSegmentsByVersion(documentVersionId),
+      ingestionRepository.getVersion(documentVersionId),
     ]);
+
+    const jurisdiction = (version2?.legalIdentity.jurisdiction ?? "us-va") as Jurisdiction;
+    const sectionIndex = buildSectionIndex(segments, jurisdiction);
 
     const anchorMap = new Map<string, ProposalAnchorResult>(
       anchorResults.map((a) => [a.anchorId, a]),
@@ -855,6 +865,11 @@ export function createReviewService(deps: ReviewServiceDeps) {
 
       const anchoredResult = anchor.result;
 
+      const indexCitation = sectionIndex.getCitationForAnchor(
+        anchor.segmentId as string,
+        anchoredResult.normalizedStart,
+      );
+
       proposalRows.push({
         analysisId: analysisId as string,
         documentVersionId: documentVersionId as string,
@@ -862,6 +877,8 @@ export function createReviewService(deps: ReviewServiceDeps) {
         segmentId: anchor.segmentId as string,
         quotedText: anchor.quotedText,
         kind: anchor.kind,
+        obligationTitle: anchor.obligationTitle ?? null,
+        sectionCitation: indexCitation ?? anchor.sectionCitation ?? null,
         normalizedStart: anchoredResult.normalizedStart,
         normalizedEnd: anchoredResult.normalizedEnd,
         originalStart: anchoredResult.originalStart,

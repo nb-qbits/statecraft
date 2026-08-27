@@ -143,6 +143,8 @@ function createStubs() {
     getSegmentsByVersion: vi.fn(async (id: DocumentVersionId) => segments.get(id) ?? []),
     deleteSegmentsByVersion: vi.fn(),
     updateParseStatus: vi.fn(),
+    storeNonBodyContent: vi.fn(),
+    getNonBodyContent: vi.fn().mockResolvedValue([]),
   };
 
   const extractionRepository: ExtractionRepository = {
@@ -229,7 +231,7 @@ describe("anchoring service", () => {
   it("idempotent: returns existing when already anchored with same version", async () => {
     stubs.versions.set(
       dvId,
-      makeVersion({ anchoringStatus: "anchored", anchorerVersion: "1.5.0", extractorVersion: "1.4.0" }),
+      makeVersion({ anchoringStatus: "anchored", anchorerVersion: "1.7.0", extractorVersion: "2.0.0" }),
     );
     stubs.anchors.set(dvId, [
       {
@@ -237,6 +239,8 @@ describe("anchoring service", () => {
         segmentId: segId,
         quotedText: "within 30 days",
         kind: "duration",
+        obligationTitle: null,
+        sectionCitation: null,
         result: {
           anchored: true,
           normalizedStart: 0,
@@ -313,7 +317,7 @@ describe("anchoring service", () => {
     expect(stubs.anchoringRepository.updateAnchoringStatus).toHaveBeenCalledWith(
       dvId,
       "anchored",
-      "1.5.0",
+      "1.7.0",
     );
   });
 
@@ -339,6 +343,8 @@ function makeAnchoredResult(
     segmentId: sid,
     quotedText,
     kind,
+    obligationTitle: null,
+    sectionCitation: null,
     result: {
       anchored: true,
       normalizedStart: originalStart,
@@ -439,6 +445,30 @@ describe("over-extraction suppression", () => {
     ]);
   });
 
+  it("does NOT suppress contained span when actors differ — distinct obligations", () => {
+    const outer = makeAnchoredResult(segId, "Not later than 180 days after enactment, the Director shall instruct agency heads to submit a report by December 31", "duration", 0, 112);
+    const inner = makeAnchoredResult(segId, "agency heads to submit a report by December 31", "obligation_deadline" as SpanProposalKind, 66, 112);
+    (outer as { actor: string | null }).actor = "Director";
+    (inner as { actor: string | null }).actor = "head of each agency";
+
+    const { active, suppressed } = suppressOverExtractedProposals([outer, inner]);
+
+    expect(active).toHaveLength(2);
+    expect(suppressed).toHaveLength(0);
+  });
+
+  it("still suppresses contained span when both actors are null", () => {
+    const results = [
+      makeAnchoredResult(segId, "Within 90 days of the effective date of this chapter", "duration", 30, 82),
+      makeAnchoredResult(segId, "the effective date of this chapter", "effective_date", 48, 82),
+    ];
+
+    const { active, suppressed } = suppressOverExtractedProposals(results);
+
+    expect(active).toHaveLength(1);
+    expect(suppressed).toHaveLength(1);
+  });
+
   it("skips unanchored proposals — they cannot be positionally compared", () => {
     const results: ProposalAnchorResult[] = [
       makeAnchoredResult(segId, "Within 90 days of the effective date of this chapter", "duration", 30, 82),
@@ -447,6 +477,8 @@ describe("over-extraction suppression", () => {
         segmentId: segId,
         quotedText: "fabricated text",
         kind: "duration",
+        obligationTitle: null,
+        sectionCitation: null,
         result: { anchored: false, reason: "no_match" },
         actor: null,
         actorQuotedText: null,
@@ -610,6 +642,8 @@ describe("duplicate span deduplication", () => {
       segmentId: segId,
       quotedText: "fabricated text",
       kind: "duration",
+      obligationTitle: null,
+      sectionCitation: null,
       result: { anchored: false, reason: "no_match" },
       actor: null,
       actorQuotedText: null,
@@ -632,6 +666,8 @@ describe("duplicate span deduplication", () => {
       segmentId: segId,
       quotedText: "fabricated text",
       kind: "duration",
+      obligationTitle: null,
+      sectionCitation: null,
       result: { anchored: false, reason: "no_match" },
       actor: null,
       actorQuotedText: null,
@@ -645,6 +681,8 @@ describe("duplicate span deduplication", () => {
       segmentId: segId,
       quotedText: "other text",
       kind: "duration",
+      obligationTitle: null,
+      sectionCitation: null,
       result: { anchored: false, reason: "no_match" },
       actor: null,
       actorQuotedText: null,

@@ -10,7 +10,7 @@ import type {
   TemporalExpression,
 } from "./types.js";
 
-export const GRAMMAR_VERSION = "2.0.0";
+export const GRAMMAR_VERSION = "2.2.0";
 
 export function parseTemporalExpression(span: AnchoredSpan): SpanParseResult {
   const result = parseText(span.text);
@@ -28,7 +28,7 @@ function dehyphenate(text: string): string {
 
 const MONTH_NAMES = "January|February|March|April|May|June|July|August|September|October|November|December";
 const CAP_CLAUSE_RE = new RegExp(
-  `,?\\s+or\\s+(${MONTH_NAMES})\\s+(\\d{1,2}),?\\s+(\\d{4}),?\\s+whichever\\s+is\\s+(sooner|earlier|later)\\s*\\.?$`,
+  `,?\\s+or\\s+(${MONTH_NAMES})\\s+(\\d{1,2}),?\\s+(\\d{4}),?\\s+whichever\\s+is\\s+(sooner|earlier|later)`,
   "i",
 );
 
@@ -43,7 +43,7 @@ const CAP_DEP_CLAUSE_RE = new RegExp(
   `(following\\s+)?` +
   `the\\s+calendar\\s+year\\s+described\\s+in\\s+` +
   `subsection\\s+(\\([a-z]\\)(?:\\(\\d+\\))?)` +
-  `,?\\s+whichever\\s+is\\s+(sooner|earlier|later)\\s*\\.?$`,
+  `,?\\s+whichever\\s+is\\s+(sooner|earlier|later)`,
   "i",
 );
 
@@ -123,6 +123,51 @@ function tryCalendarYearAnchoredDate(text: string): ParseResult | null {
   };
 }
 
+const WORD_CONTINUATION_RE = /^(?:or|whichever|and\s+(?:each|every))\b/i;
+
+function tryTruncateAtWordBoundary(text: string, errorPosition: number): ParseResult | null {
+  let lastSpace = -1;
+  for (let i = errorPosition - 1; i >= 0; i--) {
+    if (/\s/.test(text[i]!)) {
+      lastSpace = i;
+      break;
+    }
+  }
+  if (lastSpace < 4) return null;
+
+  const afterTrunc = text.slice(lastSpace).trim();
+  if (WORD_CONTINUATION_RE.test(afterTrunc)) return null;
+
+  const truncated = text.slice(0, lastSpace).trim().replace(/[,;]+$/, "");
+  if (truncated.length < 4) return null;
+  const result = parseText(truncated);
+  return result.parsed ? result : null;
+}
+
+const TEMPORAL_CONTINUATION_RE = /^,\s*(?:or\b|whichever\b)/i;
+
+function tryStripTrailingClause(text: string): ParseResult | null {
+  const DATE_COMMA_RE = /\d{1,2},\s*\d{4}/g;
+  const dateCommas = new Set<number>();
+  let dc;
+  while ((dc = DATE_COMMA_RE.exec(text)) !== null) {
+    const ci = text.indexOf(",", dc.index);
+    if (ci >= 0) dateCommas.add(ci);
+  }
+
+  for (let i = text.length - 1; i >= 8; i--) {
+    if (text[i] === "," && !dateCommas.has(i)) {
+      if (TEMPORAL_CONTINUATION_RE.test(text.slice(i))) continue;
+      const truncated = text.slice(0, i).trim();
+      if (truncated.length >= 8) {
+        const result = parseText(truncated);
+        if (result.parsed) return result;
+      }
+    }
+  }
+  return null;
+}
+
 function parseText(text: string): ParseResult {
   const trimmed = dehyphenate(text.trim());
   if (trimmed.length === 0) {
@@ -157,6 +202,14 @@ function parseText(text: string): ParseResult {
     if (stripped !== null) {
       return parseText(stripped);
     }
+  }
+
+  const trailing = tryStripTrailingClause(trimmed);
+  if (trailing) return trailing;
+
+  if (result.reason.startsWith("unexpected character") && result.position >= 4) {
+    const truncAtWord = tryTruncateAtWordBoundary(trimmed, result.position);
+    if (truncAtWord) return truncAtWord;
   }
 
   return result;
@@ -244,7 +297,18 @@ function tryCombinedFixedRecurrence(text: string): ParseResult | null {
   if (fixedResult.expression.kind !== "fixed_date") return null;
   if (fixedResult.expression.year === null) return null;
 
-  const recResult = attemptParse(recurrencePart);
+  let recResult = attemptParse(recurrencePart);
+  if (!recResult.parsed) {
+    for (let i = recurrencePart.length - 1; i >= 8; i--) {
+      if (recurrencePart[i] === ",") {
+        const truncated = recurrencePart.slice(0, i).trim();
+        if (truncated.length >= 8) {
+          recResult = attemptParse(truncated);
+          if (recResult.parsed) break;
+        }
+      }
+    }
+  }
   if (!recResult.parsed) return null;
   if (recResult.expression.kind !== "recurrence") return null;
 
@@ -291,7 +355,26 @@ function tryExtractWithTrailingScope(text: string): ParseResult | null {
   if (coreResult.expression.kind !== "relative_duration") return null;
 
   const knownEvent = matchKnownEvent(scopeText);
-  if (knownEvent === "partial_match") return null;
+  if (knownEvent === "partial_match") {
+    for (const sep of [",", ";"]) {
+      const idx = scopeText.indexOf(sep);
+      if (idx > 0) {
+        const truncated = scopeText.slice(0, idx).trim();
+        const truncatedEvent = matchKnownEvent(truncated);
+        if (truncatedEvent && truncatedEvent !== "partial_match") {
+          return {
+            parsed: true,
+            expression: {
+              ...coreResult.expression,
+              referenceEvent: truncatedEvent.event,
+              referenceEventText: null,
+            },
+          };
+        }
+      }
+    }
+    return null;
+  }
   if (knownEvent) {
     return {
       parsed: true,
@@ -311,16 +394,27 @@ function tryExtractWithTrailingScope(text: string): ParseResult | null {
 
 const MONTHS =
   "January|February|March|April|May|June|July|August|September|October|November|December";
+const NUM_WORD =
+  "one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|" +
+  "thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|" +
+  "thirty|forty|fifty|sixty|seventy|eighty|ninety";
 const LEADING_CONTEXT_RE = new RegExp(
-  `^.+?\\b(by\\s+(?:${MONTHS})\\b.*)$`,
+  `^.+?\\b(` +
+  `(?:not|no)\\s+later\\s+than\\b.+|` +
+  `no\\s+longer\\s+than\\b.+|` +
+  `on\\s+or\\s+before\\b.+|` +
+  `within\\s+(?:\\d+|${NUM_WORD})\\b.+|` +
+  `at\\s+least\\s+(?:\\d+|${NUM_WORD})\\b.+|` +
+  `before\\s+(?:\\d+|${NUM_WORD})\\s+.+|` +
+  `(?:quarterly|annually|annual)\\b.*|` +
+  `each\\s+(?:${MONTHS})\\b.+|` +
+  `every\\s+(?:\\d+|${NUM_WORD})\\b.+|` +
+  `becomes?\\s+effective\\b.+|` +
+  `by\\s+(?:${MONTHS})\\b.*` +
+  `)$`,
   "is",
 );
 
-/**
- * If the text has unrecognised leading words before "by <Month>...",
- * return the substring starting at "by".  Returns null when no such
- * pattern is found (e.g. "reviewed by the oversight committee").
- */
 function stripLeadingContext(text: string): string | null {
   const m = LEADING_CONTEXT_RE.exec(text);
   return m ? m[1]! : null;

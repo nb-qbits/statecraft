@@ -17,6 +17,8 @@ export const anchorResults = pgTable(
     segmentId: varchar("segment_id", { length: 128 }).notNull(),
     quotedText: text("quoted_text").notNull(),
     kind: varchar("kind", { length: 64 }).notNull(),
+    obligationTitle: text("obligation_title"),
+    sectionCitation: text("section_citation"),
     anchored: boolean("anchored").notNull(),
     method: varchar("method", { length: 32 }),
     normalizedStart: integer("normalized_start"),

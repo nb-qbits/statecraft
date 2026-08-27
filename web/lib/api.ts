@@ -39,6 +39,8 @@ export interface Finding {
   provisionLabel: string;
   quotedText: string;
   kind: string;
+  obligationTitle: string | null;
+  sectionCitation: string | null;
   actor: string | null;
   actorQuotedText: string | null;
   dependsOnDescription: string | null;
@@ -54,6 +56,7 @@ export interface Finding {
   resolved: boolean;
   statutoryDate: string | null;
   adjustedDate: string | null;
+  dateRole: "deadline" | "floor" | null;
   rrule: string | null;
   occurrences: FindingOccurrence[];
   horizon: string | null;

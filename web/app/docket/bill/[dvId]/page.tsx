@@ -1099,7 +1099,7 @@ function BriefingSummaryLine({ tasks }: { tasks: DocketTask[] }) {
 }
 
 function CalendarSyncBar({
-  dvId,
+  dvId: _dvId,
   onOpenModal,
   syncStatus,
   onSync,

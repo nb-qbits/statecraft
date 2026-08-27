@@ -255,9 +255,9 @@ export function Sidebar() {
   const [plan, setPlan] = useState("free");
 
   useEffect(() => {
-    const storedIds = getStoredBills();
-    setBillCount(storedIds.length);
-    syncBillTracking(storedIds)
+    const stored = getStoredBills();
+    setBillCount(stored.length);
+    syncBillTracking(stored.map((b) => b.dvId))
       .then(() => fetchUserInfo())
       .then((u) => {
         setBillCount(u.trackedBills);

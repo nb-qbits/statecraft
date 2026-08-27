@@ -176,6 +176,35 @@ describe("resolver — relative_duration", () => {
     expect(result.citations).toContain("Va. Code § 1-210(A)");
     expect(result.packVersion).toBe("us-va/v1");
     expect(result.inputs).toEqual([trigger]);
+    expect(result.dateRole).toBe("deadline");
+  });
+
+  it("at_least boundKind → dateRole is floor, not deadline", () => {
+    const trigger: ResolutionInput = {
+      name: "triggerDate",
+      value: "2026-03-02",
+      source: "derived_from_session",
+      authority: "Va. Code § 1-214(A)",
+      citation: "Va. Code § 1-214(A)",
+    };
+    const expr = makeExpr(
+      {
+        kind: "relative_duration",
+        quantity: 30,
+        unit: "days",
+        dayKind: null,
+        preposition: null,
+        referenceEvent: null,
+        referenceEventText: null,
+        boundKind: "at_least",
+      },
+      "at least 30 days",
+    );
+    const result = resolve(expr, [trigger], testPack);
+    expect(result.resolved).toBe(true);
+    if (!isResolvedDate(result)) return;
+    expect(result.dateRole).toBe("floor");
+    expect(result.statutoryDate).toBe("2026-04-01");
   });
 
   it("within 5 calendar days from Monday June 1 → Sat June 6 → adjusted Mon June 8", () => {
@@ -707,7 +736,7 @@ describe("resolver — calendar_year_anchored_date", () => {
 
 describe("resolver version", () => {
   it("exports RESOLVER_VERSION", () => {
-    expect(RESOLVER_VERSION).toBe("1.6.0");
+    expect(RESOLVER_VERSION).toBe("1.8.0");
   });
 });
 

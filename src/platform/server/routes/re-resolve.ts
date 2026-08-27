@@ -19,6 +19,8 @@ import { normalizeActors } from "../../../modules/extraction/actor-normalizer.js
 import { computeConfigHash, currentStageVersions, stageVersionsToRecord } from "../../../modules/shared/engine-versions.js";
 import { GRAMMAR_VERSION } from "../../../modules/grammar/service.js";
 import { RESOLVER_VERSION } from "../../../modules/resolver/service.js";
+import { buildSectionIndex } from "../../../modules/section-index/build-index.js";
+import type { Jurisdiction } from "../../../modules/section-index/types.js";
 
 export interface ReResolveDeps {
   ingestionRepository: IngestionRepository;
@@ -40,7 +42,7 @@ export function registerReResolveRoutes(
   deps: ReResolveDeps,
 ): void {
   const {
-    ingestionRepository, anchoringRepository,
+    ingestionRepository, parsingRepository, anchoringRepository,
     grammarRepository, resolverRepository, evaluationRepository,
     routingRepository, reviewRepository, conflictRepository,
     pipeline, parserVersion, logger,
@@ -368,6 +370,14 @@ export function registerReResolveRoutes(
         routingRepository.getAssignmentsByVersion(dvId),
       ]);
 
+    const [segments, version2] = await Promise.all([
+      parsingRepository.getSegmentsByVersion(dvId),
+      ingestionRepository.getVersion(dvId),
+    ]);
+
+    const jurisdiction = (version2?.legalIdentity.jurisdiction ?? "us-va") as Jurisdiction;
+    const sectionIndex = buildSectionIndex(segments, jurisdiction);
+
     const anchorMap = new Map(anchorResults.map((a) => [a.anchorId, a] as [string, ProposalAnchorResult]));
     const grammarMap = new Map(grammarResults.map((g) => [g.anchorId, g] as [string, SpanParseResult]));
     const resolutionMap = new Map(resolutionResults.map((r) => [r.anchorId, r] as [string, AnchoredResolution]));
@@ -384,6 +394,11 @@ export function registerReResolveRoutes(
       const assignment = assignmentMap.get(evaluation.anchorId as string);
       const anchoredResult = anchor.result;
 
+      const indexCitation = sectionIndex.getCitationForAnchor(
+        anchor.segmentId as string,
+        anchoredResult.normalizedStart,
+      );
+
       proposalRows.push({
         analysisId,
         documentVersionId: dvId as string,
@@ -391,6 +406,8 @@ export function registerReResolveRoutes(
         segmentId: anchor.segmentId as string,
         quotedText: anchor.quotedText,
         kind: anchor.kind,
+        obligationTitle: anchor.obligationTitle ?? null,
+        sectionCitation: indexCitation ?? anchor.sectionCitation ?? null,
         normalizedStart: anchoredResult.normalizedStart,
         normalizedEnd: anchoredResult.normalizedEnd,
         originalStart: anchoredResult.originalStart,

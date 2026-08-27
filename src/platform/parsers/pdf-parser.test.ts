@@ -38,7 +38,7 @@ function makeSidecarClient(response?: SidecarResponse | Error): SidecarClient {
 describe("pdf-parser", () => {
   it("has correct parserVersion", () => {
     const parser = createPdfParser(makeSidecarClient());
-    expect(parser.parserVersion).toBe("1.4.0");
+    expect(parser.parserVersion).toBe("1.6.0");
   });
 
   it("rejects non-PDF input", async () => {
@@ -59,7 +59,7 @@ describe("pdf-parser", () => {
     expect(result.paragraphs.length).toBeGreaterThan(0);
     expect(result.fidelity).toBe("inferred");
     expect(result.parserAdapter).toBe("pdf");
-    expect(result.parserVersion).toBe("1.4.0");
+    expect(result.parserVersion).toBe("1.6.0");
   });
 
   it("applies structural segmentation to sidecar output", async () => {

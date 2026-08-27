@@ -26,6 +26,7 @@ export const resolutionResults = pgTable("resolution_results", {
   derivationDepth: integer("derivation_depth"),
   statutoryDate: varchar("statutory_date", { length: 10 }),
   adjustedDate: varchar("adjusted_date", { length: 10 }),
+  dateRole: varchar("date_role", { length: 16 }),
   rrule: varchar("rrule", { length: 512 }),
   recurrenceData: jsonb("recurrence_data"),
   ruleIds: jsonb("rule_ids"),

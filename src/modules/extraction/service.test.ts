@@ -166,6 +166,8 @@ function createStubs() {
     ),
     deleteSegmentsByVersion: vi.fn(),
     updateParseStatus: vi.fn(),
+    storeNonBodyContent: vi.fn(),
+    getNonBodyContent: vi.fn().mockResolvedValue([]),
   };
 
   const scanningRepository: ScanningRepository = {

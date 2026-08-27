@@ -189,9 +189,17 @@ export function splitOnEmbeddedSections(paragraphs: ParsedParagraph[]): ParsedPa
     const text = p.runs.map(r => r.text).join("");
     const matches = [...text.matchAll(SECTION_DEF_BOUNDARY)];
 
-    if (matches.length < 2) {
+    if (matches.length === 0) {
       result.push(p);
       continue;
+    }
+
+    if (matches.length === 1 && matches[0]!.index === 0) {
+      const sectionId = matches[0]![1]!.replace(/[.:]$/, "");
+      if (p.structuralPath.includes(`section[${sectionId}]`)) {
+        result.push(p);
+        continue;
+      }
     }
 
     const parentPath = extractParentPath(p.structuralPath);
@@ -260,6 +268,106 @@ export function stripDetectedLineNumber(line: string): string {
     result = stripped;
   }
   return result;
+}
+
+export interface EnactingClauseInfo {
+  readonly declaredSections: readonly string[];
+  readonly source: string;
+}
+
+export interface ReconciliationResult {
+  readonly paragraphs: readonly ParsedParagraph[];
+  readonly warnings: readonly string[];
+  readonly enactingClause: EnactingClauseInfo | null;
+}
+
+const ENACTED_RANGE = /sections?\s+(?:numbered\s+)?([\d.:-]+)\s+through\s+([\d.:-]+)/i;
+const ENACTED_SINGLE = /That\s+§\s*([\d.:-]+)\s+of\s+the\s+Code.*?is\s+amended/i;
+const ENACTED_MULTI = /That\s+§§\s*([\d.:-]+(?:\s*,\s*[\d.:-]+)*)\s*(?:,?\s*and\s+([\d.:-]+))?\s+of\s+the\s+Code/i;
+
+export function expandSectionRange(start: string, end: string): string[] | null {
+  const startMatch = start.match(/^(.*?)(\d+)$/);
+  const endMatch = end.match(/^(.*?)(\d+)$/);
+  if (!startMatch || !endMatch) return null;
+  if (startMatch[1] !== endMatch[1]) return null;
+
+  const prefix = startMatch[1]!;
+  const startNum = parseInt(startMatch[2]!, 10);
+  const endNum = parseInt(endMatch[2]!, 10);
+  if (startNum > endNum || endNum - startNum > 200) return null;
+
+  return Array.from({ length: endNum - startNum + 1 }, (_, i) => `${prefix}${startNum + i}`);
+}
+
+export function parseEnactingClause(paragraphs: readonly ParsedParagraph[]): EnactingClauseInfo | null {
+  for (const p of paragraphs) {
+    const text = p.runs.map(r => r.text).join("");
+
+    const rangeMatch = ENACTED_RANGE.exec(text);
+    if (rangeMatch) {
+      const sections = expandSectionRange(rangeMatch[1]!, rangeMatch[2]!);
+      if (sections) {
+        return { declaredSections: sections, source: rangeMatch[0] };
+      }
+    }
+
+    const multiMatch = ENACTED_MULTI.exec(text);
+    if (multiMatch) {
+      const ids = multiMatch[1]!.split(/\s*,\s*/).filter(s => s.length > 0);
+      if (multiMatch[2]) ids.push(multiMatch[2]);
+      return { declaredSections: ids, source: multiMatch[0] };
+    }
+
+    const singleMatch = ENACTED_SINGLE.exec(text);
+    if (singleMatch) {
+      return { declaredSections: [singleMatch[1]!], source: singleMatch[0] };
+    }
+  }
+  return null;
+}
+
+export function reconcileWithEnactingClause(
+  paragraphs: readonly ParsedParagraph[],
+): ReconciliationResult {
+  const enactingClause = parseEnactingClause(paragraphs);
+  if (!enactingClause) {
+    return { paragraphs, warnings: [], enactingClause: null };
+  }
+
+  const declaredSet = new Set(enactingClause.declaredSections);
+  const warnings: string[] = [];
+  const corrected: ParsedParagraph[] = [];
+
+  const foundSections = new Set<string>();
+
+  for (const p of paragraphs) {
+    const sectionMatch = p.structuralPath.match(/\/section\[([\d.:-]+)\]/);
+    if (sectionMatch) {
+      const sectionId = sectionMatch[1]!;
+      if (declaredSet.has(sectionId)) {
+        foundSections.add(sectionId);
+        corrected.push(p);
+      } else {
+        warnings.push(
+          `Split produced section ${sectionId} outside declared range [${enactingClause.declaredSections[0]}..${enactingClause.declaredSections[enactingClause.declaredSections.length - 1]}]; reverted to parent path`,
+        );
+        corrected.push({
+          structuralPath: p.structuralPath.replace(/\/section\[[\d.:-]+\]/, ""),
+          runs: p.runs,
+        });
+      }
+    } else {
+      corrected.push(p);
+    }
+  }
+
+  for (const declared of enactingClause.declaredSections) {
+    if (!foundSections.has(declared)) {
+      warnings.push(`Declared section ${declared} not found in parsed document`);
+    }
+  }
+
+  return { paragraphs: corrected, warnings, enactingClause };
 }
 
 export function updateSectionStack(current: readonly string[], heading: string): string[] {

@@ -45,12 +45,14 @@ function wordOverlap(a: string, b: string | null, minWordLen: number): number {
 
 function findingOutcome(f: PipelineFinding): "date" | "bounded" | "refuse" {
   if (f.resolved && f.adjustedDate) return "date";
+  if (f.resolved && f.rrule && f.occurrences?.length > 0) return "date";
   if (f.bounded) return "bounded";
   return "refuse";
 }
 
 function findingDate(f: PipelineFinding): string | null {
   if (f.resolved && f.adjustedDate) return f.adjustedDate;
+  if (f.resolved && f.rrule && f.occurrences?.length > 0) return f.occurrences[0]!.adjustedDate;
   if (f.bounded && f.upperBound) return f.upperBound;
   return null;
 }
@@ -131,6 +133,8 @@ export function matchFindings(
       } else if (goldCit && findingCit) {
         if (goldCit.includes(findingCit) || findingCit.includes(goldCit)) {
           score += 0.1;
+        } else {
+          score -= 0.15;
         }
       }
 

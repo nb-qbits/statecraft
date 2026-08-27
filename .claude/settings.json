@@ -220,7 +220,29 @@
       "Bash(psql -h localhost -U statecraft -d statecraft -c \"SELECT id, document_version_id, kind, actor, resolved_date, status, reference_event_text FROM findings WHERE document_version_id = '5f9aa80f-d8e6-49d1-8977-9a55f7c50978' ORDER BY resolved_date;\")",
       "Bash(pg_isready)",
       "Bash(brew services *)",
-      "Bash(DATABASE_URL=postgresql://policyaction:policyaction@localhost:5432/policyaction S3_ENDPOINT=http://localhost:9000 S3_ACCESS_KEY=minioadmin S3_SECRET_KEY=minioadmin S3_BUCKET=policyaction S3_FORCE_PATH_STYLE=true SIDECAR_URL=http://localhost:8000 LOG_LEVEL=info npm run dev)"
+      "Bash(DATABASE_URL=postgresql://policyaction:policyaction@localhost:5432/policyaction S3_ENDPOINT=http://localhost:9000 S3_ACCESS_KEY=minioadmin S3_SECRET_KEY=minioadmin S3_BUCKET=policyaction S3_FORCE_PATH_STYLE=true SIDECAR_URL=http://localhost:8000 LOG_LEVEL=info npm run dev)",
+      "Bash(git checkout *)",
+      "Bash(awk '/^function CalendarSyncBar/,/^function [A-Z]/' /Users/vgrover/Downloads/software/statecraft/web/app/docket/bill/\\\\[dvId\\\\]/page.tsx)",
+      "Bash(kill 11160)",
+      "Bash(kill 12857 11826 55678)",
+      "Bash(npx dotenv *)",
+      "Bash(DATABASE_URL=postgresql://policyaction:policyaction@localhost:5432/policyaction S3_ENDPOINT=http://localhost:9000 S3_ACCESS_KEY=minioadmin S3_SECRET_KEY=minioadmin S3_BUCKET=policyaction S3_FORCE_PATH_STYLE=true SIDECAR_URL=http://localhost:8000 npx tsx watch src/main.ts)",
+      "Bash(docker port *)",
+      "Bash(DOCKER_HOST=unix:///var/run/docker.sock docker ps --format '{{.Names}} {{.Ports}}')",
+      "Bash(docker info *)",
+      "Bash(docker context *)",
+      "Bash(DOCKER_HOST=unix:///Users/vgrover/.docker/run/docker.sock docker ps --format '{{.Names}} {{.Ports}}')",
+      "Bash(npx tsx *)",
+      "Bash(docker stop *)",
+      "Bash(DATABASE_URL=postgresql://policyaction:policyaction@localhost:5432/policyaction S3_ENDPOINT=http://localhost:9000 S3_ACCESS_KEY=minioadmin S3_SECRET_KEY=minioadmin S3_BUCKET=policyaction S3_FORCE_PATH_STYLE=true SIDECAR_URL=http://localhost:8000 LOG_LEVEL=info npx tsx src/main.ts)",
+      "Bash(PGPASSWORD=policyaction psql -h localhost -U policyaction -d policyaction -c \"SELECT dv.document_version_id, li.jurisdiction, li.instrument_type, li.number, li.chapter, li.short_title, dv.mime_type, dv.parse_status, dv.extraction_status, dv.resolution_status FROM document_versions dv JOIN source_documents sd ON dv.document_id = sd.document_id JOIN LATERAL \\(SELECT dv.legal_identity\\) li\\(jurisdiction, instrument_type, number, chapter, short_title, session, stage\\) ON true LIMIT 10;\")",
+      "Bash(docker exec statecraft-postgres-1 psql -U policyaction -d policyaction -t -A -c \" *)",
+      "Bash(python3 -m json.tool /tmp/plaw-findings.json)",
+      "Bash(AWS_ACCESS_KEY_ID=minioadmin AWS_SECRET_ACCESS_KEY=minioadmin aws --endpoint-url http://localhost:9000 s3 cp s3://policyaction/documents/1e896153151784fab8039ba3ccc6d5f3ae512bae8ae2492fd12ed822534907b4 /Users/vgrover/Downloads/software/statecraft/fixtures/gold/chapter-1126/chapter-1126.pdf)",
+      "Bash(AWS_ACCESS_KEY_ID=minioadmin AWS_SECRET_ACCESS_KEY=minioadmin aws --endpoint-url http://localhost:9000 s3 cp s3://policyaction/documents/3cc7507df36ec2ffd5ba2bf24fd5a5358232939d48e7fb86c40ce05c2ff9d410 /Users/vgrover/Downloads/software/statecraft/fixtures/gold/plaw-114publ117/PLAW-114publ117.pdf)",
+      "Bash(MODEL_PROVIDER=anthropic MODEL_ID=claude-sonnet-4-20250514 npx tsx src/eval/run.ts)",
+      "Bash(MODEL_PROVIDER=anthropic npm run eval)",
+      "Bash(MODEL_PROVIDER=anthropic npm run eval -- --force-reparse)"
     ],
     "deny": [
       "Read(./.env)",
@@ -247,7 +269,8 @@
       "/Users/vgrover/Downloads/software/statecraft/web/app/docket/bill",
       "/Users/vgrover/Downloads/software/statecraft/web/app/api/v1/documents/[documentVersionId]",
       "/Users/vgrover/Downloads/software/statecraft/web/app/api/v1/documents/[documentVersionId]/anchors/[anchorId]",
-      "/private/tmp/hr2409.pdf"
+      "/private/tmp/hr2409.pdf",
+      "/tmp"
     ]
   }
 }

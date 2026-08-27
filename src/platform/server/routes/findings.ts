@@ -53,7 +53,7 @@ export function registerFindingsRoutes(
       }
 
       try {
-        const [allProposals, segments, anchorResults, grammarResults, resolutions, evaluations, routingResult] =
+        const [allProposals, segments, anchorResults, grammarResults, resolutions, evaluations, routingResult, nonBodyContent] =
           await Promise.all([
             reviewRepository.getProposalsByVersion(dvId),
             parsingRepository.getSegmentsByVersion(dvId),
@@ -62,6 +62,7 @@ export function registerFindingsRoutes(
             resolverRepository.getResultsByVersion(dvId),
             evaluationRepository.getResultsByVersion(dvId),
             routingRepository.getResultsByVersion(dvId),
+            parsingRepository.getNonBodyContent(dvId),
           ]);
 
         const latestAnalysis = await reviewRepository.getLatestCompletedAnalysis(dvId);
@@ -162,6 +163,10 @@ export function registerFindingsRoutes(
             referenceEventText = parsedExpr.referenceEventText as string;
           }
 
+          const dateRole = resolution?.result.resolved && !("recurrence" in resolution.result && resolution.result.recurrence)
+            ? (resolution.result as { dateRole?: string }).dateRole ?? "deadline"
+            : null;
+
           return {
             anchorId: p.anchorId,
             proposalId: p.proposalId,
@@ -170,6 +175,8 @@ export function registerFindingsRoutes(
             provisionLabel,
             quotedText: p.quotedText,
             kind: p.kind,
+            obligationTitle: p.obligationTitle ?? null,
+            sectionCitation: p.sectionCitation ?? null,
             actor: p.actor ?? null,
             actorQuotedText: p.actorQuotedText ?? null,
             dependsOnDescription: p.dependsOnDescription ?? null,
@@ -185,6 +192,7 @@ export function registerFindingsRoutes(
             resolved: p.resolved,
             statutoryDate: p.statutoryDate,
             adjustedDate: p.adjustedDate,
+            dateRole,
             rrule,
             occurrences,
             horizon,
@@ -243,10 +251,12 @@ export function registerFindingsRoutes(
               );
               if (container) containedBy = container.quotedText;
             }
+            const ruleId = !a.result.anchored && a.result.ruleId ? a.result.ruleId : null;
             return {
               quotedText: a.quotedText,
               segmentId: a.segmentId,
               reason: (a.result as { reason: string }).reason,
+              ruleId,
               containedBy,
             };
           });
@@ -277,6 +287,7 @@ export function registerFindingsRoutes(
           laneSummary,
           rejectedSpans,
           suppressedSpans,
+          nonBodyContent,
           engineVersions: {
             current,
             staleStages: stale,

@@ -20,6 +20,8 @@ const HB346_TXT = readFileSync(resolve(__dirname, "../../fixtures/documents/hb34
 const SIMPLE_BILL_DOCX = readFileSync(resolve(__dirname, "../../fixtures/documents/simple-bill.docx"));
 const PDF_FIXTURE = readFileSync(resolve(__dirname, "../../fixtures/sample-bill.pdf"));
 const HB346_PDF = readFileSync(resolve(__dirname, "../../fixtures/documents/hb346.pdf"));
+const CH1126_PDF = readFileSync(resolve(__dirname, "../../fixtures/gold/chapter-1126/chapter-1126.pdf"));
+const PLAW_PDF = readFileSync(resolve(__dirname, "../../fixtures/gold/plaw-114publ117/PLAW-114publ117.pdf"));
 
 const UPLOAD_URL = "http://localhost:3000/api/v1/documents/upload";
 const PARSE_URL = "http://localhost:3000/api/v1/documents";
@@ -415,7 +417,7 @@ describe("Gate 2 — Parsing integration", () => {
       expect(seg.normalizedText.length).toBeGreaterThan(0);
       expect(seg.contentHash).toHaveLength(64);
       expect(seg.parserAdapter).toBe("plain-text");
-      expect(seg.parserVersion).toBe("1.3.0");
+      expect(seg.parserVersion).toBe("1.6.0");
       expect(seg.fidelity).toBe("none");
     }
   });
@@ -534,5 +536,106 @@ describe("Identity mismatch (deferred from Amendment 2)", () => {
 
     expect(r2.status).toBe(400);
     expect(r2.body.error.code).toBe("IDENTITY_MISMATCH");
+  });
+});
+
+describe("Gate 2 criteria — Layout-aware extraction", () => {
+  async function uploadAndParsePdf(
+    pdf: Buffer,
+    filename: string,
+    identity: Record<string, unknown>,
+  ): Promise<ParseResult> {
+    const r = await uploadDoc({
+      content: pdf,
+      filename,
+      contentType: "application/pdf",
+      legalIdentity: identity,
+    });
+    expect(r.status).toBe(201);
+    const p = await parseDoc(r.body.documentVersionId);
+    expect(p.status).toBe(200);
+    return p.body;
+  }
+
+  const NONBODY_PATTERNS = {
+    runningHeader: [
+      /PUBLIC\s+LAW\s+\d+/i,
+      /\d+\s+STAT\.\s*\d+/i,
+      /ACTS\s+OF\s+ASSEMBLY/i,
+    ],
+    pageFooter: [
+      /^\s*-\s*\d+\s*-\s*$/,
+      /^\s*Page\s+\d+\s*(?:of\s+\d+)?\s*$/i,
+      /VerDate\s+/i,
+      /(?:Jkt|Frm|Fmt|Sfmt)\s+\d+/i,
+    ],
+    backMatter: [
+      /LEGISLATIVE\s*HISTORY/i,
+    ],
+  };
+
+  it("(a) Chapter 1126: body text contains no marginal notes, footers, headers, or back matter", async () => {
+    const result = await uploadAndParsePdf(CH1126_PDF, "ch1126-crit-a.pdf", {
+      ...LEGAL_IDENTITY, number: `9001-${RUN}`,
+    });
+
+    for (const seg of result.segments) {
+      for (const [kind, patterns] of Object.entries(NONBODY_PATTERNS)) {
+        for (const re of patterns) {
+          expect(
+            re.test(seg.rawText),
+            `seg ${seg.ordinal}: body contains ${kind} pattern "${re.source}" in: ${seg.rawText.slice(0, 80)}`,
+          ).toBe(false);
+        }
+      }
+    }
+  });
+
+  it("(a) PLAW-114publ117: body text contains no marginal notes, footers, headers, or back matter", async () => {
+    const result = await uploadAndParsePdf(PLAW_PDF, "plaw-crit-a.pdf", {
+      ...LEGAL_IDENTITY, number: `9002-${RUN}`, jurisdiction: "us-federal",
+    });
+
+    for (const seg of result.segments) {
+      for (const [kind, patterns] of Object.entries(NONBODY_PATTERNS)) {
+        for (const re of patterns) {
+          expect(
+            re.test(seg.rawText),
+            `seg ${seg.ordinal}: body contains ${kind} pattern "${re.source}" in: ${seg.rawText.slice(0, 80)}`,
+          ).toBe(false);
+        }
+      }
+    }
+  });
+
+  it("(c) zero mid-word line-break hyphens across entire corpus", async () => {
+    const ch1126 = await uploadAndParsePdf(CH1126_PDF, "ch1126-crit-c.pdf", {
+      ...LEGAL_IDENTITY, number: `9003-${RUN}`,
+    });
+    const plaw = await uploadAndParsePdf(PLAW_PDF, "plaw-crit-c.pdf", {
+      ...LEGAL_IDENTITY, number: `9004-${RUN}`, jurisdiction: "us-federal",
+    });
+
+    const allSegments = [...ch1126.segments, ...plaw.segments];
+    const artifacts: string[] = [];
+
+    for (const seg of allSegments) {
+      const words = seg.rawText.split(/\s+/);
+      for (let w = 0; w < words.length - 1; w++) {
+        const word = words[w]!;
+        const next = words[w + 1]!;
+        if (
+          word.endsWith("-") &&
+          word.length >= 2 &&
+          /[a-zA-Z]/.test(word[word.length - 2]!) &&
+          next.length > 0 &&
+          /^[a-z]/.test(next)
+        ) {
+          artifacts.push(`seg ${seg.ordinal}: "${word} ${next}"`);
+        }
+      }
+    }
+
+    expect(artifacts, `line-break hyphens found:\n${artifacts.join("\n")}`).toHaveLength(0);
   });
 });

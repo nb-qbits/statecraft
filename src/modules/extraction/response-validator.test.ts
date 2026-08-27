@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import type { SegmentId } from "../shared/types.js";
-import { validateAndRepairResponse, EXTRACTION_RESPONSE_SCHEMA } from "./response-validator.js";
+import { validateAndRepairResponse, EXTRACTION_RESPONSE_SCHEMA, isBareDateTime, isExternalCitation } from "./response-validator.js";
 
 const SEG_ID = "seg_abc123" as SegmentId;
 
@@ -218,15 +218,15 @@ describe("response-validator", () => {
       expect(result.repaired).toBe(true);
     });
 
-    it("truncates quotedText exceeding 500 chars", () => {
-      const longText = "a".repeat(600);
+    it("truncates quotedText exceeding 800 chars", () => {
+      const longText = "a".repeat(900);
       const parsed = {
         proposals: [
           { segmentId: SEG_ID, quotedText: longText, kind: "duration" },
         ],
       };
       const result = validateAndRepairResponse(parsed, SEG_ID);
-      expect(result.proposals[0]!.quotedText).toHaveLength(500);
+      expect(result.proposals[0]!.quotedText).toHaveLength(800);
       expect(result.truncatedCount).toBe(1);
       expect(result.repaired).toBe(true);
     });
@@ -236,7 +236,7 @@ describe("response-validator", () => {
         proposals: [
           {
             segmentId: "seg_wrong",
-            quotedText: "a".repeat(600),
+            quotedText: "a".repeat(900),
             kind: "duration",
           },
           {
@@ -252,13 +252,13 @@ describe("response-validator", () => {
       expect(result.repaired).toBe(true);
       expect(result.proposals).toHaveLength(1);
       expect(result.proposals[0]!.segmentId).toBe(SEG_ID);
-      expect(result.proposals[0]!.quotedText).toHaveLength(500);
+      expect(result.proposals[0]!.quotedText).toHaveLength(800);
       expect(result.droppedCount).toBe(2);
       expect(result.nulledCount).toBe(1);
       expect(result.truncatedCount).toBe(1);
 
       for (const p of result.proposals) {
-        expect(Object.keys(p)).toEqual(["segmentId", "quotedText", "kind", "actor", "actorQuotedText", "dependsOnQuotedText", "dependsOnDescription"]);
+        expect(Object.keys(p)).toEqual(["segmentId", "quotedText", "kind", "obligationTitle", "sectionCitation", "actor", "actorQuotedText", "dependsOnQuotedText", "dependsOnDescription"]);
       }
     });
 
@@ -288,7 +288,7 @@ describe("response-validator", () => {
           properties: Record<string, unknown>;
         }
       ).properties;
-      const allowedFields = new Set(["segmentId", "quotedText", "kind", "actor", "actorQuotedText", "dependsOnQuotedText", "dependsOnDescription"]);
+      const allowedFields = new Set(["segmentId", "quotedText", "obligationTitle", "kind", "sectionCitation", "actor", "actorQuotedText", "dependsOnQuotedText", "dependsOnDescription"]);
       for (const key of Object.keys(itemProps)) {
         expect(allowedFields.has(key)).toBe(true);
       }
@@ -302,6 +302,167 @@ describe("response-validator", () => {
           }
         ).additionalProperties,
       ).toBe(false);
+    });
+  });
+
+  describe("isBareDateTime", () => {
+    it("detects full month-day-year date phrases", () => {
+      expect(isBareDateTime("July 1, 2025")).toBe(true);
+      expect(isBareDateTime("January 15, 2026")).toBe(true);
+      expect(isBareDateTime("December 31")).toBe(true);
+    });
+
+    it("detects numeric date formats", () => {
+      expect(isBareDateTime("2025-07-01")).toBe(true);
+      expect(isBareDateTime("7/1/2025")).toBe(true);
+      expect(isBareDateTime("01.15.2026")).toBe(true);
+    });
+
+    it("detects month-only or month-year tokens", () => {
+      expect(isBareDateTime("July 2025")).toBe(true);
+      expect(isBareDateTime("Jan 1")).toBe(true);
+    });
+
+    it("rejects substantive obligation titles", () => {
+      expect(isBareDateTime("Submit strategic plan to Governor")).toBe(false);
+      expect(isBareDateTime("File annual audit report")).toBe(false);
+      expect(isBareDateTime("Notify Department of Environmental Quality")).toBe(false);
+    });
+
+    it("rejects titles that happen to contain dates but describe duties", () => {
+      expect(isBareDateTime("Submit report due July 1")).toBe(false);
+      expect(isBareDateTime("Complete review within 30 days")).toBe(false);
+    });
+
+    it("detects date phrases with leading prepositions", () => {
+      expect(isBareDateTime("by July 1, 2025")).toBe(true);
+      expect(isBareDateTime("on January 15")).toBe(true);
+      expect(isBareDateTime("before December 31, 2026")).toBe(true);
+    });
+  });
+
+  describe("obligationTitle bare date nulling", () => {
+    it("nulls obligationTitle when it is a bare date phrase", () => {
+      const parsed = {
+        proposals: [
+          {
+            segmentId: SEG_ID,
+            quotedText: "shall submit by July 1, 2025",
+            kind: "obligation_deadline",
+            obligationTitle: "July 1, 2025",
+          },
+        ],
+      };
+      const result = validateAndRepairResponse(parsed, SEG_ID);
+      expect(result.proposals).toHaveLength(1);
+      expect(result.proposals[0]!.obligationTitle).toBeNull();
+      expect(result.repaired).toBe(true);
+    });
+
+    it("preserves substantive obligationTitle", () => {
+      const parsed = {
+        proposals: [
+          {
+            segmentId: SEG_ID,
+            quotedText: "shall submit by July 1, 2025",
+            kind: "obligation_deadline",
+            obligationTitle: "Submit strategic plan to Governor",
+          },
+        ],
+      };
+      const result = validateAndRepairResponse(parsed, SEG_ID);
+      expect(result.proposals[0]!.obligationTitle).toBe("Submit strategic plan to Governor");
+    });
+  });
+
+  describe("isExternalCitation", () => {
+    it("detects U.S.C. references", () => {
+      expect(isExternalCitation("42 U.S.C. §16511")).toBe(true);
+      expect(isExternalCitation("26 U.S.C. § 45X")).toBe(true);
+    });
+
+    it("detects United States Code long form", () => {
+      expect(isExternalCitation("section 551 of title 5, United States Code")).toBe(true);
+    });
+
+    it("detects Public Law references", () => {
+      expect(isExternalCitation("P.L. 117-169")).toBe(true);
+      expect(isExternalCitation("Public Law 117-169")).toBe(true);
+    });
+
+    it("detects C.F.R. references", () => {
+      expect(isExternalCitation("40 C.F.R. Part 60")).toBe(true);
+      expect(isExternalCitation("Code of Federal Regulations")).toBe(true);
+    });
+
+    it("detects title references", () => {
+      expect(isExternalCitation("title 5")).toBe(true);
+      expect(isExternalCitation("Title 26")).toBe(true);
+    });
+
+    it("detects Statutes at Large", () => {
+      expect(isExternalCitation("136 Stat. 1818")).toBe(true);
+    });
+
+    it("does not flag internal section references", () => {
+      expect(isExternalCitation("§ 56-576")).toBe(false);
+      expect(isExternalCitation("Section 3 of this act")).toBe(false);
+      expect(isExternalCitation("the effective date of this act")).toBe(false);
+    });
+  });
+
+  describe("external dependency dropping", () => {
+    it("nulls dependency fields when dependsOnQuotedText is an external citation", () => {
+      const parsed = {
+        proposals: [
+          {
+            segmentId: SEG_ID,
+            quotedText: "shall comply within 180 days",
+            kind: "duration",
+            dependsOnQuotedText: "42 U.S.C. §16511",
+            dependsOnDescription: "federal loan guarantee program",
+          },
+        ],
+      };
+      const result = validateAndRepairResponse(parsed, SEG_ID);
+      expect(result.proposals).toHaveLength(1);
+      expect(result.proposals[0]!.dependsOnQuotedText).toBeNull();
+      expect(result.proposals[0]!.dependsOnDescription).toBeNull();
+      expect(result.repaired).toBe(true);
+    });
+
+    it("preserves dependency fields for internal references", () => {
+      const parsed = {
+        proposals: [
+          {
+            segmentId: SEG_ID,
+            quotedText: "within 30 days after the effective date",
+            kind: "duration",
+            dependsOnQuotedText: "the effective date of this act",
+            dependsOnDescription: "effective date",
+          },
+        ],
+      };
+      const result = validateAndRepairResponse(parsed, SEG_ID);
+      expect(result.proposals[0]!.dependsOnQuotedText).toBe("the effective date of this act");
+      expect(result.proposals[0]!.dependsOnDescription).toBe("effective date");
+    });
+
+    it("drops P.L. references as dependencies", () => {
+      const parsed = {
+        proposals: [
+          {
+            segmentId: SEG_ID,
+            quotedText: "as required by P.L. 117-169",
+            kind: "obligation_deadline",
+            dependsOnQuotedText: "P.L. 117-169",
+            dependsOnDescription: "Inflation Reduction Act",
+          },
+        ],
+      };
+      const result = validateAndRepairResponse(parsed, SEG_ID);
+      expect(result.proposals[0]!.dependsOnQuotedText).toBeNull();
+      expect(result.proposals[0]!.dependsOnDescription).toBeNull();
     });
   });
 });

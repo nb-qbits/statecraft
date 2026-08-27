@@ -37,6 +37,8 @@ export interface ProposalAnchorResult {
   readonly segmentId: SegmentId;
   readonly quotedText: string;
   readonly kind: SpanProposalKind;
+  readonly obligationTitle: string | null;
+  readonly sectionCitation: string | null;
   readonly result: AnchorResult;
   readonly actor: string | null;
   readonly actorQuotedText: string | null;

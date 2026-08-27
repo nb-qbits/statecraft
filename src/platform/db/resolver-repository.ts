@@ -49,6 +49,7 @@ function rowToAnchoredResolution(
       resolved: true,
       statutoryDate: row.statutoryDate!,
       adjustedDate: row.adjustedDate!,
+      dateRole: (row.dateRole as "deadline" | "floor") ?? "deadline",
       ruleIds: (row.ruleIds as string[]) ?? [],
       citations: (row.citations as string[]) ?? [],
       packVersion: row.packVersion!,
@@ -63,6 +64,8 @@ function rowToAnchoredResolution(
       reason: row.reason ?? "unknown",
       ...(row.contingency ? { contingency: row.contingency } : {}),
       ...(row.derivationDepth != null ? { derivationDepth: row.derivationDepth } : {}),
+      ruleIds: (row.ruleIds as string[]) ?? [],
+      citations: (row.citations as string[]) ?? [],
       missingInputs: (row.missingInputs as string[]) ?? [],
       warnings,
       inputs,
@@ -72,6 +75,8 @@ function rowToAnchoredResolution(
       resolved: false,
       refusalKind: (row.refusalKind as RefusalKind) ?? "missing_trigger",
       reason: row.reason ?? "unknown",
+      ruleIds: (row.ruleIds as string[]) ?? [],
+      citations: (row.citations as string[]) ?? [],
       missingInputs: (row.missingInputs as string[]) ?? [],
       warnings,
       inputs,
@@ -133,16 +138,13 @@ export function createResolverRepository(
           derivationDepth: !r.result.resolved && "bounded" in r.result && r.result.bounded && r.result.derivationDepth != null ? r.result.derivationDepth : null,
           statutoryDate: isResolvedDate(r.result) ? r.result.statutoryDate : null,
           adjustedDate: isResolvedDate(r.result) ? r.result.adjustedDate : null,
+          dateRole: isResolvedDate(r.result) ? r.result.dateRole : null,
           rrule: isResolvedRecurrence(r.result) ? r.result.rrule : null,
           recurrenceData: isResolvedRecurrence(r.result)
             ? ({ occurrences: r.result.occurrences, horizon: r.result.horizon, yearParityNote: r.result.yearParityNote } as unknown as Record<string, unknown>)
             : null,
-          ruleIds: r.result.resolved
-            ? (r.result.ruleIds as unknown as Record<string, unknown>[])
-            : null,
-          citations: r.result.resolved
-            ? (r.result.citations as unknown as Record<string, unknown>[])
-            : null,
+          ruleIds: (r.result.ruleIds as unknown as Record<string, unknown>[]) ?? null,
+          citations: (r.result.citations as unknown as Record<string, unknown>[]) ?? null,
           packVersion: r.result.resolved ? r.result.packVersion : null,
           warnings: r.result.warnings as unknown as Record<string, unknown>[],
           reason: r.result.resolved ? null : r.result.reason,

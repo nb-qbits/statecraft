@@ -1,0 +1,125 @@
+CHAPTER 1126 An Act to amend the Code of Virginia by adding in Chapter 1 of Title 45.2 an article numbered 3, consisting of sections numbered 45.2-114 through 45.2-122, relating to Virginia Clean Energy Innovation Bank; established; report. [S 225] Approved May 14, 2026 Be it enacted by the General Assembly of Virginia:
+
+1. That the Code of Virginia is amended by adding in Chapter 1 of Title 45.2 an article numbered 3, consisting of sections numbered 45.2-114 through 45.2-122, as follows:
+
+Article 3. Virginia Clean Energy Innovation Bank.
+
+§ 45.2-114. Virginia Clean Energy Innovation Bank; Bank Advisory Board.
+
+A. The Virginia Clean Energy Innovation Bank is established in the Department. The purpose of the Bank is to accelerate the deployment of clean energy projects, greenhouse gas emissions reduction projects, and other qualified projects through the strategic deployment of public funds in the form of grants, loans, credit enhancements, and other financing mechanisms in order to leverage existing public and private sources of capital to reduce the upfront and total cost of qualified projects and to overcome financial barriers to project adoption, especially in low-income communities.
+
+B. 1. The Virginia Clean Energy Innovation Bank Advisory Board (the Bank Advisory Board) is established as an advisory board in the executive branch of state government for the purpose of advising, overseeing, and making advisory recommendations related to the Virginia Clean Energy Innovation Bank and its effectiveness in fulfilling the purposes described subsection A.
+
+2. The Bank Advisory Board shall have a total membership of eight members that shall consist of six nonlegislative citizen members and two ex officio members. Nonlegislative citizen members shall be appointed as follows: two members to be appointed by the Senate Committee on Rules, two members to be appointed by the Speaker of the House of Delegates, and two members to be appointed by the Governor. Each nonlegislative citizen member shall have expertise in matters relevant to the Bank. The Director and the Chief Executive Officer of the Virginia Economic Development Partnership Authority, or their designees, shall serve ex officio with voting privileges. Nonlegislative citizen members of the Board shall be citizens of the Commonwealth.
+
+3. The nonlegislative citizen members of the Bank Advisory Board shall be appointed for five-year staggered terms. Each ex officio member of the Bank Advisory Board shall serve a term coincident with his term of office. Appointments to fill vacancies, other than by expiration of a term, shall be for the unexpired term. Vacancies shall be filled in the same manner as the original appointments. No person shall serve more than two consecutive terms. The remainder of any term to which a member is appointed to fill a vacancy shall not constitute a term in determining the member's eligibility for reappointment.
+
+4. The Bank Advisory Board shall annually elect a chair and vice-chair from among its membership and shall formulate rules for its organization and procedure. A majority of the members shall constitute a quorum.
+
+5. The nonlegislative citizen members of the Bank Advisory Board shall serve without compensation or reimbursement for expenses incurred in the performance of their duties.
+
+§ 45.2-115. Definitions. As used in this article, unless the context requires a different meaning: "Bank" means the Virginia Clean Energy Innovation Bank. "Bank Advisory Board" means the Virginia Clean Energy Innovation Bank Advisory Board "Community navigator" means an organization that works to facilitate access to clean energy project financing by individuals and community groups. "Credit enhancement" means a pool of capital set aside to cover potential losses on loans and other investments made by financing entities. "Credit enhancement" includes loan loss reserves and loan guarantees. "Energy storage system" means a system that absorbs, stores, and discharges electricity. "Energy storage system" does not include fossil fuel storage or power-to-gas storage that directly uses fossil fuel inputs. "Greenhouse gas emissions" means emissions of carbon dioxide, methane, nitrous oxide, hydrofluorocarbons, perfluorocarbons, and sulfur hexafluoride emitted by anthropogenic sources. "Historically economically disadvantaged community" has the same meaning as provided in § 56-576. "Loan loss reserves" means a pool of capital set aside to reimburse a private lender if a customer defaults on a loan, up to an agreed-upon percentage of loans originated by the private lender. "Local workers" means Virginia residents who permanently reside within 150 miles of the location of a proposed project in which the Bank is considering participating. "Microgrid system" means an electric grid that (i) serves a discrete geographical area from distributed energy resources and (ii) can operate independently from the central electric grid on a permanent or temporary basis. "Qualified project" means a project, technology, product, service, or measure promoting energy efficiency, clean energy, electrification, or water conservation and quality that (i) substantially reduces greenhouse gas emissions; (ii) reduces energy use without diminishing the level of service; (iii) increases the deployment of renewable or non-carbon emitting energy projects, energy storage systems, district heating, smart grid technologies, or microgrid systems; (iv) replaces existing fossil-fuel-based technology with an end-use electric technology; (v) supports the development and deployment of electric vehicle charging stations and associated infrastructure, electric buses, and electric fleet vehicles; (vi) reduces water use or protects, restores, or preserves the quality of the Commonwealth's surface waters or the Chesapeake Bay; or (vii) incentivizes customers to shift demand in response to changes in the price of electricity or when system reliability is not jeopardized. "Renewable energy" means electric energy generated by a source that is considered a renewable energy standard eligible source under the provisions of § 56-585.5. "Securitization" means the conversion of an asset composed of individual loans into marketable securities. "Smart grid" means a digital technology that allows for two-way communication between a utility and the utility's customers and enables the utility to control power flow and load in real time.
+
+§ 45.2-116. Duties of the Bank.
+
+A. The Bank shall:
+
+1. Advise the Director on the management of the Bank pursuant to this article;
+
+2. Apply for and accept gifts, grants, aid, and donations from any source to be expended in furtherance of accomplishing the objectives of the Bank. All federal funding accepted under this subdivision shall be accepted and expended by the Bank in accordance with such terms and conditions as are prescribed by the United States and are consistent with state law, and all state funding accepted under this subdivision shall be accepted and expended in accordance with such terms and conditions as prescribed by the Commonwealth;
+
+3. Seek to qualify as a state energy financing institution as defined in 42 U.S.C. § 16511;
+
+4. Serve as a financial resource to reduce the upfront and total costs of implementing qualified projects;
+
+5. Ensure that all financed projects reduce or do not contribute to greenhouse gas emissions and that no more than 15 percent in the aggregate of available funds are used to finance projects involving coalbed methane gas, as such term is defined in § 45.2-1600, or nuclear power;
+
+6. Ensure that financing terms and conditions offered are well suited to qualified projects;
+
+7. Strategically prioritize the use of the Bank's funds to leverage private investment in qualified projects, with the aim of achieving a high ratio of private to public money invested through funding mechanisms that support, enhance, and complement private lending and investment;
+
+8. Coordinate with existing federal, state, local, utility, and other programs to ensure that the Bank's resources are being used most effectively to add to and complement those programs;
+
+9. Stimulate demand for qualified projects by (i) contracting with the Department to provide, including through subcontracts with community navigators, information to project participants about federal, state, local, utility, and other Bank financial assistance for qualifying projects and technical information on energy conservation and renewable energy measures; (ii) forming partnerships with contractors and informing contractors about the Bank's financing programs; (iii) developing innovative marketing strategies to stimulate project owner interest, especially in underserved communities; and (iv) incentivizing financing entities to increase activity in underserved markets;
+
+10. Finance projects in all regions of the Commonwealth;
+
+11. Develop participant eligibility standards and other terms and conditions for financial support provided by the Bank;
+
+12. Develop and administer (i) policies to collect reasonable fees for Bank services and (ii) risk management activities to support ongoing Bank activities;
+
+13. Develop consumer protection standards governing the Bank's investments to ensure that financial support is provided responsibly and transparently and is in the financial interest of participating project owners;
+
+14. Develop methods to accurately measure the impact of the Bank's activities, particularly on low-income communities and on greenhouse gas emissions reductions;
+
+15. Hire sufficient staff with the appropriate skills and qualifications to carry out the Bank's programs, making an affirmative effort to recruit and hire staff who are from, or share the interests of, the communities the Bank is required to serve;
+
+16. Acting under its powers as a state energy financing institution under 42 U.S.C. § 16511, collaborate with the U.S. Department of Energy Loan Programs Office to ensure that authorities made available under the federal Inflation Reduction Act of 2022, P.L. 117-169, maximally benefit Virginians;
+
+17. Ensure that Bank contracts with all third-party administrators, contractors, and subcontractors contain required covenants, representations, and warranties specifying that contracted third parties are agents of the Bank and that all acts of contracted third parties are considered acts of the Bank, provided that the act is within the contracted scope of work; and
+
+18. Undertake such other activities as are necessary to carry out the provisions of this article.
+
+C. In carrying out its powers and duties pursuant to this article, the Bank may:
+
+1. Employ credit enhancement mechanisms that reduce financial risk for financing entities by providing assurance that a limited portion of a loan or other financial instrument is assumed by the Bank via a loan loss reserve, loan guarantee, or other mechanism;
+
+2. Co-invest in a qualified project by providing senior or subordinated debt, equity, or other mechanisms in conjunction with other investment, co-lending, or financing;
+
+3. Aggregate small and geographically dispersed qualified projects in order to diversify risk or secure additional private investment through securitization or similar resale of the Bank's interest in a completed qualified project; and
+
+4. Expend funds appropriated to the Bank for start-up purposes, which may be used for financing programs and project investments authorized under this article, prior to adoption of the strategic plan required pursuant to § 45.2-118 and the investment strategy required pursuant to § 45.2-119.
+
+§ 45.2-117. Bank lending practices; consumer protection.
+
+A. In determining the projects in which the Bank will participate, the Bank shall give preference to projects that (i) maximize the creation of high-quality employment and apprenticeship opportunities for local workers, consistent with the public interest, especially workers from historically economically disadvantaged communities, and Virginia communities hosting retired or retiring electric generation facilities, including workers previously employed at retiring facilities, and (ii) utilize energy technologies produced domestically that received an advanced manufacturing tax credit under § 45X of the Internal Revenue Code, as allowed under the federal Inflation Reduction Act of 2022, P.L. 117-169.
+
+B. The Bank shall require, for all projects for which the Bank provides financing, that (i) the participants meet the Bank's underwriting criteria and (ii) any loan made to a homeowner for a project on the homeowner's residence complies with all applicable state and federal consumer lending laws.
+
+§ 45.2-118. Strategic plan.
+
+A. By December 15, 2026, and each December 15 in even-numbered years thereafter, the Bank shall develop and adopt a strategic plan that prioritizes the Bank's activities over the next two years. The strategic plan shall (i) identify targeted underserved markets for qualified projects in Virginia; (ii) develop specific programs to overcome market impediments through access to Bank financing and technical assistance; and (iii) develop outreach and marketing strategies designed to make potential project developers, participants, and communities aware of financing and technical assistance available from the Bank, including the deployment of community navigators.
+
+B. Elements of the strategic plan shall be informed by the Bank's analysis of the market for qualified projects and by the Bank's experience under the previous strategic plan, including the degree to which performance targets were or were not achieved by each financing program. In addition, the Bank shall actively seek input regarding activities that should be included in the strategic plan from stakeholders, historically economically disadvantaged communities, the general public, and participants, including via meetings required pursuant to § 45.2-120.
+
+C. The Bank shall establish annual targets in a strategic plan for each financing program regarding the number of projects, level of Bank investments, greenhouse gas emissions reductions, and installed generating capacity or energy savings the Bank hopes to achieve, including separate targets for Bank activities undertaken in historically economically disadvantaged communities.
+
+D. The Bank's targets and strategies shall be designed to ensure that no less than 40 percent of the direct benefits of Bank activities flow to historically economically disadvantaged communities.
+
+E. The Bank shall submit a draft strategic plan to the Bank Advisory Board no later than August 1 and, with any feedback from the Bank Advisory Board incorporated therein, to the General Assembly no later than October 15 in any even-numbered year.
+
+§ 45.2-119. Investment strategy; content; process.
+
+A. No later than December 15, 2026, and every four years thereafter, the Bank shall adopt a long-term investment strategy to ensure that the Bank's paramount goal to reduce greenhouse gas emissions is reflected in all of the Bank's operations. The investment strategy shall address:
+
+1. The types of qualified projects the Bank should focus on;
+
+2. Gaps in current qualified project financing that present the greatest opportunities for successful action by the Bank;
+
+3. How the Bank can best position itself to maximize its impact without displacing, subsidizing, or assuming risk that should be shared with financing entities;
+
+4. Financing tools that will be most effective in achieving the Bank's goals;
+
+5. Partnerships the Bank should establish with other organizations to increase the likelihood of success; and
+
+6. How values of economic and geographic balance can be integrated into all investment operations of the Bank.
+
+B. In developing an investment strategy, the Bank shall consult, at a minimum, with similar organizations in other states, lending authorities, state agencies, utilities, environmental and energy policy nonprofits, and other organizations that can provide valuable advice on the Bank's activities. The Bank shall consult with the Bank Advisory Board, the Department of Environmental Quality, and the Department of Conservation and Recreation to identify and incorporate flood resilience and water quality projects into the investment strategy.
+
+C. The long-term investment strategy shall contain provisions ensuring that:
+
+1. Bank investments are not made solely to reduce private risk; and
+
+2. Private financing entities do not unilaterally control the terms of investments to which the Bank is a party.
+
+D. The Bank shall submit a draft long-term investment strategy for comment to each of the groups and individuals with whom the Bank consults pursuant to subsection B and to the General Assembly and shall post the draft strategy on the Bank's website. The Bank shall accept written comments on the draft strategy for at least 30 days and shall consider the comments in preparing the final long-term investment strategy.
+
+§ 45.2-120. Public outreach. The Bank shall hold quarterly meetings that are accessible online to update the general public on the Bank's activities, report progress being made in regard to the Bank's strategic plan and long-term investment strategy, and invite audience questions regarding Bank programs.
+
+§ 45.2-121. Form and audit of accounts and records.
+
+A. The accounts and records of the Bank showing the receipt and disbursement of funds from whatever source derived shall be in such form as the Auditor of Public Accounts prescribes.
+
+B. The accounts and records of the Bank are subject to an annual audit by the Auditor of Public Accounts or his legal representative the results of which shall be reported to the Bank Advisory Board and to the Chairs of the Senate Finance and Appropriations Committee and the House Committee on Appropriations.
+
+§ 45.2-122. Annual report. The Bank shall submit to the Governor and the General Assembly an annual executive summary of the interim activity and work of the Bank no later than the first day of each regular session of the General Assembly, including a breakdown of the use of funds in the prior year. The executive summary shall be submitted as a report document as provided in the procedures of the Division of Legislative Automated Systems for the processing of legislative documents and reports and shall be posted on the General Assembly's website. The executive summary shall include information regarding efforts supported by the Bank.

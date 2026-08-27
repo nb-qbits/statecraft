@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { uploadDocument, streamAnalysis, submitWaitlist } from "@/lib/api";
-import type { LegalIdentity, StageEvent } from "@/lib/api";
+import type { LegalIdentity } from "@/lib/api";
 import { addStoredBill } from "@/lib/docket-data";
 
 const PROCESSING_STAGES = [
@@ -213,7 +213,7 @@ export default function AddBillPage() {
 
   const [jurisdiction, setJurisdiction] = useState("us-fed");
   const [session, setSession] = useState("");
-  const [instrumentType, setInstrumentType] = useState("bill");
+  const [instrumentType, _setInstrumentType] = useState("bill");
   const [billNumber, setBillNumber] = useState("");
   const [stage, setStage] = useState("introduced");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});

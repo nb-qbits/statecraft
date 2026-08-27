@@ -65,6 +65,8 @@ export const proposals = pgTable(
     segmentId: varchar("segment_id", { length: 128 }).notNull(),
     quotedText: text("quoted_text").notNull(),
     kind: varchar("kind", { length: 64 }).notNull(),
+    obligationTitle: text("obligation_title"),
+    sectionCitation: text("section_citation"),
     normalizedStart: integer("normalized_start").notNull(),
     normalizedEnd: integer("normalized_end").notNull(),
     originalStart: integer("original_start").notNull(),

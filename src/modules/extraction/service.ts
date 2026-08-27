@@ -14,7 +14,7 @@ import type {
 import { SPAN_PROPOSAL_PROMPT, renderUserPrompt } from "./prompt-registry.js";
 import { validateAndRepairResponse, EXTRACTION_RESPONSE_SCHEMA } from "./response-validator.js";
 
-export const EXTRACTOR_VERSION = "1.4.0";
+export const EXTRACTOR_VERSION = "2.0.0";
 
 export interface ExtractionServiceDeps {
   ingestionRepository: IngestionRepository;

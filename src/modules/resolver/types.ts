@@ -16,11 +16,18 @@ export interface ResolutionInput {
   readonly citation: string;
 }
 
+export const DateRole = {
+  deadline: "deadline",
+  floor: "floor",
+} as const;
+export type DateRole = (typeof DateRole)[keyof typeof DateRole];
+
 export interface ResolvedDate {
   readonly resolved: true;
   readonly recurrence?: false;
   readonly statutoryDate: string;
   readonly adjustedDate: string;
+  readonly dateRole: DateRole;
   readonly ruleIds: readonly string[];
   readonly citations: readonly string[];
   readonly packVersion: string;
@@ -70,6 +77,8 @@ export interface BoundedUnresolvedDate {
   readonly reason: string;
   readonly contingency?: string;
   readonly derivationDepth?: number;
+  readonly ruleIds: readonly string[];
+  readonly citations: readonly string[];
   readonly missingInputs: readonly string[];
   readonly warnings: readonly string[];
   readonly inputs: readonly ResolutionInput[];
@@ -80,6 +89,8 @@ export interface UnresolvedDate {
   readonly bounded?: false;
   readonly refusalKind: RefusalKind;
   readonly reason: string;
+  readonly ruleIds: readonly string[];
+  readonly citations: readonly string[];
   readonly missingInputs: readonly string[];
   readonly warnings: readonly string[];
   readonly inputs: readonly ResolutionInput[];

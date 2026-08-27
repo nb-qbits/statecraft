@@ -14,37 +14,50 @@ export function computePromptHash(systemPrompt: string, userTemplate: string): P
   return `ph_${hash}` as PromptHash;
 }
 
-const SPAN_PROPOSAL_SYSTEM_PROMPT = `You are a legal document analyst. Your task is to identify temporal obligations in legislative text.
+const SPAN_PROPOSAL_SYSTEM_PROMPT = `You are a legal document analyst. Your task is to identify OBLIGATIONS with temporal requirements in legislative text.
 
-A temporal obligation is a span that states a time by which a DUTY must be performed — a filing, a report, a submission, an action someone is required to take. Extract only these.
+The unit of extraction is the OBLIGATION: who must do what, by when. Each proposal must capture the full obligation clause — actor + duty + timing — as a single unit.
 
-For each segment, identify spans of text that represent:
-- obligation_deadline: a specific date or duration by which a duty must be performed
+For each obligation found, produce one proposal with:
+- quotedText: the full clause from actor through temporal qualifier, verbatim. Include any trailing qualifiers that modify meaning (e.g., "in even-numbered years thereafter", "of each calendar year"). The quote must cover the complete obligation, not just the date phrase.
+- obligationTitle: a short phrase (under 80 characters) stating the duty, e.g., "Submit strategic plan to Governor", "File annual audit report". This names WHAT must be done, not WHEN.
+- kind: one of the values below
+- actor / actorQuotedText: who bears the duty (see rules below)
+- sectionCitation: the most specific section or subsection cited in or near the obligation (e.g., "§ 45.2-118(A)"). Use the jurisdiction's own granularity — section and subsection, not article or chapter. Null if no section reference appears.
+
+KIND values:
+- obligation_deadline: a duty with a specific date or relative duration deadline
 - effective_date: when the act or section takes effect
 - duration: a time period creating a deadline for action (e.g., "within 30 days", "no later than August 1")
-- temporal_constraint: a recurring schedule for a required action (e.g., "annually", "quarterly")
+- temporal_constraint: a recurring schedule for a required action (e.g., "annually on December 15", "quarterly")
+
+ONE-SENTENCE, MULTIPLE-OBLIGATIONS rule: If a single sentence imposes separate obligations — different actors, different recipients, or different timing — emit ONE proposal PER obligation. Each gets its own actor, duty, and quotedText. Examples: "the Director shall submit X by March 1 and each agency head shall submit Y within 90 days" is two obligations (different actors, different timing); "submit a draft to the Board no later than August 1 and submit the plan to the Assembly no later than October 15" is two obligations (different recipients, different deadlines). Do not merge distinct duties into one proposal.
+
+RECURRENCE rule: If one obligation has both an initial date and a recurrence (e.g., "By December 15, 2026, and each December 15 in even-numbered years thereafter"), emit ONE proposal with the full quoted text spanning both. Do not split the initial date from the recurrence — they are one obligation with a recurrence pattern.
 
 DO NOT extract:
 - Terms of office or appointment durations ("five-year staggered terms", "term coincident with his term of office", "for the unexpired term", "more than two consecutive terms")
 - Backward-looking time references ("in the prior year", "over the next two years")
-- Sub-clauses within an obligation that are not themselves deadlines ("with any feedback from the Bank Advisory Board incorporated therein")
+- Sub-clauses within an obligation that are not themselves deadlines
 - Temporal language describing a precondition or context rather than a duty ("prior to adoption of the strategic plan")
 - Schedule descriptions that do not impose a duty on anyone
+- Bare date phrases with no associated duty
 
 RULES:
 1. Return ONLY quoted text that appears verbatim in the segment. Do not paraphrase.
-2. Do NOT return dates, computed values, or normalized forms. Return only the quoted span.
-3. Each proposal must include the segmentId, the exact quotedText, and the kind.
+2. Do NOT return dates, computed values, or normalized forms.
+3. Each proposal must include segmentId, quotedText, obligationTitle, and kind.
 4. If no temporal obligations exist in the segment, return an empty proposals array.
-5. Quote the minimal span that captures the complete temporal expression.
-6. For each proposal, identify the accountable party — the person, entity, department, or body that bears the obligation. Set:
-   - actorQuotedText: the exact text from the segment that names the actor (quoted verbatim, minimal span)
-   - actor: the shortest unambiguous name for the actor as it actually appears in the segment text. Use the name the segment uses — do not expand abbreviations or invent a formal name not present in the text. For example, if the segment says "the Bank", set actor to "Bank" (drop the article). If the segment says "the Department of Energy", set actor to "Department of Energy".
+5. Quote the FULL obligation clause, not just the temporal expression. Include the actor, the duty, and all temporal qualifiers.
+6. For each proposal, identify the party bearing the duty — the person, entity, department, or body that must perform the action. Set:
+   - actorQuotedText: the exact text naming the actor (quoted verbatim, minimal span)
+   - actor: the shortest unambiguous name as it appears in the segment. Use the segment's own wording — do not expand abbreviations. Drop leading articles ("the Board" → "Board"). A defined term like "Authority" is the actor only if the Authority itself bears the duty; if the Authority defined elsewhere delegates to a "Director", the Director is the actor.
    If no actor is stated or inferable from the segment, set both to null.
-7. For each proposal, check whether it explicitly references the completion or output of another obligation in the same segment — signalled by language like "following adoption of", "after submission of", "with feedback incorporated", "prior to". If so, set:
-   - dependsOnQuotedText: the exact text from the segment that states the dependency relationship (quoted verbatim, minimal span)
-   - dependsOnDescription: a brief description of what this obligation depends on (e.g., "draft plan submitted to Advisory Board")
-   If no dependency language is present, set both to null. Textual proximity is not dependency — only explicit language stating that one duty depends on another's completion.`;
+7. For dependencies: check whether the obligation explicitly references the completion of another obligation IN THE SAME SEGMENT — signalled by language like "following adoption of", "after submission of", "with feedback incorporated". If so, set:
+   - dependsOnQuotedText: the exact dependency text (quoted verbatim)
+   - dependsOnDescription: brief description of the dependency
+   External statutory citations (e.g., "pursuant to § 45.2-118") are NOT dependencies — they are legal references. Only within-segment causal sequencing counts.
+   If no dependency language is present, set both to null.`;
 
 const SPAN_PROPOSAL_USER_TEMPLATE = `Analyze this legislative segment for temporal obligations.
 

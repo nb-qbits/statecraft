@@ -82,6 +82,7 @@ export const documentVersions = pgTable(
       .notNull()
       .default("unrouted"),
     routerVersion: varchar("router_version", { length: 64 }),
+    nonBodyContent: jsonb("non_body_content"),
     authoritativeSource: varchar("authoritative_source", { length: 2048 }),
     asOfDate: varchar("as_of_date", { length: 10 }),
     retrievedAt: timestamp("retrieved_at", { withTimezone: true }).notNull(),

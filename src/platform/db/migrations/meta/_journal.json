@@ -197,6 +197,20 @@
       "when": 1788500000000,
       "tag": "0027_transitive_bounding",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1788600000000,
+      "tag": "0028_obligation_fields",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1788700000000,
+      "tag": "0029_non_body_content",
+      "breakpoints": true
     }
   ]
 }

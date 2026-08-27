@@ -3,6 +3,7 @@ import {
   splitByBlankLines,
   splitByStructure,
   splitOnEmbeddedSections,
+  reconcileWithEnactingClause,
   isPageFooter,
   detectLineNumbers,
   stripDetectedLineNumber,
@@ -50,17 +51,21 @@ export function createPlainTextParser(): DocumentParser {
       const contentLines = trimTrailingBlanks(preprocessed.lines);
       const hasBlankLines = contentLines.some(l => l.trim().length === 0);
 
-      let paragraphs;
+      let splitParagraphs;
       let consumedCount;
       if (hasBlankLines) {
         const result = splitByBlankLines(contentLines);
-        paragraphs = splitOnEmbeddedSections(result.paragraphs);
+        splitParagraphs = splitOnEmbeddedSections(result.paragraphs);
         consumedCount = result.consumedCount;
       } else {
         const result = splitByStructure(contentLines);
-        paragraphs = splitOnEmbeddedSections(result.paragraphs);
+        splitParagraphs = splitOnEmbeddedSections(result.paragraphs);
         consumedCount = result.consumedCount;
       }
+
+      const reconciliation = reconcileWithEnactingClause(splitParagraphs);
+      const paragraphs = reconciliation.paragraphs;
+      const warnings = reconciliation.warnings;
 
       const nonEmptyCount = contentLines.filter(l => l.trim().length > 0).length;
       if (consumedCount !== nonEmptyCount) {
@@ -111,6 +116,7 @@ export function createPlainTextParser(): DocumentParser {
         parserVersion: VERSION,
         fidelity: "none",
         characterAccounting,
+        ...(warnings.length > 0 ? { warnings } : {}),
       };
     },
   };

@@ -89,6 +89,8 @@ export interface ReviewProposal {
   readonly segmentId: SegmentId;
   readonly quotedText: string;
   readonly kind: string;
+  readonly obligationTitle: string | null;
+  readonly sectionCitation: string | null;
   readonly normalizedStart: number;
   readonly normalizedEnd: number;
   readonly originalStart: number;

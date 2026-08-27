@@ -13,7 +13,7 @@ function span(text: string): AnchoredSpan {
 
 describe("grammar version", () => {
   it("exports a version string", () => {
-    expect(GRAMMAR_VERSION).toBe("2.0.0");
+    expect(GRAMMAR_VERSION).toBe("2.2.0");
   });
 });
 
@@ -952,6 +952,42 @@ describe("dependency-ref cap clause (2.0)", () => {
     expect(expr.capDate!.yearSource).toBeUndefined();
   });
 
+  it("extracts cap clause even with trailing actor/duty text", () => {
+    const r = parseTemporalExpression(
+      span("Not later than 90 days after the date on which all of the notices required pursuant to paragraph (1) have been provided or March 31 of the calendar year following the calendar year described in subsection (a)(1), whichever is sooner, the Secretary shall compile the notices submitted pursuant to paragraph (1) and submit to Congress a report on such notices."),
+    );
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    const expr = r.result.expression as {
+      kind: string; quantity: number; referenceEventText?: string | null;
+      capDate?: { yearSource?: string; dependencyRef?: string; yearOffset?: number; month?: number; day?: number };
+    };
+    expect(expr.kind).toBe("relative_duration");
+    expect(expr.quantity).toBe(90);
+    expect(expr.capDate).toBeDefined();
+    expect(expr.capDate!.yearSource).toBe("dependency_ref");
+    expect(expr.capDate!.dependencyRef).toBe("(a)(1)");
+    expect(expr.capDate!.yearOffset).toBe(1);
+    expect(expr.capDate!.month).toBe(3);
+    expect(expr.capDate!.day).toBe(31);
+    expect(expr.referenceEventText).not.toContain("the Secretary shall compile");
+  });
+
+  it("extracts literal cap clause with trailing text", () => {
+    const r = parseTemporalExpression(
+      span("Not later than 180 days after enactment, or March 31, 2016, whichever is sooner, the Director shall submit a report"),
+    );
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    const expr = r.result.expression as {
+      kind: string; capDate?: { year?: number; month?: number; day?: number };
+    };
+    expect(expr.capDate).toBeDefined();
+    expect(expr.capDate!.year).toBe(2016);
+    expect(expr.capDate!.month).toBe(3);
+    expect(expr.capDate!.day).toBe(31);
+  });
+
   it("no hardcoded year literals in grammar module for cap clause", () => {
     // This is the grep verification — already confirmed at shell level
     // grep -rn "2018" src/modules/grammar/ | grep -v test → empty
@@ -1215,11 +1251,15 @@ describe("combined fixed date plus recurrence (1.6)", () => {
     });
   });
 
-  it("rejects 'By December 15, 2026, and the Board shall submit a report' (adversarial)", () => {
+  it("parses 'By December 15, 2026, and the Board shall submit a report' (strips trailing clause)", () => {
     const r = parseTemporalExpression(
       span("By December 15, 2026, and the Board shall submit a report"),
     );
-    expect(r.result.parsed).toBe(false);
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "fixed_date", month: 12, day: 15, year: 2026,
+    });
   });
 
   it("standalone parts still parse independently", () => {
@@ -1239,6 +1279,194 @@ describe("combined fixed date plus recurrence (1.6)", () => {
       kind: "recurrence", frequency: "yearly", interval: 1,
       byMonth: 12, byMonthDay: 15, yearParity: "even",
       anchorEvent: null, boundKind: "on", dayKind: null,
+    });
+  });
+});
+
+describe("full obligation clause — trailing actor/duty text (2.1)", () => {
+  it("parses PLAW plaw117-01: 'Not later than 180 days after the date of the enactment of this Act, the Director of the Office of Management and Budget shall instruct the head of each agency'", () => {
+    const r = parseTemporalExpression(
+      span("Not later than 180 days after the date of the enactment of this Act, the Director of the Office of Management and Budget shall instruct the head of each agency"),
+    );
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "relative_duration",
+      quantity: 180, unit: "days", dayKind: null,
+      preposition: null, referenceEvent: "enactment", referenceEventText: null,
+      boundKind: "no_longer_than",
+    });
+  });
+
+  it("parses 'by January 15, 2027, the agency shall submit the report'", () => {
+    const r = parseTemporalExpression(
+      span("by January 15, 2027, the agency shall submit the report"),
+    );
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "fixed_date", month: 1, day: 15, year: 2027,
+    });
+  });
+
+  it("parses 'January 15, 2027, the Director shall compile the report'", () => {
+    const r = parseTemporalExpression(
+      span("January 15, 2027, the Director shall compile the report"),
+    );
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "fixed_date", month: 1, day: 15, year: 2027,
+    });
+  });
+
+  it("still rejects text with no temporal expression", () => {
+    const r = parseTemporalExpression(
+      span("the Board shall submit a report to the oversight committee"),
+    );
+    expect(r.result.parsed).toBe(false);
+  });
+});
+
+describe("full obligation clause — leading actor text (2.1)", () => {
+  it("parses 'Bank shall submit draft strategic plan within 30 days of the effective date of this act'", () => {
+    const r = parseTemporalExpression(
+      span("Bank shall submit draft strategic plan within 30 days of the effective date of this act"),
+    );
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "relative_duration",
+      quantity: 30, unit: "days", dayKind: null,
+      preposition: "of", referenceEvent: "effective_date", referenceEventText: null,
+      boundKind: "within",
+    });
+  });
+
+  it("parses 'Bank shall file quarterly'", () => {
+    const r = parseTemporalExpression(span("Bank shall file quarterly"));
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "recurrence", frequency: "quarterly", interval: 1,
+      byMonth: null, byMonthDay: null, yearParity: null,
+      anchorEvent: null, boundKind: "on", dayKind: null,
+    });
+  });
+
+  it("parses 'Bank shall file annually'", () => {
+    const r = parseTemporalExpression(span("Bank shall file annually"));
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "recurrence", frequency: "yearly", interval: 1,
+      byMonth: null, byMonthDay: null, yearParity: null,
+      anchorEvent: null, boundKind: "on", dayKind: null,
+    });
+  });
+
+  it("parses 'executive summary shall be provided not later than 60 days after effective date'", () => {
+    const r = parseTemporalExpression(
+      span("executive summary shall be provided not later than 60 days after effective date"),
+    );
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "relative_duration",
+      quantity: 60, unit: "days", dayKind: null,
+      preposition: "after", referenceEvent: "effective_date", referenceEventText: null,
+      boundKind: "no_longer_than",
+    });
+  });
+
+  it("parses 'Director shall act before seven days have passed'", () => {
+    const r = parseTemporalExpression(
+      span("Director shall act before seven days have passed"),
+    );
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "relative_duration",
+      quantity: 7, unit: "days", dayKind: null,
+      preposition: null, referenceEvent: null, referenceEventText: null,
+      boundKind: "no_longer_than",
+    });
+  });
+
+  it("parses 'Agency shall submit each December 15 in even-numbered years thereafter'", () => {
+    const r = parseTemporalExpression(
+      span("Agency shall submit each December 15 in even-numbered years thereafter"),
+    );
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "recurrence", frequency: "yearly", interval: 1,
+      byMonth: 12, byMonthDay: 15, yearParity: "even",
+      anchorEvent: null, boundKind: "on", dayKind: null,
+    });
+  });
+
+  it("parses 'the Secretary shall report every 4 years thereafter'", () => {
+    const r = parseTemporalExpression(
+      span("the Secretary shall report every 4 years thereafter"),
+    );
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "recurrence", frequency: "yearly", interval: 4,
+      byMonth: null, byMonthDay: null, yearParity: null,
+      anchorEvent: null, boundKind: "on", dayKind: null,
+    });
+  });
+
+  it("still rejects text with no temporal expression even with actor prefix", () => {
+    const r = parseTemporalExpression(
+      span("the Secretary shall submit a report to the oversight committee"),
+    );
+    expect(r.result.parsed).toBe(false);
+  });
+
+  it("still rejects 'reviewed by the oversight committee'", () => {
+    const r = parseTemporalExpression(
+      span("reviewed by the oversight committee"),
+    );
+    expect(r.result.parsed).toBe(false);
+  });
+
+  it("parses 'Bank shall hold quarterly meetings' by extracting 'quarterly'", () => {
+    const r = parseTemporalExpression(
+      span("Bank shall hold quarterly meetings"),
+    );
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "recurrence", frequency: "quarterly", interval: 1,
+      byMonth: null, byMonthDay: null, yearParity: null,
+      anchorEvent: null, boundKind: "on", dayKind: null,
+    });
+  });
+
+  it("parses 'Bank Advisory Board shall annually elect a chair' by extracting 'annually'", () => {
+    const r = parseTemporalExpression(
+      span("Bank Advisory Board shall annually elect a chair"),
+    );
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "recurrence", frequency: "yearly", interval: 1,
+      byMonth: null, byMonthDay: null, yearParity: null,
+      anchorEvent: null, boundKind: "on", dayKind: null,
+    });
+  });
+
+  it("parses obligation with 'no later than August 1 and' trailing conjunction", () => {
+    const r = parseTemporalExpression(
+      span("Bank shall submit a plan no later than August 1 and, after receiving comments"),
+    );
+    expect(r.result.parsed).toBe(true);
+    if (!r.result.parsed) return;
+    expect(r.result.expression).toEqual({
+      kind: "fixed_date", month: 8, day: 1, year: null,
     });
   });
 });

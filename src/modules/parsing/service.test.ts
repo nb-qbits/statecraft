@@ -96,6 +96,8 @@ function createStubs() {
       const v = versions.get(id);
       if (v) versions.set(id, { ...v, parseStatus: status });
     }),
+    storeNonBodyContent: vi.fn(),
+    getNonBodyContent: vi.fn().mockResolvedValue([]),
   };
 
   const storage: ObjectStorage = {

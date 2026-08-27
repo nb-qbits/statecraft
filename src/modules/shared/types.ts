@@ -64,6 +64,7 @@ export type AnchorResult =
   | {
       anchored: false;
       reason: string;
+      ruleId?: string;
       containedBy?: string;
     };
 

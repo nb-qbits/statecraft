@@ -1,21 +1,26 @@
-import type { ParseResult, CharacterAccounting } from "../../modules/parsing/types.js";
+import type { ParseResult, CharacterAccounting, NonBodyRun } from "../../modules/parsing/types.js";
 import {
   splitByBlankLines,
   splitByStructure,
   splitOnEmbeddedSections,
+  reconcileWithEnactingClause,
   isPageFooter,
   detectLineNumbers,
   stripDetectedLineNumber,
 } from "./structural-segmentation.js";
 
 const ADAPTER_ID = "pdf";
-const VERSION = "1.4.0";
+const VERSION = "1.6.0";
 
 export interface SidecarPage {
   readonly pageNumber: number;
   readonly text: string;
   readonly hasTextLayer: boolean;
   readonly charCount: number;
+  readonly marginalNotes?: readonly string[];
+  readonly runningHeaders?: readonly string[];
+  readonly pageFooters?: readonly string[];
+  readonly backMatter?: string;
 }
 
 export interface SidecarResponse {
@@ -117,10 +122,31 @@ export function createPdfParser(sidecarClient: SidecarClient, sidecarVersion?: s
       };
     }
 
-    const pageTexts = sidecarResult.pages
-      .filter(p => p.hasTextLayer)
-      .map(p => p.text.replace(/\n+$/, ""));
+    const textPages = sidecarResult.pages.filter(p => p.hasTextLayer);
+    const pageTexts = textPages.map(p => p.text.replace(/\n+$/, ""));
     const rawText = pageTexts.join("\n");
+
+    const nonBodyContent: NonBodyRun[] = [];
+    for (const page of textPages) {
+      if (page.marginalNotes) {
+        for (const note of page.marginalNotes) {
+          nonBodyContent.push({ type: "marginal_note", text: note, pageNumber: page.pageNumber });
+        }
+      }
+      if (page.runningHeaders) {
+        for (const hdr of page.runningHeaders) {
+          nonBodyContent.push({ type: "running_header", text: hdr, pageNumber: page.pageNumber });
+        }
+      }
+      if (page.pageFooters) {
+        for (const ftr of page.pageFooters) {
+          nonBodyContent.push({ type: "page_footer", text: ftr, pageNumber: page.pageNumber });
+        }
+      }
+      if (page.backMatter) {
+        nonBodyContent.push({ type: "back_matter", text: page.backMatter, pageNumber: page.pageNumber });
+      }
+    }
 
     if (rawText.trim().length === 0) {
       return {
@@ -142,20 +168,25 @@ export function createPdfParser(sidecarClient: SidecarClient, sidecarVersion?: s
           return stripped;
         })
       : contentLines;
-    const trimmedLines = trimTrailingBlanks(processedLines);
+    const repairedLines = repairCrossPageHyphens(processedLines);
+    const trimmedLines = trimTrailingBlanks(repairedLines);
     const hasBlankLines = trimmedLines.some(l => l.trim().length === 0);
 
-    let paragraphs;
+    let splitParagraphs;
     let consumedCount;
     if (hasBlankLines) {
       const result = splitByBlankLines(trimmedLines);
-      paragraphs = splitOnEmbeddedSections(result.paragraphs);
+      splitParagraphs = splitOnEmbeddedSections(result.paragraphs);
       consumedCount = result.consumedCount;
     } else {
       const result = splitByStructure(trimmedLines);
-      paragraphs = splitOnEmbeddedSections(result.paragraphs);
+      splitParagraphs = splitOnEmbeddedSections(result.paragraphs);
       consumedCount = result.consumedCount;
     }
+
+    const reconciliation = reconcileWithEnactingClause(splitParagraphs);
+    const paragraphs = reconciliation.paragraphs;
+    const warnings = reconciliation.warnings;
 
     const nonEmptyCount = trimmedLines.filter(l => l.trim().length > 0).length;
     if (consumedCount !== nonEmptyCount) {
@@ -195,11 +226,66 @@ export function createPdfParser(sidecarClient: SidecarClient, sidecarVersion?: s
       parserVersion: compositeVersion,
       fidelity: "inferred",
       characterAccounting,
+      ...(nonBodyContent.length > 0 ? { nonBodyContent } : {}),
+      ...(warnings.length > 0 ? { warnings } : {}),
     };
   };
 
   parsePdf.parserVersion = compositeVersion;
   return parsePdf;
+}
+
+function repairCrossPageHyphens(lines: string[]): string[] {
+  if (lines.length < 2) return lines;
+
+  const compoundWords = new Set<string>();
+  for (const line of lines) {
+    for (const m of line.matchAll(/([a-zA-Z]+)-([a-zA-Z]+)/g)) {
+      if (m.index! + m[0].length < line.trimEnd().length) {
+        compoundWords.add(`${m[1]!.toLowerCase()}-${m[2]!.toLowerCase()}`);
+      }
+    }
+  }
+
+  const result: string[] = [];
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i]!;
+    const stripped = line.trimEnd();
+    if (
+      i + 1 < lines.length &&
+      stripped.length >= 2 &&
+      stripped.endsWith("-") &&
+      stripped[stripped.length - 2]!.match(/[a-zA-Z]/)
+    ) {
+      const nextLine = lines[i + 1]!.trimStart();
+      const m = nextLine.match(/^([a-z]+)(.*)/);
+      if (m) {
+        const prefixMatch = stripped.match(/([a-zA-Z]+)-$/);
+        const isCompound = prefixMatch &&
+          compoundWords.has(`${prefixMatch[1]!.toLowerCase()}-${m[1]!.toLowerCase()}`);
+
+        if (isCompound) {
+          result.push(stripped + m[1]);
+        } else {
+          result.push(stripped.slice(0, -1) + m[1]);
+        }
+        const rest = m[2]!.trim();
+        if (rest) {
+          lines[i + 1] = rest;
+        } else {
+          i += 2;
+          continue;
+        }
+      } else {
+        result.push(line);
+      }
+    } else {
+      result.push(line);
+    }
+    i++;
+  }
+  return result;
 }
 
 function trimTrailingBlanks(lines: string[]): string[] {

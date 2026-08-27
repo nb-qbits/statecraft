@@ -150,7 +150,20 @@ export function createParsingService(deps: ParsingServiceDeps) {
       });
 
       await parsingRepository.insertSegments(segments);
+      if (parseResult.nonBodyContent && parseResult.nonBodyContent.length > 0) {
+        await parsingRepository.storeNonBodyContent(documentVersionId, parseResult.nonBodyContent);
+      }
       await parsingRepository.updateParseStatus(documentVersionId, "parsed");
+
+      if (parseResult.warnings && parseResult.warnings.length > 0) {
+        logger.warn(
+          {
+            documentVersionId,
+            warnings: parseResult.warnings,
+          },
+          "parser reconciliation warnings",
+        );
+      }
 
       logger.info(
         {

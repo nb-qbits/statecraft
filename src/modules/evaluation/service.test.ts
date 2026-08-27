@@ -93,6 +93,8 @@ function makeAnchorResult(
     segmentId: segId,
     quotedText: "within 30 days",
     kind: "duration",
+    obligationTitle: null,
+    sectionCitation: null,
     result: {
       anchored: true,
       normalizedStart: 0,
@@ -151,6 +153,8 @@ function makeResolution(): AnchoredResolution {
       resolved: false,
       refusalKind: "missing_trigger",
       reason: "triggerDate is required",
+      ruleIds: ["refusal-missing-trigger"],
+      citations: [],
       missingInputs: ["triggerDate"],
       warnings: [],
       inputs: [],

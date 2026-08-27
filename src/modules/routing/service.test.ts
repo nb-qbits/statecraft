@@ -133,6 +133,7 @@ function makeResolution(anchorId: string, segmentId: string): AnchoredResolution
       resolved: true,
       statutoryDate: "2025-07-01",
       adjustedDate: "2025-07-01",
+      dateRole: "deadline",
       ruleIds: ["FIXED_DATE"],
       citations: [],
       packVersion: "us-va/v1",

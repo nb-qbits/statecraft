@@ -34,6 +34,14 @@ export interface ParsedParagraph {
 
 export type ParseResult = ParseSuccess | ParseFailure;
 
+export type NonBodyRunType = "marginal_note" | "running_header" | "page_footer" | "back_matter";
+
+export interface NonBodyRun {
+  readonly type: NonBodyRunType;
+  readonly text: string;
+  readonly pageNumber: number;
+}
+
 export interface CharacterAccounting {
   readonly inputChars: number;
   readonly strippedChars: number;
@@ -48,6 +56,8 @@ export interface ParseSuccess {
   readonly parserVersion: string;
   readonly fidelity: Fidelity;
   readonly characterAccounting?: CharacterAccounting;
+  readonly nonBodyContent?: readonly NonBodyRun[];
+  readonly warnings?: readonly string[];
 }
 
 export interface ParseFailure {

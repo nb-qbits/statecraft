@@ -25,6 +25,8 @@ import { normalizeActors } from "../../../modules/extraction/actor-normalizer.js
 import { computeConfigHash, currentStageVersions, stageVersionsToRecord } from "../../../modules/shared/engine-versions.js";
 import { inferJurisdictionFromText } from "../../../modules/ingestion/jurisdiction.js";
 import { extractTitleFromSegments, extractApprovalDate, looksLikeFilename } from "../../../modules/ingestion/title-extractor.js";
+import { buildSectionIndex } from "../../../modules/section-index/build-index.js";
+import type { Jurisdiction } from "../../../modules/section-index/types.js";
 
 export interface AnalyzeDeps {
   ingestionRepository: IngestionRepository;
@@ -336,14 +338,22 @@ export function registerAnalyzeRoutes(
       logger.info({ dvId, deletedCount }, "cleared stale pending proposals before re-deriving");
     }
 
-    const [anchorResults, evaluations, grammarResults, resolutionResults, assignments] =
+    const [anchorResults, evaluations, grammarResults, resolutionResults, assignments, segments, version2] =
       await Promise.all([
         anchoringRepository.getResultsByVersion(dvId),
         evaluationRepository.getResultsByVersion(dvId),
         grammarRepository.getResultsByVersion(dvId),
         resolverRepository.getResultsByVersion(dvId),
         routingRepository.getAssignmentsByVersion(dvId),
+        parsingRepository.getSegmentsByVersion(dvId),
+        ingestionRepository.getVersion(dvId),
       ]);
+
+    const jurisdiction = (version2?.legalIdentity.jurisdiction ?? "us-va") as Jurisdiction;
+    const sectionIndex = buildSectionIndex(segments, jurisdiction);
+    if (!sectionIndex.valid) {
+      logger.warn({ dvId, errors: sectionIndex.errors }, "section index validation failed; citations will use LLM fallback");
+    }
 
     const anchorMap = new Map(anchorResults.map((a) => [a.anchorId, a] as [string, ProposalAnchorResult]));
     const grammarMap = new Map(grammarResults.map((g) => [g.anchorId, g] as [string, SpanParseResult]));
@@ -361,6 +371,10 @@ export function registerAnalyzeRoutes(
       const assignment = assignmentMap.get(evaluation.anchorId as string);
       const anchoredResult = anchor.result;
 
+      const indexCitation = sectionIndex.getCitationForAnchor(
+        anchor.segmentId as string,
+        anchoredResult.normalizedStart,
+      );
       proposalRows.push({
         analysisId: analysisId as string,
         documentVersionId: dvId as string,
@@ -368,6 +382,8 @@ export function registerAnalyzeRoutes(
         segmentId: anchor.segmentId as string,
         quotedText: anchor.quotedText,
         kind: anchor.kind,
+        obligationTitle: anchor.obligationTitle ?? null,
+        sectionCitation: indexCitation ?? anchor.sectionCitation ?? null,
         normalizedStart: anchoredResult.normalizedStart,
         normalizedEnd: anchoredResult.normalizedEnd,
         originalStart: anchoredResult.originalStart,

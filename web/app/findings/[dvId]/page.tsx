@@ -80,12 +80,16 @@ function RecurrenceCard({ finding }: { finding: Finding }) {
 
           <div className="flex items-baseline gap-2">
             <span className={`text-sm font-medium ${isStale ? "text-gray-500" : "text-gray-900"}`}>
-              {finding.provisionLabel || finding.structuralPath}
+              {finding.sectionCitation ?? (finding.provisionLabel || finding.structuralPath)}
             </span>
             <span className="text-xs text-gray-400">
               {formatKind(finding.kind)}
             </span>
           </div>
+
+          {finding.obligationTitle && (
+            <p className="text-sm font-medium text-gray-900">{finding.obligationTitle}</p>
+          )}
 
           <blockquote className="border-l-2 border-gray-300 pl-3 text-sm text-gray-800">
             {"“"}
@@ -203,12 +207,16 @@ function FindingCard({ finding }: { finding: Finding }) {
 
           <div className="flex items-baseline gap-2">
             <span className={`text-sm font-medium ${isStale ? "text-gray-500" : "text-gray-900"}`}>
-              {finding.provisionLabel || finding.structuralPath}
+              {finding.sectionCitation ?? (finding.provisionLabel || finding.structuralPath)}
             </span>
             <span className="text-xs text-gray-400">
               {formatKind(finding.kind)}
             </span>
           </div>
+
+          {finding.obligationTitle && (
+            <p className="text-sm font-medium text-gray-900">{finding.obligationTitle}</p>
+          )}
 
           <blockquote className="border-l-2 border-gray-300 pl-3 text-sm text-gray-800">
             {"“"}
@@ -227,6 +235,11 @@ function FindingCard({ finding }: { finding: Finding }) {
                     </span>
                   )}
               </p>
+              {finding.dateRole === "floor" && (
+                <p className="text-xs font-medium text-blue-700">
+                  Minimum waiting period — earliest date action may occur, not a deadline
+                </p>
+              )}
               {isEstimated && (
                 <p className="text-xs font-medium text-amber-700">
                   Estimated — not verified for this jurisdiction

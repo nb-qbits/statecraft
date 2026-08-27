@@ -8,7 +8,22 @@ import type {
   ResolutionResult,
   Occurrence,
   DerivedEffectiveDate,
+  DateRole,
 } from "./types.js";
+import {
+  VERBATIM_DATE,
+  CALENDAR_YEAR_OFFSET,
+  CAP_DATE_APPLIED,
+  RECURRENCE_SCHEDULE,
+  YEAR_PARITY_FILTER,
+  REFUSAL_MISSING_YEAR,
+  REFUSAL_MISSING_TRIGGER,
+  REFUSAL_UNRESOLVED_DEPENDENCY,
+  REFUSAL_HOUR_SCALE,
+  REFUSAL_MISSING_ANCHOR,
+  REFUSAL_RULE_IDS,
+  durationFromTriggerRuleId,
+} from "../shared/rule-registry.js";
 
 const DEFAULT_HORIZON_YEARS = 5;
 
@@ -120,7 +135,7 @@ function generateOccurrences(
   });
 }
 
-export const RESOLVER_VERSION = "1.6.0";
+export const RESOLVER_VERSION = "1.8.0";
 
 export function resolve(
   expr: ParsedAnchoredExpression,
@@ -152,6 +167,8 @@ function resolveFixedDate(
       resolved: false,
       refusalKind: "missing_year",
       reason: "year not specified in expression",
+      ruleIds: [REFUSAL_MISSING_YEAR],
+      citations: [],
       missingInputs: ["year"],
       warnings: [],
       inputs: [],
@@ -172,7 +189,7 @@ function resolveFixedDate(
 
   const adjustment = pack.adjustForNonBusinessDay(statutoryDate);
 
-  const ruleIds: string[] = ["verbatim-date"];
+  const ruleIds: string[] = [VERBATIM_DATE];
   const citations: string[] = [`date stated in instrument: '${expr.text}'`];
 
   ruleIds.push(...adjustment.ruleIds);
@@ -182,6 +199,7 @@ function resolveFixedDate(
     resolved: true,
     statutoryDate,
     adjustedDate: adjustment.adjustedDate,
+    dateRole: "deadline" as DateRole,
     ruleIds,
     citations,
     packVersion: pack.packVersion,
@@ -247,6 +265,7 @@ function resolveRelativeDuration(
 
     const hasEventRef = referencesEnactment || expression.referenceEventText;
     const refusalKind = hasEventRef ? "undated_event" as const : "missing_trigger" as const;
+    const refusalRuleId = REFUSAL_RULE_IDS[refusalKind]!;
     const reason = referencesEnactment
       ? "enactment date not available for this document"
       : expression.referenceEventText
@@ -259,6 +278,8 @@ function resolveRelativeDuration(
           resolved: false,
           refusalKind: "unresolved_dependency" as const,
           reason: `cap date depends on ${expression.capDate.dependencyRef} which has not been resolved`,
+          ruleIds: [REFUSAL_UNRESOLVED_DEPENDENCY],
+          citations: [],
           missingInputs: [`dependencyRef:${expression.capDate.dependencyRef}`],
           warnings,
           inputs: [...suppliedInputs],
@@ -273,6 +294,8 @@ function resolveRelativeDuration(
         bounded: true,
         upperBound,
         reason: `${reason} — bounded by ${capKind === "sooner" ? "on or before" : "on or after"} ${upperBound}`,
+        ruleIds: [refusalRuleId],
+        citations: [],
         missingInputs: referencesEnactment ? ["enactmentDate"] : ["triggerDate"],
         warnings,
         inputs: [...suppliedInputs],
@@ -283,6 +306,8 @@ function resolveRelativeDuration(
       resolved: false,
       refusalKind,
       reason,
+      ruleIds: [refusalRuleId],
+      citations: [],
       missingInputs: referencesEnactment ? ["enactmentDate"] : ["triggerDate"],
       warnings,
       inputs: [...suppliedInputs],
@@ -295,6 +320,8 @@ function resolveRelativeDuration(
       refusalKind: "hour_scale",
       reason:
         "hour-scale durations cannot be resolved to a civil date — they require time-of-day computation",
+      ruleIds: [REFUSAL_HOUR_SCALE],
+      citations: [],
       missingInputs: [],
       warnings: [],
       inputs: [triggerInput],
@@ -318,7 +345,7 @@ function resolveRelativeDuration(
     deadline = {
       statutoryDate,
       adjustedDate: adjustment.adjustedDate,
-      ruleIds: [`${expression.quantity}-${expression.unit}-from-trigger`, ...adjustment.ruleIds],
+      ruleIds: [durationFromTriggerRuleId(expression.quantity, expression.unit), ...adjustment.ruleIds],
       citations: [`${expression.quantity} ${expression.unit} after ${triggerInput.value}`, ...adjustment.citations],
     };
   } else {
@@ -365,17 +392,20 @@ function resolveRelativeDuration(
       finalStatutory = capIso;
       const capAdj = pack.adjustForNonBusinessDay(capIso);
       finalAdjusted = capAdj.adjustedDate;
-      ruleIds.push("cap-date-applied");
+      ruleIds.push(CAP_DATE_APPLIED);
       citations.push(`capped at ${capIso} (whichever is ${capKind})`);
       ruleIds.push(...capAdj.ruleIds);
       citations.push(...capAdj.citations);
     }
   }
 
+  const dateRole: DateRole = expression.boundKind === "at_least" ? "floor" : "deadline";
+
   return {
     resolved: true,
     statutoryDate: finalStatutory,
     adjustedDate: finalAdjusted,
+    dateRole,
     ruleIds,
     citations,
     packVersion: pack.packVersion,
@@ -418,14 +448,17 @@ function resolveCalendarYearAnchoredDate(
 
   if (!triggerInput) {
     const hasEventRef = referencesEnactment || expression.referenceEventText;
+    const refusalKind = hasEventRef ? "undated_event" as const : "missing_trigger" as const;
     return {
       resolved: false,
-      refusalKind: hasEventRef ? "undated_event" as const : "missing_trigger" as const,
+      refusalKind,
       reason: referencesEnactment
         ? "enactment date not available for this document"
         : expression.referenceEventText
           ? `runs from an event this document does not date: ${expression.referenceEventText}`
           : "reference date is required to resolve calendar year offset",
+      ruleIds: [REFUSAL_RULE_IDS[refusalKind]!],
+      citations: [],
       missingInputs: referencesEnactment ? ["enactmentDate"] : ["triggerDate"],
       warnings: [],
       inputs: [...suppliedInputs],
@@ -442,6 +475,8 @@ function resolveCalendarYearAnchoredDate(
       resolved: false,
       refusalKind: "missing_trigger" as const,
       reason: `day ${expression.day} invalid for month ${expression.month} in year ${targetYear}`,
+      ruleIds: [REFUSAL_MISSING_TRIGGER],
+      citations: [],
       missingInputs: [],
       warnings: [],
       inputs: [triggerInput],
@@ -461,7 +496,8 @@ function resolveCalendarYearAnchoredDate(
     resolved: true,
     statutoryDate,
     adjustedDate: adjustment.adjustedDate,
-    ruleIds: ["calendar-year-offset", ...adjustment.ruleIds],
+    dateRole: "deadline" as DateRole,
+    ruleIds: [CALENDAR_YEAR_OFFSET, ...adjustment.ruleIds],
     citations: [
       `${ordinalWord} calendar year after ${triggerInput.value} = ${targetYear}`,
       ...adjustment.citations,
@@ -494,6 +530,8 @@ function resolveRecurrenceExpression(
       resolved: false,
       refusalKind: "missing_anchor",
       reason: "recurrence has no date anchor — cannot generate occurrences without a start date",
+      ruleIds: [REFUSAL_MISSING_ANCHOR],
+      citations: [],
       missingInputs: ["anchorDate"],
       warnings: [],
       inputs: [...suppliedInputs],
@@ -505,6 +543,8 @@ function resolveRecurrenceExpression(
       resolved: false,
       refusalKind: "missing_anchor",
       reason: "recurrence anchored to legislative session — requires session calendar to generate occurrences",
+      ruleIds: [REFUSAL_MISSING_ANCHOR],
+      citations: [],
       missingInputs: ["sessionDate"],
       warnings: [],
       inputs: [...suppliedInputs],
@@ -536,11 +576,11 @@ function resolveRecurrenceExpression(
 
   const occurrences = generateOccurrences(expression, rruleStr, dtstart, horizon, pack);
 
-  const ruleIds = ["recurrence-schedule"];
+  const ruleIds = [RECURRENCE_SCHEDULE];
   const citations = [`recurrence rule: ${rruleStr}`];
 
   if (expression.yearParity) {
-    ruleIds.push("year-parity-filter");
+    ruleIds.push(YEAR_PARITY_FILTER);
     citations.push(`year parity: ${expression.yearParity}-numbered years only (RRULE INTERVAL=2 with DTSTART in ${expression.yearParity} year ${startYear})`);
   }
 

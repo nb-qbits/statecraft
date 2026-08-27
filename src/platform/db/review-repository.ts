@@ -71,6 +71,8 @@ function rowToProposal(row: typeof proposals.$inferSelect): ReviewProposal {
     segmentId: row.segmentId as SegmentId,
     quotedText: row.quotedText,
     kind: row.kind,
+    obligationTitle: row.obligationTitle ?? null,
+    sectionCitation: row.sectionCitation ?? null,
     normalizedStart: row.normalizedStart,
     normalizedEnd: row.normalizedEnd,
     originalStart: row.originalStart,
@@ -263,6 +265,8 @@ export interface ProposalInsert {
   readonly segmentId: string;
   readonly quotedText: string;
   readonly kind: string;
+  readonly obligationTitle: string | null;
+  readonly sectionCitation: string | null;
   readonly normalizedStart: number;
   readonly normalizedEnd: number;
   readonly originalStart: number;
@@ -428,6 +432,8 @@ export function createReviewRepository(
           segmentId: p.segmentId,
           quotedText: p.quotedText,
           kind: p.kind,
+          obligationTitle: p.obligationTitle,
+          sectionCitation: p.sectionCitation,
           normalizedStart: p.normalizedStart,
           normalizedEnd: p.normalizedEnd,
           originalStart: p.originalStart,

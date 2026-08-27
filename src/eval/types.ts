@@ -35,6 +35,8 @@ export interface PipelineFinding {
   readonly resolved: boolean;
   readonly statutoryDate: string | null;
   readonly adjustedDate: string | null;
+  readonly rrule: string | null;
+  readonly occurrences: ReadonlyArray<{ occurrenceDate: string; adjustedDate: string }>;
   readonly bounded: boolean;
   readonly upperBound: string | null;
   readonly refusalKind: string | null;

@@ -102,6 +102,8 @@ function createStubs() {
     getSegmentsByVersion: vi.fn(async (id: DocumentVersionId) => segments.get(id) ?? []),
     deleteSegmentsByVersion: vi.fn(),
     updateParseStatus: vi.fn(),
+    storeNonBodyContent: vi.fn(),
+    getNonBodyContent: vi.fn().mockResolvedValue([]),
   };
 
   const scanningRepository: ScanningRepository = {

@@ -20,6 +20,8 @@ function rowToProposalResult(
     segmentId: row.segmentId as SegmentId,
     quotedText: row.quotedText,
     kind: row.kind as SpanProposalKind,
+    obligationTitle: row.obligationTitle ?? null,
+    sectionCitation: row.sectionCitation ?? null,
     actor: row.actor ?? null,
     actorQuotedText: row.actorQuotedText ?? null,
     actorAnchored: row.actorAnchored ?? null,
@@ -81,13 +83,22 @@ export function createAnchoringRepository(
     ): Promise<void> {
       if (results.length === 0) return;
 
+      const seen = new Set<string>();
+      const uniqueResults = results.filter((r) => {
+        if (seen.has(r.anchorId)) return false;
+        seen.add(r.anchorId);
+        return true;
+      });
+
       await db.insert(anchorResults).values(
-        results.map((r) => ({
+        uniqueResults.map((r) => ({
           anchorId: r.anchorId,
           documentVersionId,
           segmentId: r.segmentId,
           quotedText: r.quotedText,
           kind: r.kind,
+          obligationTitle: r.obligationTitle,
+          sectionCitation: r.sectionCitation,
           anchored: r.result.anchored,
           method: r.result.anchored ? r.result.method : null,
           normalizedStart: r.result.anchored ? r.result.normalizedStart : null,

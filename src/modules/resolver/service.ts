@@ -18,6 +18,15 @@ import type {
 import type { TemporalExpression, CapDate, CapDateRef } from "../grammar/types.js";
 import type { SessionMetadata } from "../jurisdiction/types.js";
 import type { SourceSegment } from "../parsing/types.js";
+import { buildSectionIndex } from "../section-index/build-index.js";
+import type { SectionIndex } from "../section-index/types.js";
+import type { Jurisdiction } from "../section-index/types.js";
+import {
+  REFUSAL_CYCLE_DETECTED,
+  REFUSAL_BROKEN_CROSS_REFERENCE,
+  REFUSAL_NONEXISTENT_TRIGGER,
+  TRANSITIVE_BOUND,
+} from "../shared/rule-registry.js";
 
 export { RESOLVER_VERSION };
 
@@ -139,7 +148,8 @@ export function createResolverService(deps: ResolverServiceDeps) {
         }
       }
 
-      const { order, cycles, edgesBySource } = buildDependencyGraph(parsedOnly, segments);
+      const sectionIndex = buildSectionIndex(segments, jurisdiction as Jurisdiction);
+      const { order, cycles, edgesBySource } = buildDependencyGraph(parsedOnly, segments, sectionIndex);
 
       const resolvedResults = new Map<string, ResolutionResult>();
       const resolutions: AnchoredResolution[] = [];
@@ -153,7 +163,7 @@ export function createResolverService(deps: ResolverServiceDeps) {
             "yearSource" in expression.capDate) {
           const capRef = expression.capDate as CapDateRef;
           const depAnchorId = findDependencyAnchor(
-            capRef.dependencyRef, parsedOnly, segments,
+            capRef.dependencyRef, parsedOnly, segments, sectionIndex, gr.segmentId as string,
           );
           if (depAnchorId) {
             const depResult = resolvedResults.get(depAnchorId as string);
@@ -185,7 +195,7 @@ export function createResolverService(deps: ResolverServiceDeps) {
 
         if (!result.resolved && eventTextEdge && expression.kind === "relative_duration") {
           result = applyTransitiveBounding(
-            result, expression, eventTextEdge, resolvedResults, parsedOnly, segments,
+            result, expression, eventTextEdge, resolvedResults, parsedOnly, segments, sectionIndex,
           );
         }
 
@@ -214,6 +224,8 @@ export function createResolverService(deps: ResolverServiceDeps) {
             resolved: false,
             refusalKind: "cycle_detected" as const,
             reason: "this finding is part of a dependency cycle and cannot be resolved",
+            ruleIds: [REFUSAL_CYCLE_DETECTED],
+            citations: [],
             missingInputs: [],
             warnings: [],
             inputs: [...suppliedInputs],
@@ -288,6 +300,7 @@ export function extractSubsectionRef(text: string): string | null {
 function buildDependencyGraph(
   grammarResults: readonly GrammarEntry[],
   segments: readonly SourceSegment[],
+  sectionIndex: SectionIndex,
 ): DependencyGraphResult {
   const anchorIds = grammarResults
     .filter((g) => g.result.parsed)
@@ -307,7 +320,7 @@ function buildDependencyGraph(
     if (expr.kind === "relative_duration" && expr.capDate &&
         "yearSource" in expr.capDate) {
       const capRef = expr.capDate as CapDateRef;
-      const dep = findDependencyAnchor(capRef.dependencyRef, grammarResults, segments);
+      const dep = findDependencyAnchor(capRef.dependencyRef, grammarResults, segments, sectionIndex, gr.segmentId as string);
       if (dep) {
         const depList = edges.get(gr.anchorId as string) ?? [];
         depList.push(dep as string);
@@ -328,7 +341,7 @@ function buildDependencyGraph(
           refParts.push(m[1]!.toLowerCase());
         }
         if (refParts.length > 0) {
-          const dep = findDependencyAnchor(ref, grammarResults, segments);
+          const dep = findDependencyAnchor(ref, grammarResults, segments, sectionIndex, gr.segmentId as string);
           if (dep && dep !== gr.anchorId) {
             const depList = edges.get(gr.anchorId as string) ?? [];
             if (!depList.includes(dep as string)) {
@@ -364,10 +377,11 @@ function detectCrossReferenceIssue(
   const seg = segments.find((s) => (s.segmentId as string) === (depGr.segmentId as string));
   if (!seg) return null;
 
-  const actorMatch = /\b(?:the\s+)((?:head|director|secretary|administrator|commissioner|chair(?:man|person)?)\s+(?:of\s+(?:an?\s+)?(?:agency|department|commission|bureau|office|board)))/i.exec(referenceEventText);
+  const actorMatch = /\b(?:the\s+)((?:head|director|secretary|administrator|commissioner|chair(?:man|person)?)\s+(?:of\s+(?:an?\s+|each\s+|every\s+|the\s+|such\s+)?(?:agency|department|commission|bureau|office|board)))/i.exec(referenceEventText);
   if (actorMatch) {
-    const actor = actorMatch[1]!.toLowerCase();
-    if (!seg.rawText.toLowerCase().includes(actor)) {
+    const actor = actorMatch[1]!.toLowerCase().replace(/\bof\s+(?:an?|each|every|the|such)\s+/i, "of ");
+    const segText = seg.rawText.toLowerCase().replace(/\bof\s+(?:an?|each|every|the|such)\s+/gi, "of ");
+    if (!segText.includes(actor)) {
       return "broken_cross_reference";
     }
   }
@@ -391,19 +405,10 @@ function computeTransitiveBound(
   return d.toISOString().slice(0, 10);
 }
 
-const SECTION_HEADING_RE = /\bSEC(?:TION)?\.?\s*(\d+)/i;
-
-function findSectionNumber(segments: readonly SourceSegment[], targetAnchorId: string, grammarResults: readonly GrammarEntry[]): string | null {
+function findSectionForAnchor(sectionIndex: SectionIndex, grammarResults: readonly GrammarEntry[], targetAnchorId: string): string | null {
   const gr = grammarResults.find((g) => (g.anchorId as string) === targetAnchorId);
   if (!gr) return null;
-  const seg = segments.find((s) => (s.segmentId as string) === (gr.segmentId as string));
-  if (!seg) return null;
-  const textPos = seg.rawText.indexOf(gr.text);
-  const textBefore = textPos >= 0 ? seg.rawText.slice(0, textPos) : seg.rawText;
-  const matches = [...textBefore.matchAll(new RegExp(SECTION_HEADING_RE, "gi"))];
-  if (matches.length > 0) return matches[matches.length - 1]![1]!;
-  const wholeMatch = SECTION_HEADING_RE.exec(seg.rawText);
-  return wholeMatch ? wholeMatch[1]! : null;
+  return sectionIndex.getSectionForSegment(gr.segmentId as string);
 }
 
 function formatSubsectionLabel(ref: string, sectionNumber?: string | null): string {
@@ -422,13 +427,14 @@ function applyTransitiveBounding(
   resolvedResults: Map<string, ResolutionResult>,
   grammarResults: readonly GrammarEntry[],
   segments: readonly SourceSegment[],
+  sectionIndex: SectionIndex,
 ): ResolutionResult {
   if (baseResult.resolved) return baseResult;
 
   const depResult = resolvedResults.get(eventTextEdge.target);
   if (!depResult) return baseResult;
 
-  const sectionNum = findSectionNumber(segments, eventTextEdge.target, grammarResults);
+  const sectionNum = findSectionForAnchor(sectionIndex, grammarResults, eventTextEdge.target);
   const refLabel = formatSubsectionLabel(eventTextEdge.ref, sectionNum);
   const referenceEventText = expression.referenceEventText ?? "";
 
@@ -438,6 +444,9 @@ function applyTransitiveBounding(
   if (crossRefIssue) {
     const depGr = grammarResults.find((g) => (g.anchorId as string) === eventTextEdge.target);
     const depText = depGr?.text ?? eventTextEdge.ref;
+    const crossRefRuleId = crossRefIssue === "broken_cross_reference"
+      ? REFUSAL_BROKEN_CROSS_REFERENCE
+      : REFUSAL_NONEXISTENT_TRIGGER;
     const explanation = crossRefIssue === "broken_cross_reference"
       ? `The described trigger references ${refLabel}, but the actor or action described does not match that subsection's content. The referenced subsection text: "${depText.slice(0, 120)}"`
       : `The trigger references a "${referenceEventText.match(/\b(second|third|fourth|each|every)\b/i)?.[0] ?? "repeated"}" occurrence under ${refLabel}, but that subsection requires only one`;
@@ -445,6 +454,8 @@ function applyTransitiveBounding(
       resolved: false,
       refusalKind: crossRefIssue,
       reason: explanation,
+      ruleIds: [crossRefRuleId],
+      citations: [],
       missingInputs: baseResult.missingInputs as string[],
       warnings: baseResult.warnings as string[],
       inputs: baseResult.inputs as ResolutionInput[],
@@ -470,6 +481,9 @@ function applyTransitiveBounding(
 
   const contingency = `Contingent on: the obligation under ${refLabel}, ${depLabel}. If filed later, this date moves with it.`;
 
+  const baseRuleIds = "ruleIds" in baseResult ? [...baseResult.ruleIds as readonly string[]] : [];
+  const baseCitations = "citations" in baseResult ? [...baseResult.citations as readonly string[]] : [];
+
   return {
     resolved: false,
     bounded: true,
@@ -477,6 +491,8 @@ function applyTransitiveBounding(
     reason: `transitive bound: ${expression.quantity} ${expression.unit} after dependency under ${refLabel} (${depLabel}) — on or before ${bound}`,
     contingency,
     derivationDepth: depDepth + 1,
+    ruleIds: [...baseRuleIds, TRANSITIVE_BOUND],
+    citations: baseCitations,
     missingInputs: baseResult.missingInputs as string[],
     warnings: baseResult.warnings as string[],
     inputs: baseResult.inputs as ResolutionInput[],
@@ -533,7 +549,9 @@ type GrammarEntry = {
 function findDependencyAnchor(
   dependencyRef: string,
   grammarResults: readonly GrammarEntry[],
-  segments: readonly SourceSegment[],
+  _segments: readonly SourceSegment[],
+  sectionIndex: SectionIndex,
+  sourceSegmentId: string,
 ): import("../shared/types.js").AnchorId | null {
   const parts: string[] = [];
   const re = /\(([a-z\d]+)\)/gi;
@@ -543,9 +561,13 @@ function findDependencyAnchor(
   }
   if (parts.length === 0) return null;
 
-  const sorted = [...segments].sort((a, b) => a.ordinal - b.ordinal);
+  const sourceSection = sectionIndex.getSectionForSegment(sourceSegmentId);
+  if (!sourceSection) return null;
 
-  // Strategy 1: segment-boundary matching (fine-grained documents)
+  const targetCitation = `§ ${sourceSection}(${parts.join(")(")})`;
+  const ranges = sectionIndex.getSegmentsForCitation(targetCitation);
+  if (ranges.length === 0) return null;
+
   const segmentIdToAnchors = new Map<string, import("../shared/types.js").AnchorId[]>();
   for (const gr of grammarResults) {
     if (gr.result.parsed) {
@@ -555,134 +577,18 @@ function findDependencyAnchor(
     }
   }
 
-  let context: string[] = [];
-  for (const seg of sorted) {
-    const text = seg.rawText.trim();
+  const pickBestAnchor = (anchors: import("../shared/types.js").AnchorId[]) => {
+    const calYear = anchors.find(aid => {
+      const gr = grammarResults.find(g => g.anchorId === aid);
+      return gr?.result.parsed && gr.result.expression.kind === "calendar_year_anchored_date";
+    });
+    return calYear ?? anchors[0]!;
+  };
 
-    const parentMatch = /^\(([a-z])\)\s/i.exec(text);
-    if (parentMatch) {
-      context = [parentMatch[1]!.toLowerCase()];
-      if (parts.length === 1 && parts[0] === context[0]) {
-        const anchors = segmentIdToAnchors.get(seg.segmentId as string);
-        if (anchors && anchors.length > 0) return anchors[0]!;
-      }
-      continue;
-    }
-
-    const childMatch = /^\((\d+)\)\s/i.exec(text);
-    if (childMatch) {
-      const identity = [...context, childMatch[1]!];
-      if (identity.length === parts.length &&
-          identity.every((p, i) => p === parts[i])) {
-        const anchors = segmentIdToAnchors.get(seg.segmentId as string);
-        if (anchors && anchors.length > 0) return anchors[0]!;
-      }
-    }
+  for (const range of ranges) {
+    const anchors = segmentIdToAnchors.get(range.segmentId);
+    if (anchors && anchors.length > 0) return pickBestAnchor(anchors);
   }
 
-  // Strategy 2: text-position matching within coarsely-segmented documents
-  return findDependencyByTextPosition(parts, grammarResults, sorted);
-}
-
-const SUBSECTION_REFERENCE_PREFIX = /(?:subsection|paragraph|section|subparagraph)\s+$/i;
-
-function isStructuralMarker(rawText: string, matchIndex: number): boolean {
-  const preceding = rawText.slice(Math.max(0, matchIndex - 20), matchIndex);
-  return !SUBSECTION_REFERENCE_PREFIX.test(preceding);
-}
-
-function findDependencyByTextPosition(
-  parts: string[],
-  grammarResults: readonly GrammarEntry[],
-  segments: readonly SourceSegment[],
-): import("../shared/types.js").AnchorId | null {
-  for (const seg of segments) {
-    const searchText = seg.normalizedText;
-    const segResults = grammarResults.filter(
-      (gr) =>
-        (gr.segmentId as string) === (seg.segmentId as string) &&
-        gr.result.parsed,
-    );
-    if (segResults.length === 0) continue;
-
-    const markerStart = findMarkerPosition(parts, searchText);
-    if (markerStart < 0) continue;
-
-    const endPos = findSubsectionEnd(parts, searchText, markerStart);
-
-    const candidates: Array<{
-      anchorId: import("../shared/types.js").AnchorId;
-      pos: number;
-      kind: string;
-    }> = [];
-    for (const gr of segResults) {
-      const textPos = searchText.indexOf(gr.text, markerStart);
-      if (textPos >= 0 && textPos < endPos) {
-        candidates.push({
-          anchorId: gr.anchorId,
-          pos: textPos,
-          kind: gr.result.parsed ? gr.result.expression.kind : "",
-        });
-      }
-    }
-    if (candidates.length === 0) continue;
-
-    const calYear = candidates.find(
-      (c) => c.kind === "calendar_year_anchored_date",
-    );
-    if (calYear) return calYear.anchorId;
-
-    candidates.sort((a, b) => a.pos - b.pos);
-    return candidates[0]!.anchorId;
-  }
   return null;
-}
-
-function findMarkerPosition(parts: string[], rawText: string): number {
-  const markerRe = /\(([a-z\d]+)\)/gi;
-  const markers: Array<{ label: string; index: number }> = [];
-  let match;
-  while ((match = markerRe.exec(rawText)) !== null) {
-    if (isStructuralMarker(rawText, match.index)) {
-      markers.push({ label: match[1]!.toLowerCase(), index: match.index });
-    }
-  }
-
-  let searchFrom = 0;
-  for (let i = 0; i < parts.length; i++) {
-    const target = parts[i]!;
-    const found = markers.find(
-      (mk) => mk.label === target && mk.index >= searchFrom,
-    );
-    if (!found) return -1;
-    searchFrom = found.index + target.length + 2;
-    if (i === parts.length - 1) return searchFrom;
-  }
-  return -1;
-}
-
-function findSubsectionEnd(
-  parts: string[],
-  rawText: string,
-  markerEnd: number,
-): number {
-  const deepest = parts[parts.length - 1]!;
-  const isNumeric = /^\d+$/.test(deepest);
-  const markerRe = /\(([a-z\d]+)\)/gi;
-  markerRe.lastIndex = markerEnd;
-
-  let match;
-  while ((match = markerRe.exec(rawText)) !== null) {
-    if (!isStructuralMarker(rawText, match.index)) continue;
-    const label = match[1]!.toLowerCase();
-    if (isNumeric) {
-      const num = parseInt(deepest, 10);
-      const labelNum = parseInt(label, 10);
-      if (!isNaN(labelNum) && labelNum === num + 1) return match.index;
-      if (/^[a-z]$/i.test(label)) return match.index;
-    } else {
-      if (/^[a-z]$/i.test(label) && label !== deepest) return match.index;
-    }
-  }
-  return rawText.length;
 }

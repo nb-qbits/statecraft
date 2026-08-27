@@ -11,6 +11,10 @@ import { validateAndRepairResponse } from "../extraction/response-validator.js";
 import { EXTRACTOR_VERSION } from "../extraction/service.js";
 import type { SpanProposal } from "../extraction/types.js";
 import type { DocumentAnchoringResult, ProposalAnchorResult } from "./types.js";
+import {
+  SUPPRESS_OVER_EXTRACTION,
+  SUPPRESS_DUPLICATE_SPAN,
+} from "../shared/rule-registry.js";
 
 interface SuppressionResult {
   active: ProposalAnchorResult[];
@@ -41,6 +45,7 @@ export function suppressOverExtractedProposals(
           (p.result.originalStart !== q.result.originalStart ||
             p.result.originalEnd !== q.result.originalEnd)
         ) {
+          if (p.actor && q.actor && p.actor !== q.actor) continue;
           suppressedSet.add(p);
           containedByMap.set(p, q.quotedText);
           break;
@@ -221,6 +226,8 @@ export function createAnchoringService(deps: AnchoringServiceDeps) {
             segmentId: proposal.segmentId,
             quotedText: proposal.quotedText,
             kind: proposal.kind,
+            obligationTitle: proposal.obligationTitle,
+            sectionCitation: proposal.sectionCitation,
             result: {
               anchored: false,
               reason: "segment_not_found",
@@ -270,6 +277,8 @@ export function createAnchoringService(deps: AnchoringServiceDeps) {
           segmentId: proposal.segmentId,
           quotedText: proposal.quotedText,
           kind: proposal.kind,
+          obligationTitle: proposal.obligationTitle,
+          sectionCitation: proposal.sectionCitation,
           result: anchorResult,
           actor: proposal.actor,
           actorQuotedText: proposal.actorQuotedText,
@@ -304,6 +313,7 @@ export function createAnchoringService(deps: AnchoringServiceDeps) {
           result: {
             anchored: false as const,
             reason: "over_extraction_substring",
+            ruleId: SUPPRESS_OVER_EXTRACTION,
             containedBy,
           },
         })),
@@ -312,6 +322,7 @@ export function createAnchoringService(deps: AnchoringServiceDeps) {
           result: {
             anchored: false as const,
             reason: "duplicate_span",
+            ruleId: SUPPRESS_DUPLICATE_SPAN,
           },
         })),
       ];

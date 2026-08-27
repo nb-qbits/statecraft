@@ -149,8 +149,9 @@ export function findingToDocketTask(
     anchorId: f.anchorId,
     segmentId: f.segmentId,
     determination,
-    obligation: f.quotedText.length > 120 ? f.quotedText.slice(0, 117) + "..." : f.quotedText,
-    citation: f.provisionLabel || f.structuralPath || "",
+    obligation: f.obligationTitle
+      ?? (f.quotedText.length > 120 ? f.quotedText.slice(0, 117) + "..." : f.quotedText),
+    citation: f.sectionCitation ?? (f.provisionLabel || f.structuralPath || ""),
     actor: f.actor && !isGenericActor(f.actor) ? f.actor : null,
     actorQuotedText: f.actorQuotedText ?? null,
     contingent: !!(f.referenceEventText && f.missingInputs?.includes("triggerDate")),
