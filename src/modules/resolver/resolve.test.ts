@@ -736,7 +736,7 @@ describe("resolver — calendar_year_anchored_date", () => {
 
 describe("resolver version", () => {
   it("exports RESOLVER_VERSION", () => {
-    expect(RESOLVER_VERSION).toBe("1.8.0");
+    expect(RESOLVER_VERSION).toBe("1.10.0");
   });
 });
 

@@ -135,7 +135,7 @@ function generateOccurrences(
   });
 }
 
-export const RESOLVER_VERSION = "1.8.0";
+export const RESOLVER_VERSION = "1.10.0";
 
 export function resolve(
   expr: ParsedAnchoredExpression,

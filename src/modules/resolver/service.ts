@@ -361,11 +361,46 @@ function buildDependencyGraph(
   return { order, cycles, edgesBySource };
 }
 
+function incrementSubsectionLabel(label: string): string | null {
+  if (/^\d+$/.test(label)) return String(parseInt(label, 10) + 1);
+  if (/^[a-z]$/.test(label) && label !== "z") return String.fromCharCode(label.charCodeAt(0) + 1);
+  return null;
+}
+
+function findNextSiblingOffset(
+  sectionIndex: SectionIndex,
+  segmentId: string,
+  sectionNum: string,
+  subsectionRef: string,
+): number | null {
+  const parts: string[] = [];
+  const re = /\(([a-z\d]+)\)/gi;
+  let m;
+  while ((m = re.exec(subsectionRef)) !== null) {
+    parts.push(m[1]!);
+  }
+  if (parts.length === 0) return null;
+
+  for (let depth = parts.length - 1; depth >= 0; depth--) {
+    const prefix = parts.slice(0, depth).map(p => `(${p})`).join("");
+    const next = incrementSubsectionLabel(parts[depth]!);
+    if (!next) continue;
+    const sibCitation = `§ ${sectionNum}${prefix}(${next})`;
+    const sibRanges = sectionIndex.getSegmentsForCitation(sibCitation);
+    const sibRange = sibRanges.find(r => r.segmentId === segmentId);
+    if (sibRange) return sibRange.startOffset;
+  }
+
+  return null;
+}
+
 function detectCrossReferenceIssue(
   referenceEventText: string,
   depAnchorId: string,
   grammarResults: readonly GrammarEntry[],
   segments: readonly SourceSegment[],
+  sectionIndex: SectionIndex,
+  subsectionRef: string,
 ): "broken_cross_reference" | "nonexistent_trigger" | null {
   if (/\b(second|third|fourth|each|every)\b/i.test(referenceEventText)) {
     return "nonexistent_trigger";
@@ -377,11 +412,30 @@ function detectCrossReferenceIssue(
   const seg = segments.find((s) => (s.segmentId as string) === (depGr.segmentId as string));
   if (!seg) return null;
 
+  const sectionNum = sectionIndex.getSectionForSegment(depGr.segmentId as string);
+  const targetCitation = sectionNum ? `§ ${sectionNum}${subsectionRef}` : null;
+  const ranges = targetCitation ? sectionIndex.getSegmentsForCitation(targetCitation) : [];
+  const targetRange = ranges.find(r => r.segmentId === (depGr.segmentId as string));
+
+  let checkText: string;
+  if (targetRange) {
+    const inclusiveEnd = findNextSiblingOffset(
+      sectionIndex, depGr.segmentId as string, sectionNum!, subsectionRef,
+    );
+    if (inclusiveEnd !== null) {
+      checkText = seg.normalizedText.slice(targetRange.startOffset, inclusiveEnd);
+    } else {
+      checkText = seg.normalizedText.slice(targetRange.startOffset);
+    }
+  } else {
+    checkText = seg.rawText;
+  }
+
   const actorMatch = /\b(?:the\s+)((?:head|director|secretary|administrator|commissioner|chair(?:man|person)?)\s+(?:of\s+(?:an?\s+|each\s+|every\s+|the\s+|such\s+)?(?:agency|department|commission|bureau|office|board)))/i.exec(referenceEventText);
   if (actorMatch) {
     const actor = actorMatch[1]!.toLowerCase().replace(/\bof\s+(?:an?|each|every|the|such)\s+/i, "of ");
-    const segText = seg.rawText.toLowerCase().replace(/\bof\s+(?:an?|each|every|the|such)\s+/gi, "of ");
-    if (!segText.includes(actor)) {
+    const narrowedText = checkText.toLowerCase().replace(/\bof\s+(?:an?|each|every|the|such)\s+/gi, "of ");
+    if (!narrowedText.includes(actor)) {
       return "broken_cross_reference";
     }
   }
@@ -440,6 +494,7 @@ function applyTransitiveBounding(
 
   const crossRefIssue = detectCrossReferenceIssue(
     referenceEventText, eventTextEdge.target, grammarResults, segments,
+    sectionIndex, eventTextEdge.ref,
   );
   if (crossRefIssue) {
     const depGr = grammarResults.find((g) => (g.anchorId as string) === eventTextEdge.target);
