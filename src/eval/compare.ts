@@ -68,8 +68,9 @@ function findingRefusalReason(f: PipelineFinding): string | null {
   return null;
 }
 
-function actorsMatch(goldActor: string, findingActor: string | null): boolean {
-  if (!findingActor) return false;
+function actorsMatch(goldActor: string | null, findingActor: string | null): boolean {
+  if (goldActor === null && findingActor === null) return true;
+  if (goldActor === null || findingActor === null) return false;
   const g = normalizeActorForMatch(goldActor);
   const f = normalizeActorForMatch(findingActor);
   if (g === f || g.includes(f) || f.includes(g)) return true;
@@ -107,22 +108,24 @@ export function matchFindings(
 
       let score = 0;
 
-      const goldActorNorm = normalizeActorForMatch(gold.actor);
-      const findingActorNorm = finding.actor
-        ? normalizeActorForMatch(finding.actor)
-        : "";
-      const actorSim = wordOverlap(gold.actor, finding.actor, 3);
-      if (actorSim >= 0.8) {
+      if (gold.actor === null && finding.actor === null) {
         score += 0.5;
-      } else if (
-        goldActorNorm && findingActorNorm &&
-        (goldActorNorm === findingActorNorm ||
-         goldActorNorm.includes(findingActorNorm) ||
-         findingActorNorm.includes(goldActorNorm))
-      ) {
-        score += 0.4;
-      } else if (actorSim >= 0.5) {
-        score += 0.3;
+      } else if (gold.actor !== null && finding.actor !== null) {
+        const goldActorNorm = normalizeActorForMatch(gold.actor);
+        const findingActorNorm = normalizeActorForMatch(finding.actor);
+        const actorSim = wordOverlap(gold.actor, finding.actor, 3);
+        if (actorSim >= 0.8) {
+          score += 0.5;
+        } else if (
+          goldActorNorm && findingActorNorm &&
+          (goldActorNorm === findingActorNorm ||
+           goldActorNorm.includes(findingActorNorm) ||
+           findingActorNorm.includes(goldActorNorm))
+        ) {
+          score += 0.4;
+        } else if (actorSim >= 0.5) {
+          score += 0.3;
+        }
       }
 
       const dutySim = wordOverlap(gold.duty, finding.obligationTitle, 3);
@@ -291,7 +294,48 @@ export function buildDocumentReport(
   verified: boolean,
   obligations: readonly GoldObligation[],
   findings: readonly PipelineFinding[],
+  expectNoFindings?: boolean,
 ): DocumentReport {
+  if (expectNoFindings) {
+    const fabricated: MatchedPair[] = findings.map(f => ({
+      goldId: "NONE",
+      findingAnchorId: f.anchorId,
+      verdict: "wrong_date" as MatchVerdict,
+      goldActor: null,
+      foundActor: f.actor,
+      actorCorrect: false,
+      goldDate: null,
+      foundDate: findingDate(f),
+      dateCorrect: false,
+      goldCitation: "NONE",
+      foundCitation: f.sectionCitation,
+      citationCorrect: false,
+      goldOutcome: "refuse",
+      foundOutcome: findingOutcome(f),
+      refusalReason: null,
+      detail: `Fabricated finding in amendment-by-instruction document — deadlines belong to the amended code, not this bill`,
+    }));
+
+    return {
+      documentName,
+      verified,
+      labelled: 0,
+      found: findings.length,
+      matched: 0,
+      recall: 1,
+      actorAccuracy: 1,
+      citationAccuracy: 1,
+      dateAccuracy: 1,
+      completeRecords: 1,
+      wrongAnswers: fabricated,
+      refusedButShouldntHave: [],
+      parseErrors: [],
+      unmatchedGold: [],
+      unmatchedFindings: [],
+      pairs: fabricated,
+    };
+  }
+
   const pairs = matchFindings(obligations, findings);
 
   const matched = pairs.filter(

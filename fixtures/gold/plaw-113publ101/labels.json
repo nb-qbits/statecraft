@@ -1,0 +1,135 @@
+{
+  "document": {
+    "filename": "PLAW-113publ101.pdf",
+    "jurisdiction": "us-fed",
+    "session": "113",
+    "instrumentType": "PLAW",
+    "number": "PLAW-113publ101",
+    "stage": "enacted",
+    "chapter": null
+  },
+  "documentVersionId": "05ba7030-fcf3-4fc7-9592-e9b180477d0c",
+  "verified": false,
+  "obligations": [
+    {
+      "id": "plaw-113publ101-01",
+      "actor": "Secretary",
+      "duty": "Post federal funds information on website",
+      "citation": "§ 3(i)(2)",
+      "expected_outcome": "refuse",
+      "expected_date": null,
+      "refusal_reason": "unexpected character 'S'",
+      "notes": "UNVERIFIED — generated from pipeline output."
+    },
+    {
+      "id": "plaw-113publ101-02",
+      "actor": "Director and the Secretary",
+      "duty": "Issue guidance to Federal agencies on data standards",
+      "citation": "§ 3(i)(1)",
+      "expected_outcome": "refuse",
+      "expected_date": null,
+      "refusal_reason": "runs from an event this document does not date: the",
+      "notes": "UNVERIFIED — generated from pipeline output."
+    },
+    {
+      "id": "plaw-113publ101-03",
+      "actor": "Federal agency",
+      "duty": "Report financial and payment information data per data standards",
+      "citation": "§ 3(i)(1)",
+      "expected_outcome": "refuse",
+      "expected_date": null,
+      "refusal_reason": "runs from an event this document does not date: the date on which the guidance under paragraph (1) is issued, each Federal agency shall report financial and payment information data in accordance with the data standards established under subsection (a).",
+      "notes": "UNVERIFIED — generated from pipeline output."
+    },
+    {
+      "id": "plaw-113publ101-04",
+      "actor": "Director and the Secretary",
+      "duty": "Apply data standards to website data",
+      "citation": "§ 3(i)(1)(A)",
+      "expected_outcome": "refuse",
+      "expected_date": null,
+      "refusal_reason": "runs from an event this document does not date: the date on which the guidance under paragraph (1) is issued, the Director and the Secretary shall ensure that the data standards established under subsection (a) are applied to the data made available on the website established under section 2.",
+      "notes": "UNVERIFIED — generated from pipeline output."
+    },
+    {
+      "id": "plaw-113publ101-05",
+      "actor": "Director, or a Federal agency designated by the Director",
+      "duty": "Establish pilot program for Federal award reporting",
+      "citation": "§ 3(i)(1)",
+      "expected_outcome": "refuse",
+      "expected_date": null,
+      "refusal_reason": "runs from an event this document does not date: the",
+      "notes": "UNVERIFIED — generated from pipeline output."
+    },
+    {
+      "id": "plaw-113publ101-06",
+      "actor": "pilot program",
+      "duty": "Terminate pilot program",
+      "citation": "§ 3(i)(1)",
+      "expected_outcome": "refuse",
+      "expected_date": null,
+      "refusal_reason": "unexpected character 'p'",
+      "notes": "UNVERIFIED — generated from pipeline output."
+    },
+    {
+      "id": "plaw-113publ101-07",
+      "actor": "Director",
+      "duty": "Submit pilot program report to Congress",
+      "citation": "§ 3(i)(1)",
+      "expected_outcome": "refuse",
+      "expected_date": null,
+      "refusal_reason": "runs from an event this document does not date: the date on which the pilot program terminates under paragraph (5), the Director shall submit to the Committee on Homeland Security and Governmental Affairs and the Committee on the Budget of the Senate and the Committee on Oversight and Government Reform and the Committee on the Budget of the House of Representatives a report on the pilot program",
+      "notes": "UNVERIFIED — generated from pipeline output."
+    },
+    {
+      "id": "plaw-113publ101-08",
+      "actor": "Director",
+      "duty": "Issue Government-wide implementation guidance to agency heads",
+      "citation": "§ 3(i)(1)",
+      "expected_outcome": "refuse",
+      "expected_date": null,
+      "refusal_reason": "runs from an event this document does not date: the date on which the Director submits the report under paragraph (6), the Director shall issue guidance to the heads of Federal agencies as to how the Government-wide financial data standards established under section 4(a) shall be applied to the information required to be reported by entities receiving Federal awards",
+      "notes": "UNVERIFIED — generated from pipeline output."
+    },
+    {
+      "id": "plaw-113publ101-09",
+      "actor": "Inspector General of each Federal agency",
+      "duty": "Submit first Inspector General spending data report",
+      "citation": "§ 3(i)(1)",
+      "expected_outcome": "refuse",
+      "expected_date": null,
+      "refusal_reason": "runs from an event this document does not date: the date on which the Director and the Secretary issue guidance to Federal agencies under section 4(c)(1), the Inspector General of each Federal agency shall submit and make publically available a report as described in paragraph (1).",
+      "notes": "UNVERIFIED — generated from pipeline output."
+    },
+    {
+      "id": "plaw-113publ101-10",
+      "actor": "Inspector General",
+      "duty": "Submit subsequent Inspector General spending data reports",
+      "citation": "§ 3(i)(1)",
+      "expected_outcome": "refuse",
+      "expected_date": null,
+      "refusal_reason": "unexpected character 's'",
+      "notes": "UNVERIFIED — generated from pipeline output."
+    },
+    {
+      "id": "plaw-113publ101-11",
+      "actor": "Comptroller General of the United States",
+      "duty": "Submit Comptroller General data quality assessment report",
+      "citation": "§ 3(i)(2)",
+      "expected_outcome": "refuse",
+      "expected_date": null,
+      "refusal_reason": "runs from an event this document does not date: the date on which the Director and the Secretary issue guidance to Federal agencies under section 4(c)(1), and every 2 years thereafter until the date that is 4 years after the date on which the first report is submitted under this subsection, the Comptroller General of the United States shall submit and make publically available a report as described in paragraph (1).",
+      "notes": "UNVERIFIED — generated from pipeline output."
+    },
+    {
+      "id": "plaw-113publ101-12",
+      "actor": "Secretary of the Treasury",
+      "duty": "Notify Congress of agency failure to notify Secretary",
+      "citation": "§ 5(3)",
+      "expected_outcome": "refuse",
+      "expected_date": null,
+      "refusal_reason": "unexpected character 'S'",
+      "notes": "UNVERIFIED — generated from pipeline output."
+    }
+  ]
+}

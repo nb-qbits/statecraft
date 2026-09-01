@@ -1,6 +1,6 @@
 export interface GoldObligation {
   readonly id: string;
-  readonly actor: string;
+  readonly actor: string | null;
   readonly duty: string;
   readonly citation: string;
   readonly expected_outcome: "date" | "bounded" | "refuse";
@@ -21,6 +21,7 @@ export interface GoldDocument {
   };
   readonly documentVersionId?: string;
   readonly verified: boolean;
+  readonly expectNoFindings?: boolean;
   readonly obligations: readonly GoldObligation[];
 }
 
@@ -63,7 +64,7 @@ export interface MatchedPair {
   readonly goldId: string;
   readonly findingAnchorId: string | null;
   readonly verdict: MatchVerdict;
-  readonly goldActor: string;
+  readonly goldActor: string | null;
   readonly foundActor: string | null;
   readonly actorCorrect: boolean;
   readonly goldDate: string | null;

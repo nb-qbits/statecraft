@@ -1,0 +1,75 @@
+{
+  "document": {
+    "filename": "PLAW-114publ195.pdf",
+    "jurisdiction": "us-fed",
+    "session": "114",
+    "instrumentType": "PLAW",
+    "number": "PLAW-114publ195",
+    "stage": "enacted",
+    "chapter": null
+  },
+  "documentVersionId": "ad241183-e9fa-48f1-9354-119e558895c6",
+  "verified": false,
+  "obligations": [
+    {
+      "id": "plaw-114publ195-01",
+      "actor": "President",
+      "duty": "Submit Global Food Security Strategy implementation report (Year 1)",
+      "citation": "§ 2(a)",
+      "expected_outcome": "refuse",
+      "expected_date": null,
+      "refusal_reason": "triggerDate is required to resolve a relative duration",
+      "notes": "UNVERIFIED — generated from pipeline output."
+    },
+    {
+      "id": "plaw-114publ195-02",
+      "actor": "President",
+      "duty": "Submit Global Food Security Strategy to congressional committees",
+      "citation": "§ 2(c)(1)",
+      "expected_outcome": "date",
+      "expected_date": "2016-10-01",
+      "refusal_reason": null,
+      "notes": "UNVERIFIED — generated from pipeline output."
+    },
+    {
+      "id": "plaw-114publ195-03",
+      "actor": "President",
+      "duty": "Report on Global Food Security Strategy progress to Congress and public",
+      "citation": "§ 2(c)",
+      "expected_outcome": "refuse",
+      "expected_date": null,
+      "refusal_reason": "recurrence has no date anchor — cannot generate occurrences without a start date",
+      "notes": "UNVERIFIED — generated from pipeline output."
+    },
+    {
+      "id": "plaw-114publ195-04",
+      "actor": "President",
+      "duty": "Submit annual report on Emergency Food Security Program activities",
+      "citation": "§ 2(c)(2)(B)",
+      "expected_outcome": "refuse",
+      "expected_date": null,
+      "refusal_reason": "unexpected character 'f'",
+      "notes": "UNVERIFIED — generated from pipeline output."
+    },
+    {
+      "id": "plaw-114publ195-05",
+      "actor": "Director of the Office of Management and Budget",
+      "duty": "Submit Global Food Security crosscut report to congressional committees",
+      "citation": "§ 2(b)",
+      "expected_outcome": "refuse",
+      "expected_date": null,
+      "refusal_reason": "runs from an event this document does not date: the President submits the budget to Congress under section 1105(a) of title 31, United States Code, the Director of the Office of Management and Budget shall submit to the appropriate congressional committees a report including—",
+      "notes": "UNVERIFIED — generated from pipeline output."
+    },
+    {
+      "id": "plaw-114publ195-06",
+      "actor": "United States Agency for International Development",
+      "duty": "Make information publicly available on USAID website",
+      "citation": "§ 2(c)",
+      "expected_outcome": "refuse",
+      "expected_date": null,
+      "refusal_reason": "unexpected character 'f'",
+      "notes": "UNVERIFIED — generated from pipeline output."
+    }
+  ]
+}

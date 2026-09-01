@@ -161,6 +161,9 @@ async function main(): Promise<void> {
     console.log(`=== ${dir} (${doc.document.filename}) ===`);
     console.log(`  Verified: ${doc.verified}`);
     console.log(`  Obligations: ${doc.obligations.length}`);
+    if (doc.expectNoFindings) {
+      console.log(`  Amendment-by-instruction: expects NO findings`);
+    }
 
     try {
       let dvId: string;
@@ -184,7 +187,7 @@ async function main(): Promise<void> {
         engineVersions = await fetchEngineVersions(dvId);
       }
 
-      const report = buildDocumentReport(dir, doc.verified, doc.obligations, findings);
+      const report = buildDocumentReport(dir, doc.verified, doc.obligations, findings, doc.expectNoFindings);
       documentReports.push(report);
 
       console.log(`  Recall: ${(report.recall * 100).toFixed(1)}%`);
@@ -290,6 +293,48 @@ async function main(): Promise<void> {
   console.log(`Report written to:`);
   console.log(`  ${mdPath}`);
   console.log(`  ${jsonPath}`);
+
+  if (process.argv.includes("--ci")) {
+    const thresholds = {
+      maxWrongAnswers: 0,
+      minRecall: 0.833,
+      minActorAccuracy: 0.933,
+      minDateAccuracy: 1.0,
+    };
+
+    const failures: string[] = [];
+
+    if (aggregate.aggregate.wrongAnswerCount > thresholds.maxWrongAnswers) {
+      failures.push(
+        `Wrong answers: ${aggregate.aggregate.wrongAnswerCount} > max ${thresholds.maxWrongAnswers}`,
+      );
+    }
+    if (aggregate.aggregate.recall < thresholds.minRecall) {
+      failures.push(
+        `Recall: ${(aggregate.aggregate.recall * 100).toFixed(1)}% < min ${(thresholds.minRecall * 100).toFixed(1)}%`,
+      );
+    }
+    if (aggregate.aggregate.actorAccuracy < thresholds.minActorAccuracy) {
+      failures.push(
+        `Actor accuracy: ${(aggregate.aggregate.actorAccuracy * 100).toFixed(1)}% < min ${(thresholds.minActorAccuracy * 100).toFixed(1)}%`,
+      );
+    }
+    if (aggregate.aggregate.dateAccuracy < thresholds.minDateAccuracy) {
+      failures.push(
+        `Date accuracy: ${(aggregate.aggregate.dateAccuracy * 100).toFixed(1)}% < min ${(thresholds.minDateAccuracy * 100).toFixed(1)}%`,
+      );
+    }
+
+    if (failures.length > 0) {
+      console.error("\n=== CI GATE FAILED ===");
+      for (const f of failures) {
+        console.error(`  FAIL: ${f}`);
+      }
+      process.exit(1);
+    } else {
+      console.log("\n=== CI GATE PASSED ===");
+    }
+  }
 }
 
 main().catch((err) => {
